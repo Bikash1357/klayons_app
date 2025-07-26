@@ -135,6 +135,15 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F5F5),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
+          onPressed: () =>
+              Navigator.pushReplacementNamed(context, '/user_profile_page'),
+        ),
+      ),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
