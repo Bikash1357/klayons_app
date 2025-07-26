@@ -4,7 +4,7 @@ import 'package:klayons/auth/login_screen.dart';
 import 'package:klayons/screens/splash_screen.dart';
 
 void main() {
-  runApp(DevicePreview(builder: (contex) => (Klayons())));
+  runApp(Klayons());
 }
 
 class Klayons extends StatelessWidget {
@@ -14,11 +14,12 @@ class Klayons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Klayons',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
       ),
-      home: MinimalSplashScreen(),
+      initialRoute: 'login',
+      routes: {'/login': (context) => LoginPage()},
     );
   }
 }
