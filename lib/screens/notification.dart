@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klayons/screens/home_screen.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({Key? key}) : super(key: key);
@@ -16,7 +17,10 @@ class NotificationsPage extends StatelessWidget {
             color: Colors.black87,
             size: 20,
           ),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+          ),
         ),
         title: const Text(
           'NOTIFICATIONS',

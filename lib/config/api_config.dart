@@ -1,22 +1,19 @@
 // lib/config/api_config.dart
 class ApiConfig {
   // Base URL for the API
-  static const String baseUrl =
-      'https://1f0f3792-ea29-4f20-8d98-5e8548cc11ac-00-1tccerdmhnsfy.pike.replit.dev';
+  static const String baseUrl = 'https://klayons-backend.vercel.app';
 
   // API endpoints
   static const String _apiPrefix = '/api';
   static const String _authPrefix = '$_apiPrefix/auth';
 
   // Auth endpoints
-  static const String loginEndpoint = '$_authPrefix/login/';
-  static const String registerEndpoint = '$_authPrefix/register/';
+  static const String loginEndpoint = '$_authPrefix/signin/';
+  static const String registerEndpoint = '$_authPrefix/signup/';
   static const String verifyOtpEndpoint = '$_authPrefix/verify-otp/';
-  static const String forgotPasswordEndpoint = '$_authPrefix/forgot-password/';
-  static const String resetPasswordEndpoint = '$_authPrefix/reset-password/';
-  static const String verifyTokenEndpoint = '$_authPrefix/verify-token/';
+  static const String resendOtpEndpoint = '$_authPrefix/resend-otp/';
   static const String logoutEndpoint = '$_authPrefix/logout/';
-  static const String addChildrenEndpoint = '$_apiPrefix/user/children/';
+  static const String addChildrenEndpoint = '$_apiPrefix/profiles/children/';
 
   // Helper method to get full URL
   static String getFullUrl(String endpoint) {
@@ -27,7 +24,7 @@ class ApiConfig {
   static Map<String, String> getHeaders({String? token}) {
     Map<String, String> headers = {'Content-Type': 'application/json'};
     if (token != null) {
-      headers['Authorization'] = 'Token $token';
+      headers['Authorization'] = 'Bearer $token';
     }
     return headers;
   }

@@ -1,7 +1,158 @@
 import 'package:flutter/material.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/add_child.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 
-class UserProfilePage extends StatelessWidget {
+import '../../../services/get_ChildServices.dart';
+import '../../../services/get_userprofile_service.dart';
+
+class UserProfilePage extends StatefulWidget {
   const UserProfilePage({Key? key}) : super(key: key);
+
+  @override
+  State<UserProfilePage> createState() => _UserProfilePageState();
+}
+
+class _UserProfilePageState extends State<UserProfilePage> {
+  UserProfile? userProfile;
+  List<Child>? children;
+  bool isLoading = true;
+  bool isLoadingChildren = true;
+  String? errorMessage;
+  String? childrenErrorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    _loadChildren();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+
+      final profile = await GetUserProfileService.getUserProfile();
+
+      setState(() {
+        userProfile = profile;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+
+      // Show error snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage ?? 'Failed to load profile'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _loadUserProfile,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadChildren() async {
+    try {
+      setState(() {
+        isLoadingChildren = true;
+        childrenErrorMessage = null;
+      });
+
+      final childrenData = await GetChildservices.fetchChildren();
+
+      setState(() {
+        children = childrenData;
+        isLoadingChildren = false;
+      });
+    } catch (e) {
+      setState(() {
+        childrenErrorMessage = e.toString();
+        isLoadingChildren = false;
+      });
+
+      print('Error loading children: $e');
+    }
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadUserProfile(), _loadChildren()]);
+  }
+
+  String _getUserName() {
+    if (userProfile?.name.isNotEmpty == true) {
+      // Capitalize each word in the name
+      return userProfile!.name
+          .split(' ')
+          .map(
+            (word) => word.isNotEmpty
+                ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+                : '',
+          )
+          .join(' ');
+    }
+    return 'USER NAME';
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      DateTime date = DateTime.parse(dateString);
+      List<String> months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${date.day}${_getDaySuffix(date.day)} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return dateString; // Return original if parsing fails
+    }
+  }
+
+  String _getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) {
+      return 'th';
+    }
+    switch (day % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
+  }
+
+  Color _getAvatarColor(String gender) {
+    return gender.toLowerCase() == 'male'
+        ? const Color(0xFF4A90E2)
+        : const Color(0xFFE91E63);
+  }
+
+  IconData _getGenderIcon(String gender) {
+    return gender.toLowerCase() == 'male' ? Icons.boy : Icons.girl;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,14 +161,6 @@ class UserProfilePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF5F5F5),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black87,
-            size: 20,
-          ),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-        ),
         title: const Text(
           'YOUR PROFILE',
           style: TextStyle(
@@ -32,28 +175,35 @@ class UserProfilePage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.black87, size: 24),
             onPressed: () {
-              Navigator.pushReplacementNamed(context, '/user_setting');
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsPage()),
+              );
             },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User Profile Section
-              _buildUserProfileSection(context),
-              const SizedBox(height: 24),
+      body: RefreshIndicator(
+        onRefresh: _refreshAll,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // User Profile Section
+                _buildUserProfileSection(context),
+                const SizedBox(height: 24),
 
-              // Children Profiles Section
-              _buildChildrenProfilesSection(context),
-              const SizedBox(height: 24),
+                // Children Profiles Section
+                _buildChildrenProfilesSection(context),
+                const SizedBox(height: 24),
 
-              // Your Bookings Section
-              _buildYourBookingsSection(),
-            ],
+                // Your Bookings Section
+                _buildYourBookingsSection(),
+              ],
+            ),
           ),
         ),
       ),
@@ -74,62 +224,148 @@ class UserProfilePage extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Profile Image
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300, width: 1),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: Container(
-                color: Colors.grey[300],
-                child: const Icon(Icons.person, color: Colors.white, size: 30),
+      child: isLoading
+          ? _buildLoadingProfile()
+          : errorMessage != null
+          ? _buildErrorProfile()
+          : _buildUserProfileContent(),
+    );
+  }
+
+  Widget _buildLoadingProfile() {
+    return Row(
+      children: [
+        // Loading Profile Image
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey[300],
+          ),
+          child: const CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+          ),
+        ),
+        const SizedBox(width: 16),
+
+        // Loading User Details
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 120,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
+              const SizedBox(height: 8),
+              Container(
+                width: 180,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: 140,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorProfile() {
+    return Column(
+      children: [
+        const Icon(Icons.error_outline, color: Colors.red, size: 48),
+        const SizedBox(height: 12),
+        Text(
+          'Failed to load profile',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed: _loadUserProfile,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF4A90E2),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
             ),
           ),
-          const SizedBox(width: 16),
+          child: const Text('Retry'),
+        ),
+      ],
+    );
+  }
 
-          // User Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'VARUN JAIN',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'varunjain@gmail.com',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '+91 98765 43210',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
+  Widget _buildUserProfileContent() {
+    return Row(
+      children: [
+        // Profile Image
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.grey.shade300, width: 1),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Container(
+              color: Colors.grey[300],
+              child: const Icon(Icons.person, color: Colors.white, size: 30),
             ),
           ),
+        ),
+        const SizedBox(width: 16),
 
-          // Edit Icon
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.grey, size: 20),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/user_edit_profile');
-            },
+        // User Details
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _getUserName(),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                userProfile?.userEmail ?? 'No email available',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                userProfile?.userPhone ?? 'No phone available',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -153,48 +389,231 @@ class UserProfilePage extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.add, color: Colors.black87, size: 24),
               onPressed: () {
-                Navigator.pushReplacementNamed(context, '/add_child');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddChildPage()),
+                );
               },
             ),
           ],
         ),
         const SizedBox(height: 16),
 
-        // Children Cards
-        Row(
-          children: [
-            Expanded(
-              child: _buildChildCard(
-                name: 'Aarav Jain',
-                birthdate: 'Birthdate: 5th Apr 2016',
-                gender: 'Gender: Boy',
-                avatarColor: const Color(0xFF4A90E2),
-                icon: Icons.boy,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildChildCard(
-                name: 'Khushi Jain',
-                birthdate: 'Birthdate: 7th Nov 2019',
-                gender: 'Gender: Girl',
-                avatarColor: const Color(0xFFE91E63),
-                icon: Icons.girl,
-              ),
-            ),
-          ],
-        ),
+        // Children Cards - Dynamic from API
+        _buildChildrenCards(),
       ],
     );
   }
 
-  Widget _buildChildCard({
-    required String name,
-    required String birthdate,
-    required String gender,
-    required Color avatarColor,
-    required IconData icon,
-  }) {
+  Widget _buildChildrenCards() {
+    if (isLoadingChildren) {
+      return _buildLoadingChildrenCards();
+    }
+
+    if (childrenErrorMessage != null) {
+      return _buildChildrenError();
+    }
+
+    if (children == null || children!.isEmpty) {
+      return _buildNoChildrenFound();
+    }
+
+    // Display children in a grid layout (2 columns max)
+    List<Widget> childCards = [];
+    for (int i = 0; i < children!.length; i += 2) {
+      List<Widget> rowChildren = [];
+
+      // Add first child in the row
+      rowChildren.add(Expanded(child: _buildChildCard(child: children![i])));
+
+      // Add second child in the row if exists
+      if (i + 1 < children!.length) {
+        rowChildren.add(const SizedBox(width: 12));
+        rowChildren.add(
+          Expanded(child: _buildChildCard(child: children![i + 1])),
+        );
+      } else {
+        // Add empty expanded widget to maintain layout
+        rowChildren.add(const SizedBox(width: 12));
+        rowChildren.add(const Expanded(child: SizedBox()));
+      }
+
+      childCards.add(Row(children: rowChildren));
+
+      // Add spacing between rows
+      if (i + 2 < children!.length) {
+        childCards.add(const SizedBox(height: 12));
+      }
+    }
+
+    return Column(children: childCards);
+  }
+
+  Widget _buildLoadingChildrenCards() {
+    return Row(
+      children: [
+        Expanded(child: _buildLoadingChildCard()),
+        const SizedBox(width: 12),
+        Expanded(child: _buildLoadingChildCard()),
+      ],
+    );
+  }
+
+  Widget _buildLoadingChildCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  shape: BoxShape.circle,
+                ),
+              ),
+              Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 80,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: 100,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                width: 70,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChildrenError() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+          const SizedBox(height: 12),
+          Text(
+            'Failed to load children profiles',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: _loadChildren,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4A90E2),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoChildrenFound() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.child_care, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          Text(
+            'No children profiles found',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Add your first child profile',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChildCard({required Child child}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -218,15 +637,19 @@ class UserProfilePage extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: avatarColor,
+                  color: _getAvatarColor(child.gender),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: Colors.white, size: 20),
+                child: Icon(
+                  _getGenderIcon(child.gender),
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.grey, size: 16),
                 onPressed: () {
-                  //
+                  // TODO: Navigate to edit child page
                 },
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -240,7 +663,7 @@ class UserProfilePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                name,
+                child.name,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -249,14 +672,28 @@ class UserProfilePage extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                birthdate,
+                'Birthdate: ${_formatDate(child.dob)}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 2),
               Text(
-                gender,
+                'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
+              // Show interests if available
+              if (child.interests.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Interests: ${child.interests.take(2).map((i) => i.name).join(', ')}${child.interests.length > 2 ? '...' : ''}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[500],
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ],
           ),
         ],

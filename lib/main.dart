@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:klayons/auth/login_screen.dart';
 import 'package:klayons/screens/bottom_screens/ticketbox_page.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/add_child.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/edit_profile_page.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/child_intrest.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
+import 'package:klayons/screens/course_details_page.dart';
 import 'package:klayons/screens/home_screen.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/screens/splash_screen.dart';
+import 'package:klayons/services/ActivitiedsServices.dart';
+import 'package:klayons/services/get_ChildServices.dart';
+import 'package:klayons/services/get_societyname.dart';
 
 import 'auth/registration_screen.dart';
 
@@ -23,6 +27,7 @@ class Klayons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Klayons',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
@@ -31,14 +36,16 @@ class Klayons extends StatelessWidget {
       routes: {
         '/': (context) => KlayonsSplashScreen(),
         '/login': (context) => LoginPage(),
-        '/register': (context) => RegistrationPage(),
+        '/signup': (context) => RegistrationPage(),
         '/home': (context) => KlayonsHomePage(),
-        '/user_edit_profile': (context) => EditProfilePage(),
         '/user_setting': (context) => SettingsPage(),
         '/notification': (context) => NotificationsPage(),
         '/activity_booking_page': (context) => ActivityBookingPage(),
+        //'/course_detail_page': (context) => CourseDetailPage(),
         '/user_profile_page': (context) => UserProfilePage(),
         '/add_child': (context) => AddChildPage(),
+        '/get_society_name': (context) => GetSocietyname(),
+        '/get_child_data': (context) => ChildrenListScreen(),
       },
     );
   }

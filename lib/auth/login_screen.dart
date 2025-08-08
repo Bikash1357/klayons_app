@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Add this for clipboard
 import 'package:http/http.dart' as http;
+import 'package:klayons/auth/registration_screen.dart';
 import 'dart:convert';
 import 'package:klayons/utils/styles/button.dart';
 import 'package:klayons/utils/styles/checkbox.dart';
-import 'package:klayons/utils/styles/klayonsFont.dart';
 import 'package:klayons/utils/styles/textButton.dart';
 import 'package:klayons/utils/styles/textboxes.dart';
 import 'package:klayons/config/api_config.dart';
-import 'package:klayons/services/login_auth_service.dart'; // Import your auth service
-
+import 'package:klayons/services/login_auth_service.dart';
+import 'package:url_launcher/url_launcher.dart'; // Add this import
 import 'otp_verification_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,263 +19,350 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   bool _isAgreeChecked = false;
   bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight:
-                  MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top,
-            ),
-            child: Column(
-              children: [
-                // Top section with background image
-                Container(
-                  height: MediaQuery.of(context).size.height * 0.4,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
+          child: Column(
+            children: [
+              // Top section with background image and Stack overlay
+              Stack(
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.4,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(
+                          'assets/images/klayons_auth_cover.png',
+                        ),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/bg.png'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.1),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Form section
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
-                  transform: Matrix4.translationValues(0, -24, 0),
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(24, 32, 24, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Welcome text
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Welcome Back',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Sign in to continue',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        SizedBox(height: 32),
-
-                        // Email input field
-                        Text(
-                          'Email',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        CustomTextField(
-                          hintText: "Enter your email",
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-
-                        SizedBox(height: 20),
-
-                        // Password input field
-                        Text(
-                          'Password',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        CustomTextField(
-                          hintText: "Enter your password",
-                          controller: _passwordController,
-                          obscureText: true,
-                        ),
-
-                        SizedBox(height: 24),
-
-                        // Terms and Privacy Policy
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CustomeCheckbox(
-                              value: _isAgreeChecked,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _isAgreeChecked = value ?? false;
-                                });
-                              },
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Text(
-                                    "By clicking, I agree to the ",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  CustomTextButton(
-                                    text: "Privacy Policy",
-                                    onPressed: () {},
-                                  ),
-                                ],
-                              ),
-                            ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.1),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                  // Rounded overlay to blend with form section
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
-                        SizedBox(height: 32),
+              // Form section
+              Container(
+                width: double.infinity,
+                color: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Welcome text
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            'Welcome Back',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Sign in to continue',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                        // Send OTP Button
+                    SizedBox(height: 32),
+
+                    // Email input field
+                    Text(
+                      'Email',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    CustomTextField(
+                      hintText: "Enter your email",
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+
+                    SizedBox(height: 24),
+
+                    // Terms and Privacy Policy with proper alignment
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Checkbox aligned to top
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: 2.0,
+                          ), // Fine-tune vertical alignment
+                          child: CustomeCheckbox(
+                            value: _isAgreeChecked,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                _isAgreeChecked = value ?? false;
+                              });
+                            },
+                          ),
+                        ),
                         SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: OrangeButton(
-                            onPressed: _isLoading
-                                ? null
-                                : (_isAgreeChecked &&
-                                          _emailController.text
-                                              .trim()
-                                              .isNotEmpty &&
-                                          _passwordController.text
-                                              .trim()
-                                              .isNotEmpty
-                                      ? _sendLoginOTP
-                                      : null),
-                            child: _isLoading
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
+                          width: 12,
+                        ), // Increased spacing for better alignment
+                        // Text content
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                height: 1.4, // Better line height
+                              ),
+                              children: [
+                                TextSpan(text: "By clicking, I agree to the "),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.baseline,
+                                  baseline: TextBaseline.alphabetic,
+                                  child: CustomTextButton(
+                                    text: "Privacy Policy",
+                                    onPressed:
+                                        _launchPrivacyPolicyUrl, // Updated this line
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 32),
+
+                    // Send OTP Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OrangeButton(
+                        onPressed: _isLoading
+                            ? null
+                            : (_isAgreeChecked &&
+                                      _emailController.text.trim().isNotEmpty
+                                  ? _sendLoginOTP
+                                  : null),
+                        child: _isLoading
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
                                       ),
-                                      SizedBox(width: 12),
-                                      Text(
-                                        "Sending OTP...",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Text(
-                                    "Send OTP",
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    "Sending OTP...",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                          ),
-                        ),
-
-                        SizedBox(height: 32),
-
-                        // Register link
-                        Center(
-                          child: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              Text(
-                                "Don't have an account? ",
+                                ],
+                              )
+                            : Text(
+                                "Send OTP",
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              CustomTextButton(
+                      ),
+                    ),
+
+                    SizedBox(height: 32),
+
+                    // Register link
+                    Center(
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          children: [
+                            TextSpan(text: "Don't have an account? "),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: CustomTextButton(
                                 text: "Register Here",
                                 onPressed: () {
-                                  Navigator.pushNamed(context, '/register');
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RegistrationPage(),
+                                    ),
+                                  );
                                 },
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-
-                        SizedBox(height: 24),
-                      ],
+                      ),
                     ),
-                  ),
+
+                    SizedBox(height: 24),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  // Add this new method to launch the privacy policy URL
+  Future<void> _launchPrivacyPolicyUrl() async {
+    const url = 'https://www.klayons.com/privacy-policy';
+
+    try {
+      final Uri uri = Uri.parse(url);
+
+      // Try different launch modes in order of preference
+      bool launched = false;
+
+      // First, try platform default
+      try {
+        launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (e) {
+        print('Platform default failed: $e');
+      }
+
+      // If that fails, try external application
+      if (!launched) {
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          print('External application failed: $e');
+        }
+      }
+
+      // If that fails, try in-app web view
+      if (!launched) {
+        try {
+          launched = await launchUrl(
+            uri,
+            mode: LaunchMode.inAppWebView,
+            webViewConfiguration: const WebViewConfiguration(
+              enableJavaScript: true,
+              enableDomStorage: true,
+            ),
+          );
+        } catch (e) {
+          print('In-app webview failed: $e');
+        }
+      }
+
+      // If still not launched, show fallback dialog
+      if (!launched) {
+        _showUrlFallbackDialog(url);
+      }
+    } catch (e) {
+      print('Error launching URL: $e');
+      _showUrlFallbackDialog(url);
+    }
+  }
+
+  // Fallback dialog when URL launcher fails
+  void _showUrlFallbackDialog(String url) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Privacy Policy'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Cannot open browser automatically.'),
+              SizedBox(height: 16),
+              Text('Please copy and paste this URL into your browser:'),
+              SizedBox(height: 8),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SelectableText(
+                  url,
+                  style: TextStyle(fontSize: 12, color: Colors.blue),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: url));
+                Navigator.of(context).pop();
+                _showSuccessMessage('URL copied to clipboard!');
+              },
+              child: Text('Copy URL'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -282,11 +370,6 @@ class _LoginPageState extends State<LoginPage> {
     // Basic email validation
     if (!_isValidEmail(_emailController.text.trim())) {
       _showErrorMessage('Please enter a valid email address');
-      return;
-    }
-
-    if (_passwordController.text.trim().length < 8) {
-      _showErrorMessage('Password must be at least 8 characters long');
       return;
     }
 
@@ -298,10 +381,7 @@ class _LoginPageState extends State<LoginPage> {
       final response = await http.post(
         Uri.parse(ApiConfig.getFullUrl(ApiConfig.loginEndpoint)),
         headers: ApiConfig.getHeaders(),
-        body: json.encode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text.trim(),
-        }),
+        body: json.encode({'email': _emailController.text.trim()}),
       );
 
       final data = json.decode(response.body);
@@ -386,7 +466,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 }

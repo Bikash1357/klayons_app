@@ -42,28 +42,55 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header with background image
-            Container(
-              height: MediaQuery.of(context).size.height * 0.35,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/bg.png'),
-                  fit: BoxFit.cover,
-                ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header with background image
+              Stack(
+                children: [
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.35,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(
+                          'assets/images/klayons_auth_cover.png',
+                        ),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  // Rounded overlay to blend with form section
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
 
-            // OTP Form Section
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.all(24.0),
+              // OTP Form Section
+              Container(
+                width: double.infinity,
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height * 0.65,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: 40),
+                    SizedBox(height: 20),
 
                     // Title Text
                     Text(
@@ -79,11 +106,14 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     SizedBox(height: 40),
 
                     // OTP Input Boxes
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(
-                        6,
-                        (index) => _buildOTPBox(index),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: List.generate(
+                          6,
+                          (index) => _buildOTPBox(index),
+                        ),
                       ),
                     ),
                     SizedBox(height: 30),
@@ -103,7 +133,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       ),
                     ),
 
-                    Spacer(),
+                    SizedBox(height: 100),
 
                     // Submit Button
                     Container(
@@ -114,8 +144,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _isLoading
                               ? Colors.grey[300]
-                              : Colors
-                                    .grey[600], // Keep grey for submit button as in image
+                              : Colors.orange,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.0),
@@ -159,66 +188,93 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildOTPBox(int index) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border.all(
-          color: _otpControllers[index].text.isNotEmpty
-              ? Color(0xFFFF6B35) // Orange border when filled
-              : Colors.grey[300]!,
-          width: 2,
+    return Flexible(
+      child: Container(
+        width: 50,
+        height: 55,
+        margin: EdgeInsets.symmetric(horizontal: 4.0),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          border: Border.all(
+            color: _otpControllers[index].text.isNotEmpty
+                ? Color(0xFFFF6B35) // Orange border when filled
+                : Colors.grey[300]!,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(12),
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TextField(
-        controller: _otpControllers[index],
-        focusNode: _focusNodes[index],
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          counterText: '',
-          contentPadding: EdgeInsets.zero,
-        ),
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        onChanged: (value) {
-          setState(() {}); // Refresh to update border color
+        child: RawKeyboardListener(
+          focusNode: FocusNode(),
+          onKey: (RawKeyEvent event) {
+            if (event is RawKeyDownEvent) {
+              if (event.logicalKey == LogicalKeyboardKey.backspace) {
+                if (_otpControllers[index].text.isEmpty && index > 0) {
+                  // Move to previous field and clear it
+                  _focusNodes[index - 1].requestFocus();
+                  _otpControllers[index - 1].clear();
+                  setState(() {});
+                } else if (_otpControllers[index].text.isNotEmpty) {
+                  // Clear current field
+                  _otpControllers[index].clear();
+                  setState(() {});
+                }
+              }
+            }
+          },
+          child: TextField(
+            controller: _otpControllers[index],
+            focusNode: _focusNodes[index],
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            keyboardType: TextInputType.number,
+            maxLength: 1,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              counterText: '',
+              contentPadding: EdgeInsets.zero,
+            ),
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (value) {
+              setState(() {}); // Refresh to update border color
 
-          if (value.isNotEmpty) {
-            // Move to next field
-            if (index < 5) {
-              _focusNodes[index + 1].requestFocus();
-            } else {
-              // Last field, remove focus
-              _focusNodes[index].unfocus();
-            }
-          } else {
-            // Move to previous field on backspace
-            if (index > 0) {
-              _focusNodes[index - 1].requestFocus();
-            }
-          }
-        },
-        onTap: () {
-          // Clear the field when tapped
-          _otpControllers[index].clear();
-        },
+              if (value.isNotEmpty) {
+                // If user types a new digit, replace existing and move to next
+                if (value.length > 1) {
+                  _otpControllers[index].text = value.substring(
+                    value.length - 1,
+                  );
+                }
+
+                // Move to next field
+                if (index < 5) {
+                  _focusNodes[index + 1].requestFocus();
+                } else {
+                  // Last field, remove focus
+                  _focusNodes[index].unfocus();
+                }
+              }
+            },
+            onTap: () {
+              // Select all text when tapped, so typing replaces it
+              _otpControllers[index].selection = TextSelection(
+                baseOffset: 0,
+                extentOffset: _otpControllers[index].text.length,
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -242,42 +298,31 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.getFullUrl('/api/auth/verify-otp/')),
-        headers: ApiConfig.getHeaders(),
-        body: json.encode({
-          'email': widget.email,
-          'otp_code': _getOTPCode(),
-          'purpose': widget.purpose,
-        }),
+      print('🔍 Starting OTP verification for email: ${widget.email}');
+      print('🔑 OTP Code: ${_getOTPCode()}');
+
+      // Use the LoginAuthService verifyOTP method
+      final result = await LoginAuthService.verifyOTP(
+        email: widget.email,
+        otp: _getOTPCode(),
       );
 
-      final data = json.decode(response.body);
+      if (result != null) {
+        print('✅ OTP verification successful!');
+        _showSuccessMessage('Verification successful!');
 
-      if (response.statusCode == 200) {
-        // OTP verification successful
-        _showSuccessMessage(data['message'] ?? 'Verification successful!');
-
-        // Save authentication data using your auth service
-        if (data.containsKey('token') || data.containsKey('access_token')) {
-          String token = data['token'] ?? data['access_token'];
-          Map<String, dynamic> userData = data['user'] ?? {};
-
-          // Use your LoginAuthService to save authentication data
-          await LoginAuthService.saveAuthData(token: token, userData: userData);
-
-          print('Authentication data saved successfully via LoginAuthService');
-        } else {
-          // If no token in response, but user data is available, update user data only
-          if (data.containsKey('user')) {
-            final existingToken = await LoginAuthService.getToken();
-            if (existingToken != null) {
-              await LoginAuthService.saveAuthData(
-                token: existingToken,
-                userData: data['user'],
-              );
-            }
+        // Optional: Fetch user profile data if needed
+        try {
+          print('👤 Fetching user profile...');
+          final userProfile = await LoginAuthService.getUserProfile();
+          if (userProfile != null) {
+            print('✅ User profile fetched successfully');
           }
+        } catch (profileError) {
+          print(
+            '⚠️ Failed to fetch user profile, but login still valid: $profileError',
+          );
+          // Don't block login flow if profile fetch fails
         }
 
         // Wait a moment to show success message
@@ -287,22 +332,16 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         if (mounted) {
           Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         }
-
-        // If you don't have named routes, use this instead:
-        // Navigator.pushAndRemoveUntil(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => HomePage()),
-        //   (route) => false,
-        // );
       } else {
-        _showErrorMessage(data['message'] ?? 'Invalid OTP. Please try again.');
+        print('❌ OTP verification failed');
+        _showErrorMessage('Invalid OTP. Please try again.');
         _clearOTPFields();
       }
     } catch (e) {
+      print('❌ OTP verification error: $e');
       _showErrorMessage(
         'Network error. Please check your connection and try again.',
       );
-      print('OTP verification error: $e'); // For debugging
     } finally {
       if (mounted) {
         setState(() {
@@ -318,24 +357,51 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     });
 
     try {
+      print('📤 Resending OTP to: ${widget.email}');
+
       final response = await http.post(
         Uri.parse(ApiConfig.getFullUrl('/api/auth/resend-otp/')),
         headers: ApiConfig.getHeaders(),
-        body: json.encode({'email': widget.email, 'purpose': widget.purpose}),
+        body: json.encode({'email': widget.email}),
       );
 
-      final data = json.decode(response.body);
+      print('📥 Resend OTP - Response status: ${response.statusCode}');
+      print('📥 Resend OTP - Response body: ${response.body}');
+
+      // Check if response body is empty
+      if (response.body.isEmpty) {
+        _showErrorMessage('Server returned empty response');
+        return;
+      }
+
+      // Try to parse JSON safely
+      Map<String, dynamic> data;
+      try {
+        data = json.decode(response.body);
+      } catch (jsonError) {
+        print('❌ JSON parsing error in resend: $jsonError');
+        print('Response body that failed to parse: ${response.body}');
+
+        if (response.body.trim().startsWith('<')) {
+          _showErrorMessage('Server error occurred. Please try again later.');
+        } else {
+          _showErrorMessage('Invalid response format from server');
+        }
+        return;
+      }
 
       if (response.statusCode == 200) {
+        print('✅ OTP resent successfully');
         _showSuccessMessage('OTP has been resent to your email.');
         _clearOTPFields();
         _focusNodes[0].requestFocus();
       } else {
+        print('❌ Failed to resend OTP: ${data['message']}');
         _showErrorMessage(data['message'] ?? 'Failed to resend OTP.');
       }
     } catch (e) {
+      print('❌ Resend OTP error: $e');
       _showErrorMessage('Network error. Please try again.');
-      print('Resend OTP error: $e'); // For debugging
     } finally {
       if (mounted) {
         setState(() {
@@ -356,7 +422,13 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
@@ -371,7 +443,13 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 5),
           behavior: SnackBarBehavior.floating,

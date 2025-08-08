@@ -12,6 +12,8 @@ class KlayonsSplashScreen extends StatefulWidget {
 }
 
 class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
+  String _statusText = 'Checking authentication...';
+
   @override
   void initState() {
     super.initState();
@@ -19,54 +21,100 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
   }
 
   void _initializeApp() async {
-    // Show splash screen for minimum 3 seconds
-    await Future.delayed(const Duration(seconds: 3));
+    try {
+      // Show splash screen for minimum 2 seconds for better UX
+      final Future<void> splashDelay = Future.delayed(
+        const Duration(seconds: 2),
+      );
+      final Future<void> authCheck = _checkAuthenticationAndNavigate();
 
-    if (mounted) {
-      await _checkAuthenticationAndNavigate();
+      // Wait for both splash delay and auth check to complete
+      await Future.wait([splashDelay, authCheck]);
+    } catch (e) {
+      print('🚨 App initialization error: $e');
+      // Fallback to login on any initialization error
+      _navigateToLogin();
     }
   }
 
   Future<void> _checkAuthenticationAndNavigate() async {
     try {
-      print('Starting authentication check...');
-
-      // First check if user is logged in locally
-      final isLoggedInLocal = await LoginAuthService.isLoggedInLocally();
-      print('Local login status: $isLoggedInLocal');
-
-      if (!isLoggedInLocal) {
-        print('User not logged in locally, navigating to login');
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/login');
-        }
-        return;
+      if (mounted) {
+        setState(() {
+          _statusText = 'Checking authentication...';
+        });
       }
 
-      // Get token for debugging
-      final token = await LoginAuthService.getToken();
-      print(
-        'Token exists: ${token != null ? "Yes (${token!.length} chars)" : "No"}',
-      );
+      print('🔍 Starting authentication check...');
 
-      // Check full authentication (including backend verification)
+      // Use the simplified authentication check
       final isAuthenticated = await LoginAuthService.isAuthenticated();
-      print('Full authentication status: $isAuthenticated');
 
-      if (mounted) {
-        if (isAuthenticated) {
-          print('User is authenticated, navigating to home');
-          Navigator.pushReplacementNamed(context, '/home');
-        } else {
-          print('User authentication failed, navigating to login');
-          Navigator.pushReplacementNamed(context, '/login');
+      if (isAuthenticated) {
+        print('✅ User is authenticated, navigating to home');
+
+        if (mounted) {
+          setState(() {
+            _statusText = 'Welcome back!';
+          });
         }
+
+        // Small delay to show welcome message
+        await Future.delayed(const Duration(milliseconds: 500));
+        _navigateToHome();
+      } else {
+        print('❌ User not authenticated, navigating to login');
+
+        if (mounted) {
+          setState(() {
+            _statusText = 'Please log in to continue';
+          });
+        }
+
+        // Small delay to show login message
+        await Future.delayed(const Duration(milliseconds: 500));
+        _navigateToLogin();
       }
     } catch (e) {
-      print('Authentication check error: $e');
-      // On error, default to login page
+      print('🚨 Authentication check error: $e');
+
       if (mounted) {
+        setState(() {
+          _statusText = 'Loading...';
+        });
+      }
+
+      // On any error, clear auth data and go to login
+      try {
+        await LoginAuthService.clearAuthData();
+      } catch (clearError) {
+        print('Error clearing auth data: $clearError');
+      }
+
+      _navigateToLogin();
+    }
+  }
+
+  void _navigateToHome() {
+    if (mounted) {
+      try {
+        Navigator.pushReplacementNamed(context, '/home');
+      } catch (e) {
+        print('Navigation to home failed: $e');
+        // Fallback navigation
+        _navigateToLogin();
+      }
+    }
+  }
+
+  void _navigateToLogin() {
+    if (mounted) {
+      try {
         Navigator.pushReplacementNamed(context, '/login');
+      } catch (e) {
+        print('Navigation to login failed: $e');
+        // If navigation fails completely, exit app gracefully
+        SystemNavigator.pop();
       }
     }
   }
@@ -84,19 +132,34 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
             colors: [Color(0xFFFFFBF5), Color(0xFFFF6B35)],
           ),
         ),
-        child: const SafeArea(
+        child: SafeArea(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Spacer(flex: 2),
-              // Logo
-              SizedBox(height: 15),
-              SizedBox(height: 30),
+              const Spacer(flex: 2),
+
+              // Logo placeholder - replace with your actual logo
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.child_care,
+                  size: 50,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 30),
+
               // App Name
-              KlayonsText(),
-              SizedBox(height: 20),
+              const KlayonsText(),
+              const SizedBox(height: 20),
+
               // Tagline
-              Text(
+              const Text(
                 'Fun and Engaging Activities for Kids',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -106,23 +169,46 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
                   height: 1.5,
                 ),
               ),
-              SizedBox(height: 60),
+              const SizedBox(height: 60),
+
               // Loading Indicator
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 3.0,
-              ),
-              SizedBox(height: 20),
-              // Loading Text
-              Text(
-                'Loading...',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w300,
+              const SizedBox(
+                width: 30,
+                height: 30,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 3.0,
                 ),
               ),
-              Spacer(flex: 3),
+              const SizedBox(height: 20),
+
+              // Dynamic Loading Text
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: Text(
+                  _statusText,
+                  key: ValueKey(_statusText),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+              ),
+              const Spacer(flex: 3),
+
+              // Version info (optional)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 20),
+                child: Text(
+                  'Version 1.0.0',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white38,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
