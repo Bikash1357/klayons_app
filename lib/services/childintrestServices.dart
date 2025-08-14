@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 
+import '../config/api_config.dart';
+
 // models/interest_model.dart
 class Interest {
   final int id;
@@ -60,7 +62,8 @@ class Child {
 }
 
 class ApiService {
-  static const String baseUrl = 'https://klayons-backend.vercel.app/api';
+  static String get _childInterestsUrl =>
+      ApiConfig.getFullUrl(ApiConfig.childInterestEndpoint);
 
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
@@ -71,7 +74,7 @@ class ApiService {
   Future<List<Interest>> getInterests() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/profiles/interests/'),
+        Uri.parse(_childInterestsUrl),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -94,7 +97,7 @@ class ApiService {
   Future<bool> addChild(Child child) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/profiles/children/'), // Adjust endpoint as needed
+        Uri.parse(ApiConfig.addChildrenEndpoint),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(child.toJson()),
       );

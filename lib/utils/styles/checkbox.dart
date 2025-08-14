@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:klayons/utils/colour.dart';
 
 class CustomeCheckbox extends StatelessWidget {
   final bool value;
@@ -16,7 +17,7 @@ class CustomeCheckbox extends StatelessWidget {
     return Checkbox(
       value: value,
       onChanged: onChanged,
-      activeColor: Color(0xFFED7733),
+      activeColor: AppColors.primaryOrange,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
     );
   }

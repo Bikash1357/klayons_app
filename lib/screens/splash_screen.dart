@@ -139,19 +139,6 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
               const Spacer(flex: 2),
 
               // Logo placeholder - replace with your actual logo
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.child_care,
-                  size: 50,
-                  color: Colors.white,
-                ),
-              ),
               const SizedBox(height: 30),
 
               // App Name

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 // Society model class to hold all society details
 class Society {
@@ -35,7 +36,7 @@ class SocietyService {
   static Future<List<Society>> getAllSocieties() async {
     try {
       print('Fetching all societies...');
-      print('API URL: $_baseUrl$_societiesEndpoint');
+      print('API URL: ${ApiConfig.getSocieties}');
 
       final response = await http
           .get(

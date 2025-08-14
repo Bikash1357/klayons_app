@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klayons/utils/colour.dart';
 
 class CustomTextButton extends StatelessWidget {
   final String text;
@@ -10,7 +11,7 @@ class CustomTextButton extends StatelessWidget {
     Key? key,
     required this.text,
     required this.onPressed,
-    this.textColor = const Color(0xFFED7733), // Default orange
+    this.textColor = AppColors.primaryOrange, // Default orange
     this.fontSize = 14,
   }) : super(key: key);
 

@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:klayons/screens/bottom_screens/uesr_profile/add_child.dart';
-import '../../../services/addchildservice.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
+import '../../../../services/post_addchildservice.dart';
+import '../../../../services/get_ChildServices.dart';
 
 // Interest model class
 class Interest {
@@ -44,9 +45,13 @@ class InterestService {
 
 class AddChildInterestsPage extends StatefulWidget {
   final ChildData childData;
+  final bool isEditMode;
 
-  const AddChildInterestsPage({Key? key, required this.childData})
-    : super(key: key);
+  const AddChildInterestsPage({
+    Key? key,
+    required this.childData,
+    this.isEditMode = false,
+  }) : super(key: key);
 
   @override
   _AddChildInterestsPageState createState() => _AddChildInterestsPageState();
@@ -63,6 +68,11 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
   void initState() {
     super.initState();
     _loadInterests();
+
+    // If in edit mode, pre-select existing interests
+    if (widget.isEditMode && widget.childData.existingInterestIds != null) {
+      selectedInterestIds = widget.childData.existingInterestIds!.toSet();
+    }
   }
 
   // Load interests from API
@@ -152,20 +162,29 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
   }
 
   // Show success dialog
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String message) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Success'),
-          content: const Text('Child profile created successfully!'),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous page
-                Navigator.of(context).pop(); // Go back to profile page
+                if (widget.isEditMode) {
+                  // In edit mode, go back to profile page with success indicator
+                  Navigator.of(context).pop(); // Go back to AddChildPage
+                  Navigator.of(
+                    context,
+                  ).pop(true); // Go back to profile page with success
+                } else {
+                  // In add mode, go back to profile page
+                  Navigator.of(context).pop(); // Go back to AddChildPage
+                  Navigator.of(context).pop(); // Go back to profile page
+                }
               },
               child: const Text('OK'),
             ),
@@ -175,7 +194,17 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     );
   }
 
-  // Submit child data with interests
+  // Convert UI gender to API format
+  String _convertGenderToApiFormat(String uiGender) {
+    return uiGender.toLowerCase() == 'boy' ? 'male' : 'female';
+  }
+
+  // Format date for API (YYYY-MM-DD)
+  String _formatDateForApi(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  // Submit child data - handles both add and edit modes
   Future<void> _submitChildData() async {
     if (selectedInterestIds.isEmpty) {
       _showErrorDialog('Please select at least one interest');
@@ -187,21 +216,47 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     });
 
     try {
-      final result = await AddChildService.createChild(
-        firstName: widget.childData.firstName,
-        lastName: widget.childData.lastName,
-        dateOfBirth: widget.childData.dateOfBirth,
-        gender: widget.childData.gender,
-        interestIds: selectedInterestIds.toList(),
-      );
+      if (widget.isEditMode) {
+        // Edit mode: Update existing child
+        final editRequest = EditChildRequest(
+          name: "${widget.childData.firstName} ${widget.childData.lastName}"
+              .trim(),
+          gender: _convertGenderToApiFormat(widget.childData.gender),
+          dob: _formatDateForApi(widget.childData.dateOfBirth),
+          interestIds: selectedInterestIds.toList(),
+        );
 
-      if (result['success']) {
-        _showSuccessDialog();
+        print('Updating child with ID: ${widget.childData.childId}');
+        print('Edit request: ${editRequest.toJson()}');
+
+        final updatedChild = await GetChildservices.editChild(
+          widget.childData.childId!,
+          editRequest,
+        );
+
+        print('Child updated successfully: ${updatedChild.name}');
+        _showSuccessDialog('Child profile updated successfully!');
       } else {
-        _showErrorDialog(result['error']);
+        // Add mode: Create new child
+        final result = await AddChildService.createChild(
+          firstName: widget.childData.firstName,
+          lastName: widget.childData.lastName,
+          dateOfBirth: widget.childData.dateOfBirth,
+          gender: widget.childData.gender,
+          interestIds: selectedInterestIds.toList(),
+        );
+
+        if (result['success']) {
+          _showSuccessDialog('Child profile created successfully!');
+        } else {
+          _showErrorDialog(result['error']);
+        }
       }
     } catch (e) {
-      _showErrorDialog('An unexpected error occurred. Please try again.');
+      print('Error in _submitChildData: $e');
+      _showErrorDialog(
+        'Failed to ${widget.isEditMode ? 'update' : 'create'} child profile: ${e.toString()}',
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -364,7 +419,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'ADD CHILD',
+          widget.isEditMode ? 'EDIT CHILD' : 'ADD CHILD',
           style: TextStyle(
             color: Colors.black,
             fontSize: 16,
@@ -391,7 +446,9 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
             ),
             SizedBox(height: 10),
             Text(
-              'Select interests for ${widget.childData.firstName}',
+              widget.isEditMode
+                  ? 'Update interests for ${widget.childData.firstName}'
+                  : 'Select interests for ${widget.childData.firstName}',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             SizedBox(height: 30),
@@ -428,7 +485,9 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                           ),
                         )
                       : Text(
-                          'Save Child Profile',
+                          widget.isEditMode
+                              ? 'Update Child Profile'
+                              : 'Save Child Profile',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,

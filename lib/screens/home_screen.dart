@@ -5,6 +5,7 @@ import 'package:klayons/screens/course_details_page.dart';
 import 'package:klayons/screens/notification.dart';
 
 import '../services/ActivitiedsServices.dart';
+import '../services/notification/scheduleOverideService.dart'; // Import the service
 import 'bottom_screens/calander.dart' hide Activity;
 
 class KlayonsHomePage extends StatefulWidget {
@@ -18,11 +19,14 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
   List<Activity> activities = [];
   bool isLoading = true;
   String? errorMessage;
+  int unreadNotificationCount = 0; // Add this for notification count
 
   @override
   void initState() {
     super.initState();
+    NotificationCountManager.init(); // Initialize notification manager
     fetchActivities();
+    _loadNotificationCount(); // Load notification count
   }
 
   Future<void> fetchActivities() async {
@@ -48,11 +52,72 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
     }
   }
 
+  // Add this method to load notification count
+  Future<void> _loadNotificationCount() async {
+    try {
+      final overrides = await ScheduleOverridesService.getScheduleOverrides();
+      setState(() {
+        unreadNotificationCount = NotificationCountManager.getUnviewedCount(
+          overrides,
+        );
+      });
+    } catch (e) {
+      print('Error loading notification count: $e');
+      // Don't set error state, just keep count at 0
+    }
+  }
+
   String _formatAgeGroup(int ageStart, int ageEnd) {
     if (ageStart == ageEnd) {
-      return 'Recommended Age: ${ageStart} years';
+      return 'Recommended Age: $ageStart';
     } else {
-      return 'Recommended Age: $ageStart-$ageEnd years';
+      return 'Recommended Age: $ageStart-$ageEnd';
+    }
+  }
+
+  String _formatBatchStartDate(String startDate) {
+    try {
+      final date = DateTime.parse(startDate);
+      final monthNames = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+
+      final day = date.day;
+      final month = monthNames[date.month - 1];
+
+      String suffix;
+      if (day >= 11 && day <= 13) {
+        suffix = 'th';
+      } else {
+        switch (day % 10) {
+          case 1:
+            suffix = 'st';
+            break;
+          case 2:
+            suffix = 'nd';
+            break;
+          case 3:
+            suffix = 'rd';
+            break;
+          default:
+            suffix = 'th';
+        }
+      }
+
+      return 'Batch Starts $day$suffix $month';
+    } catch (e) {
+      return 'Batch Starts Soon';
     }
   }
 
@@ -111,20 +176,64 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: Colors.grey),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationsPage()),
-              );
-            },
+          // Updated notification icon with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.grey,
+                ),
+                onPressed: () async {
+                  // Navigate to notifications page and refresh count when returning
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationsPage(),
+                    ),
+                  );
+                  // Refresh notification count when returning from notifications page
+                  _loadNotificationCount();
+                },
+              ),
+              if (unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      unreadNotificationCount > 99
+                          ? '99+'
+                          : unreadNotificationCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: fetchActivities,
+        onRefresh: () async {
+          await fetchActivities();
+          await _loadNotificationCount(); // Also refresh notification count
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -400,34 +509,37 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
         );
       },
       child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.08),
+              spreadRadius: 0,
+              blurRadius: 20,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image with banner support
+            // Image section
             Container(
-              width: 100,
-              height: 120,
+              width: double.infinity,
+              height: 200,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  bottomLeft: Radius.circular(15),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                color: Colors.grey[300],
+                color: Colors.grey[200],
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  bottomLeft: Radius.circular(15),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
                 child: activity.bannerImageUrl.isNotEmpty
                     ? Image.network(
@@ -435,21 +547,23 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.school,
-                              color: Colors.grey,
-                              size: 40,
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(
+                                Icons.school,
+                                color: Colors.grey,
+                                size: 60,
+                              ),
                             ),
                           );
                         },
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
                           return Container(
-                            color: Colors.grey[300],
+                            color: Colors.grey[200],
                             child: const Center(
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: 3,
                                 color: Colors.orange,
                               ),
                             ),
@@ -457,128 +571,122 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
                         },
                       )
                     : Container(
-                        color: Colors.grey[300],
-                        child: const Icon(
-                          Icons.school,
-                          color: Colors.grey,
-                          size: 40,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Icon(
+                            Icons.school,
+                            color: Colors.grey,
+                            size: 60,
+                          ),
                         ),
                       ),
               ),
             ),
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      activity.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+
+            // Content section
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    activity.name,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      height: 1.2,
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      _formatDateRange(activity.startDate, activity.endDate),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Batch start date
+                  Text(
+                    _formatBatchStartDate(activity.startDate),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatAgeGroup(
-                        activity.ageGroupStart,
-                        activity.ageGroupEnd,
-                      ),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Age group
+                  Text(
+                    _formatAgeGroup(
+                      activity.ageGroupStart,
+                      activity.ageGroupEnd,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Instructor: ${activity.instructor.name}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    if (activity.pricing.isNotEmpty)
-                      Text(
-                        'Price: ₹${activity.pricing}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    const SizedBox(height: 2),
-                    if (activity.batchesCount.isNotEmpty)
-                      Text(
-                        'Batches: ${activity.batchesCount}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    const SizedBox(height: 10),
-                    // Status indicator
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: activity.isActive
-                            ? Colors.green[100]
-                            : Colors.red[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        activity.isActive ? 'Active' : 'Inactive',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: activity.isActive
-                              ? Colors.green[700]
-                              : Colors.red[700],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: activity.isActive
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        CourseDetailPage(activity: activity),
-                                  ),
-                                );
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: activity.isActive
-                              ? Colors.orange
-                              : Colors.grey,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                        child: Text(
-                          activity.isActive ? 'Add to Cart' : 'Not Available',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Price and button row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Price
+                      if (activity.pricing.isNotEmpty)
+                        Text(
+                          '₹ ${activity.pricing}',
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF6B35), // Orange color
+                          ),
+                        ),
+
+                      // View Details button
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0xFFFF6B35),
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: TextButton(
+                          onPressed: activity.isActive
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          CourseDetailPage(activity: activity),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: Text(
+                            'View Details',
+                            style: TextStyle(
+                              color: activity.isActive
+                                  ? const Color(0xFFFF6B35)
+                                  : Colors.grey,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

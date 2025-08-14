@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:klayons/utils/colour.dart';
 
 class CustomTextField extends StatelessWidget {
   final String hintText;
@@ -24,7 +25,7 @@ class CustomTextField extends StatelessWidget {
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+        hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 16),
         filled: true,
         fillColor: Colors.grey[50],
         border: OutlineInputBorder(
@@ -37,7 +38,7 @@ class CustomTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Color(0xFFED7733), width: 2),
+          borderSide: BorderSide(color: AppColors.primaryOrange, width: 2),
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 
 import '../../../services/login_auth_service.dart';
 import '../../../services/get_userprofile_service.dart';
@@ -455,14 +456,11 @@ class _SettingsPageState extends State<SettingsPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.black54),
-            onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => UserProfilePage()),
           ),
-        ],
+        ),
       ),
       backgroundColor: Colors.white,
       body: SafeArea(

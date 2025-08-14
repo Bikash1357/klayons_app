@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config/api_config.dart';
 
 // Data models
 class Interest {
@@ -42,6 +43,29 @@ class Child {
   }
 }
 
+class EditChildRequest {
+  final String name;
+  final String gender;
+  final String dob;
+  final List<int> interestIds;
+
+  EditChildRequest({
+    required this.name,
+    required this.gender,
+    required this.dob,
+    required this.interestIds,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'gender': gender,
+      'dob': dob,
+      'interest_ids': interestIds,
+    };
+  }
+}
+
 // API Service
 class GetChildservices {
   static const String baseUrl = 'https://klayons-backend.vercel.app/api';
@@ -61,6 +85,7 @@ class GetChildservices {
     }
   }
 
+  // Fetch all children
   static Future<List<Child>> fetchChildren() async {
     final token = await getToken();
 
@@ -93,123 +118,47 @@ class GetChildservices {
       throw Exception('Failed to load data. Check your connection.');
     }
   }
-}
 
-// Main Widget
-class ChildrenListScreen extends StatefulWidget {
-  @override
-  _ChildrenListScreenState createState() => _ChildrenListScreenState();
-}
+  // Edit/Update a child
+  static Future<Child> editChild(int childId, EditChildRequest request) async {
+    final token = await getToken();
 
-class _ChildrenListScreenState extends State<ChildrenListScreen> {
-  late Future<List<Child>> futureChildren;
+    if (token == null || token.isEmpty) {
+      throw Exception('No authentication token found. Please login first.');
+    }
 
-  @override
-  void initState() {
-    super.initState();
-    futureChildren = GetChildservices.fetchChildren();
-  }
-
-  void _refresh() =>
-      setState(() => futureChildren = GetChildservices.fetchChildren());
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Children Profiles'),
-        backgroundColor: Colors.blue,
-        actions: [IconButton(icon: Icon(Icons.refresh), onPressed: _refresh)],
-      ),
-      body: FutureBuilder<List<Child>>(
-        future: futureChildren,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    SizedBox(height: 16),
-                    Text('${snapshot.error}', textAlign: TextAlign.center),
-                    SizedBox(height: 20),
-                    ElevatedButton(onPressed: _refresh, child: Text('Retry')),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.child_care, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No children found'),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: EdgeInsets.all(16),
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              Child child = snapshot.data![index];
-              return Card(
-                margin: EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: child.gender == 'male'
-                        ? Colors.blue.shade100
-                        : Colors.pink.shade100,
-                    child: Icon(
-                      child.gender == 'male' ? Icons.boy : Icons.girl,
-                      color: child.gender == 'male' ? Colors.blue : Colors.pink,
-                    ),
-                  ),
-                  title: Text(
-                    child.name,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('DOB: ${child.dob} • ${child.gender}'),
-                      if (child.interests.isNotEmpty) ...[
-                        SizedBox(height: 4),
-                        Wrap(
-                          spacing: 4,
-                          children: child.interests
-                              .take(3)
-                              .map(
-                                (interest) => Chip(
-                                  label: Text(
-                                    interest.name,
-                                    style: TextStyle(fontSize: 10),
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/profiles/children/$childId/'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
         },
-      ),
-    );
+        body: json.encode(request.toJson()),
+      );
+
+      print('Edit Child API Response Status: ${response.statusCode}');
+      print('Edit Child API Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonData = json.decode(response.body);
+        return Child.fromJson(jsonData);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed. Please login again.');
+      } else if (response.statusCode == 404) {
+        throw Exception('Child not found.');
+      } else if (response.statusCode == 400) {
+        throw Exception('Invalid data provided. Please check your input.');
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Network error in editChild: $e');
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to update child. Check your connection.');
+    }
   }
 }

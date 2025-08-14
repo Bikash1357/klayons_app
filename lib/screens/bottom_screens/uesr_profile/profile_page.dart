@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/add_child.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
+import 'package:klayons/screens/home_screen.dart';
 
 import '../../../services/get_ChildServices.dart';
 import '../../../services/get_userprofile_service.dart';
@@ -171,6 +172,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         centerTitle: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.black87, size: 24),
@@ -613,6 +621,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
+  // Replace your existing _buildChildCard method with this updated version
+  // Updated _buildChildCard method for your UserProfilePage
+  // Replace your existing _buildChildCard method with this one
+
   Widget _buildChildCard({required Child child}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -646,10 +658,53 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   size: 20,
                 ),
               ),
+
+              // Replace your existing edit button onPressed in _buildChildCard method with this:
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.grey, size: 16),
-                onPressed: () {
-                  // TODO: Navigate to edit child page
+                onPressed: () async {
+                  print('Editing child with ID: ${child.id}'); // Debug log
+
+                  try {
+                    // Navigate to AddChildPage in edit mode with child data
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            AddChildPage(childToEdit: child, isEditMode: true),
+                      ),
+                    );
+
+                    // If changes were made (result == true), refresh the children list
+                    if (result == true) {
+                      print('Child updated, refreshing list...'); // Debug log
+                      await _loadChildren(); // Reload children data
+
+                      // Show success message
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Child profile updated successfully!',
+                            ),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    print('Error navigating to edit page: $e');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  }
                 },
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -662,6 +717,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Child ID (for debugging - you can remove this in production)
+              Text(
+                'ID: ${child.id}',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[400],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 2),
+
+              // Child Name
               Text(
                 child.name,
                 style: const TextStyle(
@@ -671,15 +738,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
               const SizedBox(height: 4),
+
+              // Birth Date
               Text(
                 'Birthdate: ${_formatDate(child.dob)}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               const SizedBox(height: 2),
+
+              // Gender
               Text(
                 'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
+
               // Show interests if available
               if (child.interests.isNotEmpty) ...[
                 const SizedBox(height: 4),
@@ -693,12 +765,38 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+              ] else ...[
+                const SizedBox(height: 4),
+                Text(
+                  'No interests added',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[400],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ],
           ),
         ],
       ),
     );
+  }
+
+  // Also, make sure your EditChildPage import is correct at the top of your UserProfilePage:
+  // import 'Childs/editChild.dart'; // Update this path to match your new EditChildPage
+
+  // You might also want to add this debug method to help troubleshoot:
+  void _debugChildData(Child child) {
+    print('=== Child Debug Info ===');
+    print('ID: ${child.id}');
+    print('Name: ${child.name}');
+    print('DOB: ${child.dob}');
+    print('Gender: ${child.gender}');
+    print(
+      'Interests: ${child.interests.map((i) => '${i.id}: ${i.name}').join(', ')}',
+    );
+    print('========================');
   }
 
   Widget _buildYourBookingsSection() {

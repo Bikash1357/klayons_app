@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:klayons/config/api_config.dart';
+
 // Society model class to hold all society details
 class Society {
   final int id;
@@ -45,7 +47,7 @@ class _GetSocietynameState extends State<GetSocietyname> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://klayons-backend.vercel.app/api/societies/'),
+        Uri.parse(ApiConfig.getSocieties),
         headers: {'Accept': 'application/json'},
       );
 

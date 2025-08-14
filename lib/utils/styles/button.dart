@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klayons/utils/colour.dart';
 
 class OrangeButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -20,7 +21,7 @@ class OrangeButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFED7733),
+          backgroundColor: AppColors.primaryOrange,
           foregroundColor: Colors.white,
           elevation: 2,
           shape: RoundedRectangleBorder(

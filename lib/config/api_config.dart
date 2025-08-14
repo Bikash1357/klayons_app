@@ -13,7 +13,13 @@ class ApiConfig {
   static const String verifyOtpEndpoint = '$_authPrefix/verify-otp/';
   static const String resendOtpEndpoint = '$_authPrefix/resend-otp/';
   static const String logoutEndpoint = '$_authPrefix/logout/';
+
   static const String addChildrenEndpoint = '$_apiPrefix/profiles/children/';
+  static const String childInterestEndpoint = '$_apiPrefix/profiles/interests/';
+  static const String parentProfileEndpoint = '$_apiPrefix/profiles/parent/';
+
+  static const String activitiesEndpoint = '$_apiPrefix/activities/';
+  static const String getSocieties = '$_apiPrefix/societies/';
 
   // Helper method to get full URL
   static String getFullUrl(String endpoint) {

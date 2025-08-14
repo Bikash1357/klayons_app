@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:klayons/utils/colour.dart';
 
 class KlayonsText extends StatelessWidget {
   const KlayonsText({super.key});
@@ -13,7 +14,7 @@ class KlayonsText extends StatelessWidget {
         textStyle: const TextStyle(
           fontSize: 36,
           fontWeight: FontWeight.bold,
-          color: Color(0xFFED7733), // orange
+          color: AppColors.primaryOrange, // orange
         ),
       ),
     );
