@@ -4,37 +4,37 @@ import 'package:klayons/config/api_config.dart';
 import 'package:klayons/services/login_auth_service.dart';
 
 class UserProfile {
-  final String name; // Added name field
+  final String name;
   final String userEmail;
   final String userPhone;
   final int societyId;
-  final String flatNo; // Added flat_no field
+  final String flatNo;
 
   UserProfile({
-    required this.name, // Added name as required
+    required this.name,
     required this.userEmail,
     required this.userPhone,
     required this.societyId,
-    required this.flatNo, // Added flatNo as required
+    required this.flatNo,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      name: json['name'] ?? '', // Parse name from backend
+      name: json['name'] ?? '',
       userEmail: json['user_email'] ?? '',
       userPhone: json['user_phone'] ?? '',
       societyId: json['society_id'] ?? 0,
-      flatNo: json['flat_no'] ?? '', // Parse flat_no from backend
+      flatNo: json['flat_no'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'name': name, // Include name in JSON
+      'name': name,
       'user_email': userEmail,
       'user_phone': userPhone,
       'society_id': societyId,
-      'flat_no': flatNo, // Include flat_no in JSON
+      'flat_no': flatNo,
     };
   }
 
@@ -48,9 +48,56 @@ class GetUserProfileService {
   static const String _baseUrl = 'https://klayons-backend.vercel.app';
   static const String _profileEndpoint = '/api/profiles/parent/';
 
-  /// Fetches the authenticated user's profile
-  static Future<UserProfile?> getUserProfile() async {
+  // Cache variables
+  static UserProfile? _cachedProfile;
+  static DateTime? _cacheTimestamp;
+  static const Duration _cacheExpiration = Duration(
+    minutes: 30,
+  ); // Cache expires after 30 minutes
+  static bool _isLoading = false;
+
+  /// Checks if cached data is still valid
+  static bool _isCacheValid() {
+    if (_cachedProfile == null || _cacheTimestamp == null) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    final cacheAge = now.difference(_cacheTimestamp!);
+    return cacheAge < _cacheExpiration;
+  }
+
+  /// Clears the cache (useful for logout or when you want to force refresh)
+  static void clearCache() {
+    _cachedProfile = null;
+    _cacheTimestamp = null;
+    _isLoading = false;
+    print('Profile cache cleared');
+  }
+
+  /// Fetches the authenticated user's profile (with caching)
+  static Future<UserProfile?> getUserProfile({
+    bool forceRefresh = false,
+  }) async {
+    // Return cached data if valid and not forcing refresh
+    if (!forceRefresh && _isCacheValid()) {
+      print('Returning cached user profile: $_cachedProfile');
+      return _cachedProfile;
+    }
+
+    // If already loading, wait for the current request to complete
+    if (_isLoading) {
+      print('Profile loading in progress, waiting...');
+      // Simple polling mechanism to wait for loading to complete
+      while (_isLoading) {
+        await Future.delayed(Duration(milliseconds: 100));
+      }
+      return _cachedProfile;
+    }
+
     try {
+      _isLoading = true;
+
       // Get the authentication token
       final token = await LoginAuthService.getToken();
 
@@ -59,7 +106,7 @@ class GetUserProfileService {
         throw Exception('User not authenticated');
       }
 
-      print('Fetching user profile...');
+      print('Fetching user profile from server...');
       print('API URL: $_baseUrl$_profileEndpoint');
       print('Token available: ${token.isNotEmpty}');
 
@@ -88,14 +135,16 @@ class GetUserProfileService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // Parse the user profile from response
-        final userProfile = UserProfile.fromJson(data);
+        // Parse and cache the user profile
+        _cachedProfile = UserProfile.fromJson(data);
+        _cacheTimestamp = DateTime.now();
 
-        print('User profile fetched successfully: $userProfile');
-        return userProfile;
+        print('User profile fetched and cached successfully: $_cachedProfile');
+        return _cachedProfile;
       } else if (response.statusCode == 401) {
         print('Unauthorized - token may be invalid or expired');
-        // Clear invalid token
+        // Clear cache and invalid token
+        clearCache();
         await LoginAuthService.clearAuthData();
         throw Exception('Session expired. Please login again.');
       } else if (response.statusCode == 404) {
@@ -127,18 +176,20 @@ class GetUserProfileService {
       } else if (e.toString().contains('SocketException')) {
         throw Exception('No internet connection. Please check your network.');
       } else {
-        rethrow; // Re-throw the original exception
+        rethrow;
       }
+    } finally {
+      _isLoading = false;
     }
   }
 
-  /// Updates the user's profile
+  /// Updates the user's profile and updates cache
   static Future<UserProfile?> updateUserProfile({
-    String? name, // Added name parameter
+    String? name,
     String? userEmail,
     String? userPhone,
     int? societyId,
-    String? flatNo, // Added flatNo parameter
+    String? flatNo,
   }) async {
     try {
       // Get the authentication token
@@ -151,11 +202,11 @@ class GetUserProfileService {
 
       // Prepare request body with only non-null values
       Map<String, dynamic> requestBody = {};
-      if (name != null) requestBody['name'] = name; // Include name
+      if (name != null) requestBody['name'] = name;
       if (userEmail != null) requestBody['user_email'] = userEmail;
       if (userPhone != null) requestBody['user_phone'] = userPhone;
       if (societyId != null) requestBody['society_id'] = societyId;
-      if (flatNo != null) requestBody['flat_no'] = flatNo; // Include flat_no
+      if (flatNo != null) requestBody['flat_no'] = flatNo;
 
       if (requestBody.isEmpty) {
         throw Exception('No data provided to update');
@@ -191,13 +242,15 @@ class GetUserProfileService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // Parse the updated user profile from response
-        final userProfile = UserProfile.fromJson(data);
+        // Parse and update cache with new profile data
+        _cachedProfile = UserProfile.fromJson(data);
+        _cacheTimestamp = DateTime.now();
 
-        print('User profile updated successfully: $userProfile');
-        return userProfile;
+        print('User profile updated and cached successfully: $_cachedProfile');
+        return _cachedProfile;
       } else if (response.statusCode == 401) {
         print('Unauthorized - token may be invalid or expired');
+        clearCache();
         await LoginAuthService.clearAuthData();
         throw Exception('Session expired. Please login again.');
       } else if (response.statusCode == 422) {
@@ -221,14 +274,14 @@ class GetUserProfileService {
     }
   }
 
-  /// Checks if user has a complete profile
-  static Future<bool> hasCompleteProfile() async {
+  /// Checks if user has a complete profile (uses cached data if available)
+  static Future<bool> hasCompleteProfile({bool forceRefresh = false}) async {
     try {
-      final profile = await getUserProfile();
+      final profile = await getUserProfile(forceRefresh: forceRefresh);
       if (profile == null) return false;
 
       // Check if all required fields are filled
-      return profile.name.isNotEmpty && // Include name check
+      return profile.name.isNotEmpty &&
           profile.userEmail.isNotEmpty &&
           profile.userPhone.isNotEmpty &&
           profile.societyId > 0;
@@ -238,10 +291,10 @@ class GetUserProfileService {
     }
   }
 
-  /// Refreshes user profile and updates local storage
+  /// Refreshes user profile and updates local storage (forces cache refresh)
   static Future<void> refreshAndSaveProfile() async {
     try {
-      final profile = await getUserProfile();
+      final profile = await getUserProfile(forceRefresh: true);
       if (profile != null) {
         // Save updated profile data to local storage
         final existingToken = await LoginAuthService.getToken();
@@ -257,5 +310,27 @@ class GetUserProfileService {
       print('Error refreshing profile: $e');
       rethrow;
     }
+  }
+
+  /// Gets cached profile without making API call (returns null if no cache)
+  static UserProfile? getCachedProfile() {
+    if (_isCacheValid()) {
+      print('Returning valid cached profile');
+      return _cachedProfile;
+    }
+    print('No valid cached profile available');
+    return null;
+  }
+
+  /// Checks if profile is currently being loaded
+  static bool get isLoading => _isLoading;
+
+  /// Gets cache age in minutes (returns -1 if no cache)
+  static int getCacheAgeInMinutes() {
+    if (_cacheTimestamp == null) return -1;
+
+    final now = DateTime.now();
+    final cacheAge = now.difference(_cacheTimestamp!);
+    return cacheAge.inMinutes;
   }
 }

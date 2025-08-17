@@ -5,6 +5,10 @@ import 'package:http/http.dart' as http;
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import '../../../../services/post_addchildservice.dart';
 import '../../../../services/get_ChildServices.dart';
+import '../../../../utils/confermation_page.dart';
+
+// Import your ConfirmationPage widget here
+// import 'path/to/confirmation_page.dart';
 
 // Interest model class
 class Interest {
@@ -161,19 +165,30 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     );
   }
 
-  // Show success dialog
-  void _showSuccessDialog(String message) {
+  // Show ConfirmationPage as a popup modal
+  void _showConfirmationPopup(String childName) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Success'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.all(0),
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: ConfirmationPage(
+              title: widget.isEditMode
+                  ? "Profile Updated!"
+                  : "Child Added Successfully!",
+              subtitle: widget.isEditMode
+                  ? "Great! ${childName}'s profile has been updated with new interests."
+                  : "Welcome ${childName}! Let's start the learning journey together.",
+              buttonText: "Back to Profile",
+              primaryColor: Colors.orange,
+              backgroundColor: const Color(0xFFFFF8F5),
+              onButtonPressed: () {
+                Navigator.of(context).pop(); // Close the popup dialog
                 if (widget.isEditMode) {
                   // In edit mode, go back to profile page with success indicator
                   Navigator.of(context).pop(); // Go back to AddChildPage
@@ -186,9 +201,8 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                   Navigator.of(context).pop(); // Go back to profile page
                 }
               },
-              child: const Text('OK'),
             ),
-          ],
+          ),
         );
       },
     );
@@ -235,7 +249,9 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         );
 
         print('Child updated successfully: ${updatedChild.name}');
-        _showSuccessDialog('Child profile updated successfully!');
+
+        // Show ConfirmationPage popup for edit success
+        _showConfirmationPopup(widget.childData.firstName);
       } else {
         // Add mode: Create new child
         final result = await AddChildService.createChild(
@@ -247,7 +263,8 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         );
 
         if (result['success']) {
-          _showSuccessDialog('Child profile created successfully!');
+          // Show ConfirmationPage popup for add success
+          _showConfirmationPopup(widget.childData.firstName);
         } else {
           _showErrorDialog(result['error']);
         }

@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/child_intrest.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../../services/get_ChildServices.dart';
 import '../../../../services/login_auth_service.dart';
 
@@ -12,8 +9,8 @@ class ChildData {
   final String lastName;
   final DateTime dateOfBirth;
   final String gender;
-  final int? childId; // Add childId for edit mode
-  final List<int>? existingInterestIds; // Add existing interests for edit mode
+  final int? childId;
+  final List<int>? existingInterestIds;
 
   ChildData({
     required this.firstName,
@@ -26,8 +23,8 @@ class ChildData {
 }
 
 class AddChildPage extends StatefulWidget {
-  final Child? childToEdit; // Optional child data for editing
-  final bool isEditMode; // Flag to determine if we're editing
+  final Child? childToEdit;
+  final bool isEditMode;
 
   const AddChildPage({Key? key, this.childToEdit, this.isEditMode = false})
     : super(key: key);
@@ -167,12 +164,8 @@ class _AddChildPageState extends State<AddChildPage> {
     } catch (e) {
       print('Error deleting child: $e');
 
-      // If it's an authentication error, you might want to handle it differently
       if (e.toString().contains('authentication') ||
-          e.toString().contains('token')) {
-        // Optionally redirect to login
-        // Navigator.pushReplacementNamed(context, '/login');
-      }
+          e.toString().contains('token')) {}
 
       return false;
     }
