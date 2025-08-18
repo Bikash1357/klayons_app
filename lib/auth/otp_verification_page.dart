@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:klayons/config/api_config.dart';
-import 'package:klayons/services/login_auth_service.dart';
+import 'package:klayons/services/auth/login_auth_service.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;

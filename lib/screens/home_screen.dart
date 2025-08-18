@@ -4,7 +4,7 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/screens/course_details_page.dart';
 import 'package:klayons/screens/notification.dart';
 
-import '../services/ActivitiedsServices.dart';
+import '../services/activity/ActivitiedsServices.dart';
 import '../services/notification/scheduleOverideService.dart'; // Import the service
 import 'bottom_screens/calander.dart' hide Activity;
 
@@ -36,8 +36,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
         errorMessage = null;
       });
 
-      // Fetch only active activities for the home page
-      final fetchedActivities = await ActivitiesService.getActiveActivities();
+      // API now returns only active activities by default
+      final fetchedActivities = await ActivitiesService.getActivities();
 
       setState(() {
         activities = fetchedActivities;
@@ -67,96 +67,25 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
     }
   }
 
-  String _formatAgeGroup(int ageStart, int ageEnd) {
-    if (ageStart == ageEnd) {
-      return 'Recommended Age: $ageStart';
-    } else {
-      return 'Recommended Age: $ageStart-$ageEnd';
+  String _formatRecommendedAge(String recommendedAge) {
+    if (recommendedAge.isEmpty) {
+      return 'All Ages Welcome';
     }
+    return 'Recommended Age: $recommendedAge';
   }
 
-  String _formatBatchStartDate(String startDate) {
-    try {
-      final date = DateTime.parse(startDate);
-      final monthNames = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-
-      final day = date.day;
-      final month = monthNames[date.month - 1];
-
-      String suffix;
-      if (day >= 11 && day <= 13) {
-        suffix = 'th';
-      } else {
-        switch (day % 10) {
-          case 1:
-            suffix = 'st';
-            break;
-          case 2:
-            suffix = 'nd';
-            break;
-          case 3:
-            suffix = 'rd';
-            break;
-          default:
-            suffix = 'th';
-        }
-      }
-
-      return 'Batch Starts $day$suffix $month';
-    } catch (e) {
-      return 'Batch Starts Soon';
+  String _getBatchInfo(String batchCount) {
+    if (batchCount.isEmpty || batchCount == '0') {
+      return 'Batches Available Soon';
     }
-  }
-
-  String _formatDateRange(String startDate, String endDate) {
-    try {
-      final start = DateTime.parse(startDate);
-      final end = DateTime.parse(endDate);
-      final startFormatted = '${start.day}/${start.month}/${start.year}';
-      final endFormatted = '${end.day}/${end.month}/${end.year}';
-
-      if (startDate == endDate) {
-        return 'Date: $startFormatted';
-      }
-      return 'Duration: $startFormatted - $endFormatted';
-    } catch (e) {
-      return 'Duration: $startDate - $endDate';
-    }
+    final count = int.tryParse(batchCount) ?? 1;
+    return count == 1 ? '1 Batch Available' : '$count Batches Available';
   }
 
   String _getUpcomingActivityInfo() {
     if (activities.isNotEmpty) {
       final activity = activities.first;
-      try {
-        final startDate = DateTime.parse(activity.startDate);
-        final now = DateTime.now();
-        final difference = startDate.difference(now).inDays;
-
-        if (difference > 0) {
-          return difference == 1
-              ? 'Starts Tomorrow'
-              : 'Starts in $difference days';
-        } else if (difference == 0) {
-          return 'Starts Today';
-        } else {
-          return 'In Progress';
-        }
-      } catch (e) {
-        return 'Starting Soon';
-      }
+      return '${activity.batchCount} batches available';
     }
     return 'No upcoming sessions';
   }
@@ -475,7 +404,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
             const Icon(Icons.sports, color: Colors.grey, size: 48),
             const SizedBox(height: 16),
             Text(
-              'No active activities available',
+              'No activities available',
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
             const SizedBox(height: 8),
@@ -589,6 +518,64 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Activity ID and Title Row
+                  Row(
+                    children: [
+                      // Activity ID Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          'ID: ${activity.id}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Category badge
+                      if (activity.category.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.blue.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            activity.categoryDisplay.isNotEmpty
+                                ? activity.categoryDisplay
+                                : activity.category.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
                   // Title
                   Text(
                     activity.name,
@@ -604,43 +591,104 @@ class _KlayonsHomePageState extends State<KlayonsHomePage> {
 
                   const SizedBox(height: 12),
 
-                  // Batch start date
-                  Text(
-                    _formatBatchStartDate(activity.startDate),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
+                  // Society and Instructor Info
+                  if (activity.societyName.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.business,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            activity.societyName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  if (activity.instructorName.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.person, size: 16, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Instructor: ${activity.instructorName}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+
+                  // Recommended Age
+                  Text(
+                    _formatRecommendedAge(activity.recommendedAge),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
 
                   const SizedBox(height: 8),
 
-                  // Age group
+                  // Batch information
                   Text(
-                    _formatAgeGroup(
-                      activity.ageGroupStart,
-                      activity.ageGroupEnd,
+                    _getBatchInfo(activity.batchCount),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.green,
+                      fontWeight: FontWeight.w500,
                     ),
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Price and button row
+                  // Bottom row with View Details button
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Price
-                      if (activity.pricing.isNotEmpty)
-                        Text(
-                          '₹ ${activity.pricing}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF6B35), // Orange color
+                      // Active status indicator
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: activity.isActive
+                                  ? Colors.green
+                                  : Colors.red,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 6),
+                          Text(
+                            activity.isActive ? 'Active' : 'Inactive',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: activity.isActive
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
 
                       // View Details button
                       Container(

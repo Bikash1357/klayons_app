@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
-import '../../../../services/post_addchildservice.dart';
-import '../../../../services/get_ChildServices.dart';
+import '../../../../services/user_child/post_addchildservice.dart';
+import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../utils/confermation_page.dart';
 
 // Import your ConfirmationPage widget here

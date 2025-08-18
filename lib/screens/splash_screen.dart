@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../utils/colour.dart';
 import '../utils/styles/klayonsFont.dart';
-import '../services/login_auth_service.dart';
+import '../services/auth/login_auth_service.dart';
 
 class KlayonsSplashScreen extends StatefulWidget {
   const KlayonsSplashScreen({super.key});

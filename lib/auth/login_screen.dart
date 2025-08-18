@@ -8,7 +8,7 @@ import 'package:klayons/utils/styles/checkbox.dart';
 import 'package:klayons/utils/styles/textButton.dart';
 import 'package:klayons/utils/styles/textboxes.dart';
 import 'package:klayons/config/api_config.dart';
-import 'package:klayons/services/login_auth_service.dart';
+import 'package:klayons/services/auth/login_auth_service.dart';
 import 'package:url_launcher/url_launcher.dart'; // Add this import
 import 'otp_verification_page.dart';
 

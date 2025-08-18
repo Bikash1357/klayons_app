@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Add this for clipboard
-import 'package:klayons/services/registration_auth_service.dart';
+import 'package:klayons/services/auth/registration_auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/child_intrest.dart';
 import 'package:http/http.dart' as http;
-import '../../../../services/get_ChildServices.dart';
-import '../../../../services/login_auth_service.dart';
+import '../../../../services/user_child/get_ChildServices.dart';
+import '../../../../services/auth/login_auth_service.dart';
 
 class ChildData {
   final String firstName;

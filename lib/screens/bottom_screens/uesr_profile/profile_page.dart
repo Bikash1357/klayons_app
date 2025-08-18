@@ -3,7 +3,7 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dar
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/home_screen.dart';
 
-import '../../../services/get_ChildServices.dart';
+import '../../../services/user_child/get_ChildServices.dart';
 import '../../../services/get_userprofile_service.dart';
 
 class UserProfilePage extends StatefulWidget {

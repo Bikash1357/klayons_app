@@ -2,71 +2,63 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../config/api_config.dart';
+import '../../config/api_config.dart';
 
 // Data Models
-class Instructor {
-  final int id;
-  final String name;
-  final String profile;
-
-  Instructor({required this.id, required this.name, required this.profile});
-
-  factory Instructor.fromJson(Map<String, dynamic> json) {
-    return Instructor(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      profile: json['profile'] ?? '',
-    );
-  }
-}
-
 class Activity {
   final int id;
   final String name;
-  final String description;
+  final String category;
+  final String categoryDisplay;
+  final String recommendedAge;
   final String bannerImageUrl;
-  final String pricing;
-  final int ageGroupStart;
-  final int ageGroupEnd;
-  final String startDate;
-  final String endDate;
-  final Instructor instructor;
+  final String societyName;
+  final String instructorName;
+  final String batchCount;
   final bool isActive;
-  final String batchesCount;
 
   Activity({
     required this.id,
     required this.name,
-    required this.description,
+    required this.category,
+    required this.categoryDisplay,
+    required this.recommendedAge,
     required this.bannerImageUrl,
-    required this.pricing,
-    required this.ageGroupStart,
-    required this.ageGroupEnd,
-    required this.startDate,
-    required this.endDate,
-    required this.instructor,
+    required this.societyName,
+    required this.instructorName,
+    required this.batchCount,
     required this.isActive,
-    required this.batchesCount,
   });
 
   factory Activity.fromJson(Map<String, dynamic> json) {
     return Activity(
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
-      description: json['description'] ?? '',
+      category: json['category'] ?? '',
+      categoryDisplay: json['category_display'] ?? '',
+      recommendedAge: json['recommended_age'] ?? '',
       bannerImageUrl: json['banner_image_url'] ?? '',
-      pricing: json['pricing']?.toString() ?? '0.00',
-      ageGroupStart: json['age_group_start'] ?? 0,
-      ageGroupEnd: json['age_group_end'] ?? 0,
-      startDate: json['start_date'] ?? '',
-      endDate: json['end_date'] ?? '',
-      instructor: json['instructor'] != null
-          ? Instructor.fromJson(json['instructor'])
-          : Instructor(id: 0, name: 'Unknown', profile: ''),
+      societyName: json['society_name'] ?? '',
+      instructorName: json['instructor_name'] ?? '',
+      batchCount: json['batch_count']?.toString() ?? '0',
       isActive: json['is_active'] ?? false,
-      batchesCount: json['batches_count']?.toString() ?? '0',
     );
+  }
+
+  // Convert Activity to JSON (useful for caching or API calls)
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'category': category,
+      'category_display': categoryDisplay,
+      'recommended_age': recommendedAge,
+      'banner_image_url': bannerImageUrl,
+      'society_name': societyName,
+      'instructor_name': instructorName,
+      'batch_count': batchCount,
+      'is_active': isActive,
+    };
   }
 }
 
@@ -175,7 +167,7 @@ class ActivitiesService {
     print('Individual activity cache cleared for ID: $activityId');
   }
 
-  // Get all activities with caching
+  // Get all activities with caching (Note: API now returns only active activities)
   static Future<List<Activity>> getActivities({
     bool forceRefresh = false,
   }) async {
@@ -306,26 +298,112 @@ class ActivitiesService {
     }
   }
 
-  // Get only active activities with caching
-  static Future<List<Activity>> getActiveActivities({
+  // Get activities filtered by category
+  static Future<List<Activity>> getActivitiesByCategory(
+    String category, {
     bool forceRefresh = false,
   }) async {
     try {
       final activities = await getActivities(forceRefresh: forceRefresh);
-      final activeActivities = activities
-          .where((activity) => activity.isActive)
+      final filteredActivities = activities
+          .where(
+            (activity) =>
+                activity.category.toLowerCase() == category.toLowerCase(),
+          )
           .toList();
       print(
-        'Filtered ${activeActivities.length} active activities from ${activities.length} total',
+        'Filtered ${filteredActivities.length} activities for category "$category" from ${activities.length} total',
       );
-      return activeActivities;
+      return filteredActivities;
     } catch (e) {
       if (e.toString().contains('Login first')) {
         throw Exception('Login first');
       }
-      throw Exception('Error fetching active activities');
+      throw Exception('Error fetching activities by category');
     }
   }
+
+  // Get activities by society name
+  static Future<List<Activity>> getActivitiesBySociety(
+    String societyName, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final activities = await getActivities(forceRefresh: forceRefresh);
+      final filteredActivities = activities
+          .where(
+            (activity) => activity.societyName.toLowerCase().contains(
+              societyName.toLowerCase(),
+            ),
+          )
+          .toList();
+      print(
+        'Filtered ${filteredActivities.length} activities for society "$societyName" from ${activities.length} total',
+      );
+      return filteredActivities;
+    } catch (e) {
+      if (e.toString().contains('Login first')) {
+        throw Exception('Login first');
+      }
+      throw Exception('Error fetching activities by society');
+    }
+  }
+
+  // Get activities by instructor name
+  static Future<List<Activity>> getActivitiesByInstructor(
+    String instructorName, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      final activities = await getActivities(forceRefresh: forceRefresh);
+      final filteredActivities = activities
+          .where(
+            (activity) => activity.instructorName.toLowerCase().contains(
+              instructorName.toLowerCase(),
+            ),
+          )
+          .toList();
+      print(
+        'Filtered ${filteredActivities.length} activities for instructor "$instructorName" from ${activities.length} total',
+      );
+      return filteredActivities;
+    } catch (e) {
+      if (e.toString().contains('Login first')) {
+        throw Exception('Login first');
+      }
+      throw Exception('Error fetching activities by instructor');
+    }
+  }
+
+  // Get unique categories from cached activities
+  static List<String> getAvailableCategories() {
+    if (_cachedActivities == null) return [];
+
+    final categories = _cachedActivities!
+        .map((activity) => activity.category)
+        .where((category) => category.isNotEmpty)
+        .toSet()
+        .toList();
+
+    categories.sort();
+    return categories;
+  }
+
+  // Get unique societies from cached activities
+  static List<String> getAvailableSocieties() {
+    if (_cachedActivities == null) return [];
+
+    final societies = _cachedActivities!
+        .map((activity) => activity.societyName)
+        .where((society) => society.isNotEmpty)
+        .toSet()
+        .toList();
+
+    societies.sort();
+    return societies;
+  }
+
+  // Note: getActiveActivities method removed as the API now returns only active activities by default
 
   /// Gets cached activities without making API call (returns null if no cache)
   static List<Activity>? getCachedActivities() {
@@ -381,6 +459,8 @@ class ActivitiesService {
       'individualActivitiesIds': _cachedIndividualActivities.keys.toList(),
       'currentlyLoadingActivities': _isLoadingActivities,
       'currentlyLoadingIndividualIds': _loadingActivityIds.toList(),
+      'availableCategories': getAvailableCategories(),
+      'availableSocieties': getAvailableSocieties(),
     };
   }
 
