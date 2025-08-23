@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:klayons/config/api_config.dart';
-import 'package:klayons/services/auth/login_auth_service.dart';
+import 'package:klayons/services/auth/signup_service.dart';
+import 'package:klayons/services/auth/login_service.dart';
+
+import '../screens/home_screen.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
@@ -103,6 +103,18 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       ),
                       textAlign: TextAlign.center,
                     ),
+                    SizedBox(height: 8),
+
+                    // Show email for clarity
+                    Text(
+                      widget.email,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFFFF6B35),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                     SizedBox(height: 40),
 
                     // OTP Input Boxes
@@ -144,7 +156,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _isLoading
                               ? Colors.grey[300]
-                              : Colors.orange,
+                              : Color(
+                                  0xFFFF6B35,
+                                ), // Match registration page color
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.0),
@@ -298,47 +312,61 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     });
 
     try {
-      print('🔍 Starting OTP verification for email: ${widget.email}');
-      print('🔑 OTP Code: ${_getOTPCode()}');
+      print('🔄 Starting OTP verification for email: ${widget.email}');
+      print('🎯 Purpose: ${widget.purpose}');
+      print('🔢 OTP Code: ${_getOTPCode()}');
 
-      // Use the LoginAuthService verifyOTP method
-      final result = await LoginAuthService.verifyOTP(
+      // Use AuthService for OTP verification
+      final result = await AuthService.verifyOTP(
         email: widget.email,
-        otp: _getOTPCode(),
+        otpCode: _getOTPCode(),
+        purpose: widget.purpose,
       );
 
-      if (result != null) {
-        print('✅ OTP verification successful!');
-        _showSuccessMessage('Verification successful!');
+      print('📋 OTP verification result: $result');
+      print('✅ Success: ${result.isSuccess}');
+      print('💬 Message: ${result.message}');
+      print('🔑 Token: ${result.token}');
 
-        // Optional: Fetch user profile data if needed
-        try {
-          print('👤 Fetching user profile...');
-          final userProfile = await LoginAuthService.getUserProfile();
-          if (userProfile != null) {
-            print('✅ User profile fetched successfully');
+      if (result.isSuccess) {
+        print('🎉 OTP verification successful!');
+        _showSuccessMessage(
+          result.message.isNotEmpty
+              ? result.message
+              : 'Verification successful!',
+        );
+
+        // Save the authentication token
+        if (result.token != null && result.token!.isNotEmpty) {
+          await TokenStorage.saveToken(result.token!);
+          print('💾 Token saved successfully: ${result.token}');
+
+          // Navigate to home screen
+          await Future.delayed(Duration(seconds: 1));
+          if (mounted) {
+            // Use direct navigation instead of named routes
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => KlayonsHomePage(),
+              ), // Make sure to import this
+              (route) => false,
+            );
           }
-        } catch (profileError) {
-          print(
-            '⚠️ Failed to fetch user profile, but login still valid: $profileError',
-          );
-          // Don't block login flow if profile fetch fails
-        }
-
-        // Wait a moment to show success message
-        await Future.delayed(Duration(seconds: 1));
-
-        // Navigate to home or dashboard
-        if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        } else {
+          print('⚠️ No token received');
+          _showErrorMessage('Verification successful but no token received');
         }
       } else {
         print('❌ OTP verification failed');
-        _showErrorMessage('Invalid OTP. Please try again.');
+        String errorMessage = result.message.isNotEmpty
+            ? result.message
+            : 'Invalid OTP. Please try again.';
+        _showErrorMessage(errorMessage);
         _clearOTPFields();
       }
     } catch (e) {
-      print('❌ OTP verification error: $e');
+      print('🚨 OTP verification error: $e');
       _showErrorMessage(
         'Network error. Please check your connection and try again.',
       );
@@ -357,50 +385,33 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     });
 
     try {
-      print('📤 Resending OTP to: ${widget.email}');
+      print('Resending OTP to: ${widget.email} for purpose: ${widget.purpose}');
 
-      final response = await http.post(
-        Uri.parse(ApiConfig.getFullUrl('/api/auth/resend-otp/')),
-        headers: ApiConfig.getHeaders(),
-        body: json.encode({'email': widget.email}),
+      // Use AuthService for consistent API handling
+      final result = await AuthService.resendOTP(
+        email: widget.email,
+        purpose: widget.purpose,
       );
 
-      print('📥 Resend OTP - Response status: ${response.statusCode}');
-      print('📥 Resend OTP - Response body: ${response.body}');
+      print('Resend OTP result: $result');
 
-      // Check if response body is empty
-      if (response.body.isEmpty) {
-        _showErrorMessage('Server returned empty response');
-        return;
-      }
-
-      // Try to parse JSON safely
-      Map<String, dynamic> data;
-      try {
-        data = json.decode(response.body);
-      } catch (jsonError) {
-        print('❌ JSON parsing error in resend: $jsonError');
-        print('Response body that failed to parse: ${response.body}');
-
-        if (response.body.trim().startsWith('<')) {
-          _showErrorMessage('Server error occurred. Please try again later.');
-        } else {
-          _showErrorMessage('Invalid response format from server');
-        }
-        return;
-      }
-
-      if (response.statusCode == 200) {
-        print('✅ OTP resent successfully');
-        _showSuccessMessage('OTP has been resent to your email.');
+      if (result.isSuccess) {
+        print('OTP resent successfully');
+        _showSuccessMessage(
+          result.message.isNotEmpty
+              ? result.message
+              : 'OTP has been resent to your email.',
+        );
         _clearOTPFields();
         _focusNodes[0].requestFocus();
       } else {
-        print('❌ Failed to resend OTP: ${data['message']}');
-        _showErrorMessage(data['message'] ?? 'Failed to resend OTP.');
+        print('Failed to resend OTP: ${result.message}');
+        _showErrorMessage(
+          result.message.isNotEmpty ? result.message : 'Failed to resend OTP.',
+        );
       }
     } catch (e) {
-      print('❌ Resend OTP error: $e');
+      print('Resend OTP error: $e');
       _showErrorMessage('Network error. Please try again.');
     } finally {
       if (mounted) {

@@ -46,9 +46,10 @@ class _GetSocietynameState extends State<GetSocietyname> {
     });
 
     try {
+      String url = ApiConfig.getFullUrl(ApiConfig.getSocieties);
       final response = await http.get(
-        Uri.parse(ApiConfig.getSocieties),
-        headers: {'Accept': 'application/json'},
+        Uri.parse(url),
+        headers: ApiConfig.getHeaders(),
       );
 
       if (response.statusCode == 200) {

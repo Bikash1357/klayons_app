@@ -1,22 +1,14 @@
-import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
 import 'package:klayons/auth/login_screen.dart';
+import 'package:klayons/auth/signupPage.dart';
 import 'package:klayons/screens/bottom_screens/ticketbox_page.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/child_intrest.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
-import 'package:klayons/screens/course_details_page.dart';
 import 'package:klayons/screens/home_screen.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/screens/splash_screen.dart';
-import 'package:klayons/services/activity/ActivitiedsServices.dart';
-import 'package:klayons/services/user_child/get_ChildServices.dart';
 import 'package:klayons/services/get_societyname.dart';
-import 'package:klayons/services/notification/background_service.dart';
-import 'package:klayons/services/notification/notification_service.dart';
-
-import 'auth/registration_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +36,7 @@ class Klayons extends StatelessWidget {
       routes: {
         '/': (context) => KlayonsSplashScreen(),
         '/login': (context) => LoginPage(),
-        '/signup': (context) => RegistrationPage(),
+        '/demo_registration': (context) => SignUnPage(),
         '/home': (context) => KlayonsHomePage(),
         '/user_setting': (context) => SettingsPage(),
         '/notification': (context) => NotificationsPage(),

@@ -1,764 +1,666 @@
 import 'package:flutter/material.dart';
-import 'package:klayons/screens/bottom_screens/ticketbox_page.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
-import 'package:klayons/screens/course_details_page.dart';
 import 'package:klayons/screens/notification.dart';
 
-import '../services/activity/ActivitiedsServices.dart';
-import '../services/notification/scheduleOverideService.dart'; // Import the service
-import 'bottom_screens/calander.dart' hide Activity;
+import 'bottom_screens/calander.dart';
+import 'bottom_screens/ticketbox_page.dart';
+import 'bottom_screens/uesr_profile/profile_page.dart';
 
 class KlayonsHomePage extends StatefulWidget {
-  const KlayonsHomePage({Key? key}) : super(key: key);
-
   @override
   _KlayonsHomePageState createState() => _KlayonsHomePageState();
 }
 
-class _KlayonsHomePageState extends State<KlayonsHomePage> {
-  List<Activity> activities = [];
-  bool isLoading = true;
-  String? errorMessage;
-  int unreadNotificationCount = 0; // Add this for notification count
+class _KlayonsHomePageState extends State<KlayonsHomePage>
+    with TickerProviderStateMixin {
+  String searchQuery = '';
+  TextEditingController searchController = TextEditingController();
+  int selectedIndex = 0;
+  late AnimationController _slideController;
+  late Animation<double> _slideAnimation;
+
+  // List of pages for bottom navigation
+  final List<Widget> _pages = [
+    HomePage(), // Index 0 - Home
+    ActivitySchedulePage(), // Index 1 - Calendar
+    ActivityBookingPage(), // Index 2 - School
+    UserProfilePage(), // Index 3 - Profile
+  ];
+
+  // Sample batch data
+  final List<Map<String, String>> batchData = [
+    {
+      'ageGroup': '8-14',
+      'categoryName': 'Robotics Workshop',
+      'activityName': 'Arduino Robot Building',
+      'price': '₹699',
+      'location': 'Tech Hub, Sector-15',
+      'organiser': 'RoboTech Academy',
+    },
+    {
+      'ageGroup': '6-14',
+      'categoryName': 'Chess Masters',
+      'activityName': 'Advanced Chess Strategies',
+      'price': '₹499',
+      'location': 'Chess Club, Sector-22',
+      'organiser': 'GrandMaster Institute',
+    },
+    {
+      'ageGroup': '5-12',
+      'categoryName': 'Art & Craft',
+      'activityName': 'Creative Painting Workshop',
+      'price': '₹399',
+      'location': 'Art Studio, Sector-18',
+      'organiser': 'Creative Minds Academy',
+    },
+    {
+      'ageGroup': '10-16',
+      'categoryName': 'Programming',
+      'activityName': 'Python Coding Basics',
+      'price': '₹899',
+      'location': 'Code Hub, Sector-12',
+      'organiser': 'Tech Academy',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    NotificationCountManager.init(); // Initialize notification manager
-    fetchActivities();
-    _loadNotificationCount(); // Load notification count
+    _slideController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
+      CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+    );
   }
 
-  Future<void> fetchActivities() async {
-    try {
+  void _onBottomNavTapped(int index) {
+    if (selectedIndex != index) {
+      // Create new tween for sliding from current position to new position
+      _slideAnimation =
+          Tween<double>(
+            begin: selectedIndex.toDouble(),
+            end: index.toDouble(),
+          ).animate(
+            CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+          );
+
+      _slideController.reset();
+      _slideController.forward();
+
       setState(() {
-        isLoading = true;
-        errorMessage = null;
+        selectedIndex = index;
       });
-
-      // API now returns only active activities by default
-      final fetchedActivities = await ActivitiesService.getActivities();
-
-      setState(() {
-        activities = fetchedActivities;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-      print('Error fetching activities: $e');
     }
   }
 
-  // Add this method to load notification count
-  Future<void> _loadNotificationCount() async {
-    try {
-      final overrides = await ScheduleOverridesService.getScheduleOverrides();
-      setState(() {
-        unreadNotificationCount = NotificationCountManager.getUnviewedCount(
-          overrides,
-        );
-      });
-    } catch (e) {
-      print('Error loading notification count: $e');
-      // Don't set error state, just keep count at 0
+  List<Map<String, String>> getFilteredBatches() {
+    if (searchQuery.isEmpty) {
+      return batchData;
+    }
+
+    return batchData.where((batch) {
+      final query = searchQuery.toLowerCase();
+      return batch['ageGroup']!.toLowerCase().contains(query) ||
+          batch['categoryName']!.toLowerCase().contains(query) ||
+          batch['activityName']!.toLowerCase().contains(query) ||
+          batch['price']!.toLowerCase().contains(query) ||
+          batch['location']!.toLowerCase().contains(query) ||
+          batch['organiser']!.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  // Method to get the current page content
+  Widget _getCurrentPage() {
+    // Only show the home content when selectedIndex is 0
+    if (selectedIndex == 0) {
+      return _getHomePageContent();
+    } else {
+      // For other tabs, return the respective pages
+      return _pages[selectedIndex];
     }
   }
 
-  String _formatRecommendedAge(String recommendedAge) {
-    if (recommendedAge.isEmpty) {
-      return 'All Ages Welcome';
-    }
-    return 'Recommended Age: $recommendedAge';
-  }
+  // Extract home page content to a separate method
+  Widget _getHomePageContent() {
+    final filteredBatches = getFilteredBatches();
 
-  String _getBatchInfo(String batchCount) {
-    if (batchCount.isEmpty || batchCount == '0') {
-      return 'Batches Available Soon';
-    }
-    final count = int.tryParse(batchCount) ?? 1;
-    return count == 1 ? '1 Batch Available' : '$count Batches Available';
-  }
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Search Field
+          Container(
+            margin: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: searchController,
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search activities...',
+                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+                prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear, color: Colors.grey, size: 20),
+                        onPressed: () {
+                          setState(() {
+                            searchQuery = '';
+                            searchController.clear();
+                          });
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 15,
+                ),
+              ),
+            ),
+          ),
 
-  String _getUpcomingActivityInfo() {
-    if (activities.isNotEmpty) {
-      final activity = activities.first;
-      return '${activity.batchCount} batches available';
-    }
-    return 'No upcoming sessions';
+          // Fee Reminder Card (only show when not searching)
+          if (searchQuery.isEmpty) ...[
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF6B35), Color(0xFFFF8A50)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'FEE REMINDER',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Robotics',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Due date on 5th June',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.smart_toy_outlined,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 30),
+          ],
+
+          // Section Title
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  searchQuery.isEmpty
+                      ? 'Explore Activities'
+                      : 'Search Results (${filteredBatches.length})',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                if (searchQuery.isNotEmpty)
+                  Text(
+                    'for "$searchQuery"',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: 16),
+
+          // Activities List or No Results
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: filteredBatches.isEmpty
+                ? Container(
+                    padding: EdgeInsets.all(40),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'No activities found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Try searching with different keywords',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    children: filteredBatches
+                        .map(
+                          (batch) => Column(
+                            children: [
+                              BatchCard(
+                                ageGroup: batch['ageGroup']!,
+                                categoryName: batch['categoryName']!,
+                                activityName: batch['activityName']!,
+                                price: batch['price']!,
+                                location: batch['location']!,
+                                organiser: batch['organiser']!,
+                              ),
+                              SizedBox(height: 16),
+                            ],
+                          ),
+                        )
+                        .toList(),
+                  ),
+          ),
+
+          SizedBox(height: 100), // Extra space for bottom navigation
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'klayons',
           style: TextStyle(
-            color: Colors.orange,
+            color: Color(0xFFFF6B35),
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
-        automaticallyImplyLeading: false,
         actions: [
-          // Updated notification icon with badge
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.grey,
-                ),
-                onPressed: () async {
-                  // Navigate to notifications page and refresh count when returning
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => NotificationsPage(),
-                    ),
-                  );
-                  // Refresh notification count when returning from notifications page
-                  _loadNotificationCount();
-                },
-              ),
-              if (unreadNotificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      unreadNotificationCount > 99
-                          ? '99+'
-                          : unreadNotificationCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
+          IconButton(
+            icon: Icon(Icons.notifications_outlined, color: Colors.black54),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationsPage()),
+              );
+            },
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await fetchActivities();
-          await _loadNotificationCount(); // Also refresh notification count
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Blue banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
-                decoration: const BoxDecoration(color: Color(0xFF1E3A8A)),
-                child: const Text(
-                  'Introductory Offer! 2 Activities at ₹2000',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Upcoming session card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFE4E1),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: const BoxDecoration(
-                              color: Colors.orange,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'P',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'UPCOMING SESSION',
-                            style: TextStyle(
-                              color: Color(0xFF1E3A8A),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      Text(
-                        activities.isNotEmpty
-                            ? activities.first.name
-                            : 'Activity Name',
-                        style: const TextStyle(
-                          color: Colors.orange,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        _getUpcomingActivityInfo(),
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.green,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'enrolled for Aarav',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Explore activities section
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'EXPLORE ACTIVITIES',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Activity cards - Dynamic content
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildActivitiesSection(),
-              ),
-
-              const SizedBox(height: 100),
-            ],
-          ),
-        ),
-      ),
+      body: _getCurrentPage(),
       bottomNavigationBar: Container(
-        height: 80,
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
+              color: Colors.black.withOpacity(0.1),
               blurRadius: 10,
+              offset: Offset(0, -2),
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Stack(
           children: [
-            _buildBottomNavItem(context, Icons.home, true, () {
-              // Already on home page, do nothing
-            }),
-            _buildBottomNavItem(context, Icons.calendar_today, false, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ActivitySchedulePage(), // Replace with CalendarPage()
+            BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: Color(0xFFFF6B35),
+              unselectedItemColor: Colors.grey,
+              currentIndex: selectedIndex,
+              onTap: _onBottomNavTapped,
+              items: [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_today),
+                  label: '',
                 ),
-              );
-            }),
-            _buildBottomNavItem(context, Icons.shopping_bag_outlined, false, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ActivityBookingPage(), // Replace with ActivityBookingPage()
-                ),
-              );
-            }),
-            _buildBottomNavItem(context, Icons.person_outline, false, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => UserProfilePage()),
-              );
-            }),
+                BottomNavigationBarItem(icon: Icon(Icons.school), label: ''),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+              ],
+            ),
+            // Animated Orange Line - Always visible, slides between tabs
+            AnimatedBuilder(
+              animation: _slideAnimation,
+              builder: (context, child) {
+                double screenWidth = MediaQuery.of(context).size.width;
+                double tabWidth = screenWidth / 4;
+                double lineWidth = 40;
+                double currentPosition = _slideAnimation.value;
+
+                return Positioned(
+                  bottom: 0,
+                  left:
+                      (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
+                  child: Container(
+                    width: lineWidth,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF6B35),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActivitiesSection() {
-    if (isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(40.0),
-          child: CircularProgressIndicator(color: Colors.orange),
-        ),
-      );
-    }
-
-    if (errorMessage != null) {
-      return Center(
-        child: Column(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Failed to load activities',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              errorMessage!.contains('Error fetching activities:')
-                  ? errorMessage!.replaceFirst(
-                      'Error fetching activities: ',
-                      '',
-                    )
-                  : errorMessage!,
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: fetchActivities,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-              child: const Text('Retry', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (activities.isEmpty) {
-      return Center(
-        child: Column(
-          children: [
-            const Icon(Icons.sports, color: Colors.grey, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'No activities available',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Check back later for new activities',
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      children: activities.map((activity) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 15),
-          child: _buildActivityCard(context, activity),
-        );
-      }).toList(),
-    );
+  @override
+  void dispose() {
+    searchController.dispose();
+    _slideController.dispose();
+    super.dispose();
   }
+}
 
-  Widget _buildActivityCard(BuildContext context, Activity activity) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CourseDetailPage(activity: activity),
+// Home page content widget
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    // This will be handled by the main widget when selectedIndex is 0
+    return Container();
+  }
+}
+
+// Keep your existing BatchCard class unchanged
+class BatchCard extends StatelessWidget {
+  final String ageGroup;
+  final String categoryName;
+  final String activityName;
+  final String price;
+  final String location;
+  final String organiser;
+
+  const BatchCard({
+    Key? key,
+    required this.ageGroup,
+    required this.categoryName,
+    required this.activityName,
+    required this.price,
+    required this.location,
+    required this.organiser,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 15,
+            offset: Offset(0, 4),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              spreadRadius: 0,
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image section
-            Container(
-              width: double.infinity,
-              height: 200,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                color: Colors.grey[200],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image Header with Age Tag
+          Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
               ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                child: activity.bannerImageUrl.isNotEmpty
-                    ? Image.network(
-                        activity.bannerImageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Icon(
-                                Icons.school,
-                                color: Colors.grey,
-                                size: 60,
-                              ),
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: Colors.orange,
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(
-                            Icons.school,
-                            color: Colors.grey,
-                            size: 60,
-                          ),
-                        ),
-                      ),
+              gradient: LinearGradient(
+                colors: [Color(0xFFE8F5E8), Color(0xFFF0F8FF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-
-            // Content section
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Activity ID and Title Row
-                  Row(
-                    children: [
-                      // Activity ID Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.orange.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          'ID: ${activity.id}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Category badge
-                      if (activity.category.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.blue.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            activity.categoryDisplay.isNotEmpty
-                                ? activity.categoryDisplay
-                                : activity.category.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                    ],
+            child: Stack(
+              children: [
+                // Activity illustration (placeholder)
+                Center(
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(60),
+                    ),
+                    child: Icon(
+                      _getActivityIcon(categoryName),
+                      size: 60,
+                      color: Colors.blue[600],
+                    ),
                   ),
+                ),
 
-                  const SizedBox(height: 12),
+                // Age Tag
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF6B35),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Age: $ageGroup',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
 
-                  // Title
-                  Text(
-                    activity.name,
-                    style: const TextStyle(
-                      fontSize: 22,
+                // Category Name only
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: Text(
+                    categoryName,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Society and Instructor Info
-                  if (activity.societyName.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.business,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            activity.societyName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.5),
+                          offset: Offset(1, 1),
+                          blurRadius: 3,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                  ],
-
-                  if (activity.instructorName.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        const Icon(Icons.person, size: 16, color: Colors.grey),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Instructor: ${activity.instructorName}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-
-                  // Recommended Age
-                  Text(
-                    _formatRecommendedAge(activity.recommendedAge),
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  // Batch information
-                  Text(
-                    _getBatchInfo(activity.batchCount),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.green,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Bottom row with View Details button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Active status indicator
-                      Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: activity.isActive
-                                  ? Colors.green
-                                  : Colors.red,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            activity.isActive ? 'Active' : 'Inactive',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: activity.isActive
-                                  ? Colors.green
-                                  : Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // View Details button
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: const Color(0xFFFF6B35),
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: TextButton(
-                          onPressed: activity.isActive
-                              ? () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          CourseDetailPage(activity: activity),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: Text(
-                            'View Details',
-                            style: TextStyle(
-                              color: activity.isActive
-                                  ? const Color(0xFFFF6B35)
-                                  : Colors.grey,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // Content Section
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Activity Name and Price
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        activityName,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      price,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF6B35),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 16),
+
+                // Location
+                Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.grey[600], size: 18),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 12),
+
+                // Organiser
+                Row(
+                  children: [
+                    Icon(Icons.person, color: Colors.grey, size: 18),
+                    SizedBox(width: 8),
+                    Text(
+                      organiser,
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 20),
+
+                // Save a Spot Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Color(0xFFFF6B35), width: 1.5),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child: Text(
+                      'Save a spot',
+                      style: TextStyle(
+                        color: Color(0xFFFF6B35),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBottomNavItem(
-    BuildContext context,
-    IconData icon,
-    bool isActive,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: isActive ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        child: Icon(
-          icon,
-          color: isActive ? Colors.orange : Colors.grey,
-          size: 24,
-        ),
-      ),
-    );
+  IconData _getActivityIcon(String categoryName) {
+    switch (categoryName.toLowerCase()) {
+      case 'robotics workshop':
+        return Icons.smart_toy;
+      case 'chess masters':
+        return Icons.grid_on;
+      case 'art & craft':
+        return Icons.palette;
+      case 'programming':
+        return Icons.code;
+      default:
+        return Icons.school;
+    }
   }
 }

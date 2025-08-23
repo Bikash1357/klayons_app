@@ -7,6 +7,7 @@ class LoginAuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String baseUrl = 'https://klayons-backend.vercel.app/api';
 
   // Save authentication data with optional user data
   static Future<void> saveAuthData({
@@ -114,48 +115,139 @@ class LoginAuthService {
     }
   }
 
-  // Verify OTP and save token
+  // NEW: Send OTP for Login (Signin) - Updated to match new API schema
+  static Future<SigninResponse> sendLoginOTP({
+    required String emailOrPhone,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/auth/signin/');
+
+      // Match API schema: {"email": "...", "phone": "..."}
+      Map<String, dynamic> requestBody = {
+        'email': emailOrPhone.contains('@') ? emailOrPhone : null,
+        'phone': !emailOrPhone.contains('@') ? emailOrPhone : null,
+      };
+
+      // Remove null values
+      requestBody.removeWhere((key, value) => value == null);
+
+      print('🌐 Sending login OTP with URL: $url');
+      print('📝 Request body: ${jsonEncode(requestBody)}');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      print('📡 Send login OTP response status: ${response.statusCode}');
+      print('📄 Send login OTP response body: ${response.body}');
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      return SigninResponse.fromJson(responseData, response.statusCode);
+    } catch (e) {
+      print('❌ Send login OTP error: $e');
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // UPDATED: Verify OTP for Login - Updated to match API schema
+  static Future<OTPVerificationResponse> verifyLoginOTP({
+    required String emailOrPhone,
+    required String otp,
+  }) async {
+    try {
+      print('🔄 Verifying login OTP for: $emailOrPhone');
+
+      final url = Uri.parse('$baseUrl/auth/verify-otp/');
+
+      // Match API schema: {"email": "...", "phone": "...", "otp": "..."}
+      Map<String, dynamic> requestBody = {
+        'email': emailOrPhone.contains('@') ? emailOrPhone : null,
+        'phone': !emailOrPhone.contains('@') ? emailOrPhone : null,
+        'otp': otp,
+      };
+
+      // Remove null values
+      requestBody.removeWhere((key, value) => value == null);
+
+      print('🌐 Verifying login OTP with URL: $url');
+      print('📝 Request body: ${jsonEncode(requestBody)}');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      print(
+        '📡 Login OTP verification response status: ${response.statusCode}',
+      );
+      print('📄 Login OTP verification response body: ${response.body}');
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Success response: {"access": "token"}
+        final accessToken = responseData['access'];
+        if (accessToken != null) {
+          await saveToken(accessToken);
+          print('✅ Login OTP verified and token saved successfully');
+        }
+
+        return OTPVerificationResponse(
+          statusCode: 0,
+          message: 'Login successful',
+          isSuccess: true,
+          token: accessToken,
+          userData: null,
+        );
+      } else {
+        // Error response: {"status_code": 0, "message": "error"}
+        return OTPVerificationResponse(
+          statusCode: responseData['status_code'] ?? 0,
+          message: responseData['message'] ?? 'Login failed',
+          isSuccess: false,
+          token: null,
+          userData: null,
+        );
+      }
+    } catch (e) {
+      print('❌ Login OTP verification error: $e');
+      throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  // DEPRECATED: Old verifyOTP method - use verifyLoginOTP instead
+  @deprecated
   static Future<Map<String, dynamic>?> verifyOTP({
     required String email,
     required String otp,
   }) async {
     try {
-      print('Verifying OTP for email: $email');
-
-      final response = await http.post(
-        Uri.parse(ApiConfig.getFullUrl('/api/auth/verify-otp/')),
-        headers: {
-          'Content-Type': 'application/json',
-          'accept': 'application/json',
-        },
-        body: json.encode({'email': email, 'otp': otp}),
+      print(
+        '⚠️ Using deprecated verifyOTP method. Use verifyLoginOTP instead.',
       );
 
-      print('OTP verification response status: ${response.statusCode}');
-      print('OTP verification response body: ${response.body}');
+      final result = await verifyLoginOTP(emailOrPhone: email, otp: otp);
 
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-
-        // Extract the access token
-        if (responseData.containsKey('access')) {
-          final accessToken = responseData['access'] as String;
-
-          // Save the token
-          await saveToken(accessToken);
-
-          print('✅ OTP verified and token saved successfully');
-          return responseData;
-        } else {
-          print('❌ No access token in response');
-          return null;
-        }
+      if (result.isSuccess) {
+        return {
+          'access': result.token,
+          'success': true,
+          'message': result.message,
+        };
       } else {
-        print('❌ OTP verification failed: ${response.statusCode}');
-        return null;
+        return {'success': false, 'message': result.message};
       }
     } catch (e) {
-      print('❌ OTP verification error: $e');
+      print('❌ Deprecated verifyOTP error: $e');
       return null;
     }
   }
@@ -177,7 +269,7 @@ class LoginAuthService {
         try {
           final response = await http
               .post(
-                Uri.parse(ApiConfig.getFullUrl('/api/auth/logout/')),
+                Uri.parse('$baseUrl/auth/logout/'), // Updated to use baseUrl
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': 'Bearer $token',
@@ -208,9 +300,7 @@ class LoginAuthService {
       }
 
       final response = await http.get(
-        Uri.parse(
-          ApiConfig.getFullUrl('/api/auth/user-profile/'),
-        ), // Adjust endpoint as needed
+        Uri.parse('$baseUrl/auth/user-profile/'), // Updated to use baseUrl
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -229,5 +319,59 @@ class LoginAuthService {
       print('Error fetching user profile: $e');
       return null;
     }
+  }
+}
+
+// Response model for signin API
+class SigninResponse {
+  final int statusCode;
+  final String message;
+  final bool isSuccess;
+  final int httpStatusCode;
+
+  SigninResponse({
+    required this.statusCode,
+    required this.message,
+    required this.isSuccess,
+    required this.httpStatusCode,
+  });
+
+  factory SigninResponse.fromJson(Map<String, dynamic> json, int httpCode) {
+    return SigninResponse(
+      statusCode: json['status_code'] ?? 0,
+      message: json['message'] ?? '',
+      isSuccess: httpCode == 200,
+      httpStatusCode: httpCode,
+    );
+  }
+}
+
+// Response model for OTP verification
+class OTPVerificationResponse {
+  final int statusCode;
+  final String message;
+  final bool isSuccess;
+  final String? token;
+  final Map<String, dynamic>? userData;
+
+  OTPVerificationResponse({
+    required this.statusCode,
+    required this.message,
+    required this.isSuccess,
+    this.token,
+    this.userData,
+  });
+
+  factory OTPVerificationResponse.fromJson(
+    Map<String, dynamic> json,
+    int httpCode,
+  ) {
+    return OTPVerificationResponse(
+      statusCode: json['status_code'] ?? 0,
+      message: json['message'] ?? '',
+      isSuccess: httpCode == 200,
+      token: json['access'], // API returns 'access' field for token
+      userData: json['user_data'],
+    );
   }
 }

@@ -12,9 +12,9 @@ class KlayonsText extends StatelessWidget {
       style: GoogleFonts.fredoka(
         // or try: baloo2, quicksand
         textStyle: const TextStyle(
-          fontSize: 36,
+          fontSize: 45,
           fontWeight: FontWeight.bold,
-          color: AppColors.primaryOrange, // orange
+          color: AppColors.orangeHighlight, // orange
         ),
       ),
     );

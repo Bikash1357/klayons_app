@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Add this for clipboard
-import 'package:http/http.dart' as http;
-import 'package:klayons/auth/registration_screen.dart';
-import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'package:klayons/auth/signupPage.dart' hide OTPVerificationPage;
 import 'package:klayons/utils/styles/button.dart';
-import 'package:klayons/utils/styles/checkbox.dart';
 import 'package:klayons/utils/styles/textButton.dart';
 import 'package:klayons/utils/styles/textboxes.dart';
-import 'package:klayons/config/api_config.dart';
-import 'package:klayons/services/auth/login_auth_service.dart';
-import 'package:url_launcher/url_launcher.dart'; // Add this import
+import 'package:klayons/services/auth/login_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'otp_verification_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -30,11 +26,11 @@ class _LoginPageState extends State<LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Top section with background image and Stack overlay
+              // Top section with background image and branding overlay
               Stack(
                 children: [
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.4,
+                    height: MediaQuery.of(context).size.height * 0.45,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       image: DecorationImage(
@@ -50,11 +46,41 @@ class _LoginPageState extends State<LoginPage> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.1),
+                            Colors.black.withOpacity(0.3),
+                            Colors.black.withOpacity(0.5),
                           ],
                         ),
                       ),
+                    ),
+                  ),
+                  // Branding overlay on the image
+                  Positioned(
+                    bottom: 60,
+                    left: 24,
+                    right: 24,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'klayons',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Where Children Learn\nand Grow Together',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white.withOpacity(0.9),
+                            height: 1.3,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   // Rounded overlay to blend with form section
@@ -80,100 +106,30 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 width: double.infinity,
                 color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Welcome text
+                    // Login form header
                     Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            'Welcome Back',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Sign in to continue',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        'Log in to your account',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
                       ),
                     ),
 
                     SizedBox(height: 32),
 
                     // Email input field
-                    Text(
-                      'Email',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                    SizedBox(height: 8),
                     CustomTextField(
-                      hintText: "Enter your email",
+                      hintText: "Email or Phone",
                       controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-
-                    SizedBox(height: 24),
-
-                    // Terms and Privacy Policy with proper alignment
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Checkbox aligned to top
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top: 2.0,
-                          ), // Fine-tune vertical alignment
-                          child: CustomeCheckbox(
-                            value: _isAgreeChecked,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                _isAgreeChecked = value ?? false;
-                              });
-                            },
-                          ),
-                        ),
-                        SizedBox(
-                          width: 12,
-                        ), // Increased spacing for better alignment
-                        // Text content
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                height: 1.4, // Better line height
-                              ),
-                              children: [
-                                TextSpan(text: "By clicking, I agree to the "),
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.baseline,
-                                  baseline: TextBaseline.alphabetic,
-                                  child: CustomTextButton(
-                                    text: "Privacy Policy",
-                                    onPressed:
-                                        _launchPrivacyPolicyUrl, // Updated this line
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                      keyboardType: TextInputType
+                          .text, // Changed from emailAddress to text
                     ),
 
                     SizedBox(height: 32),
@@ -185,8 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: OrangeButton(
                         onPressed: _isLoading
                             ? null
-                            : (_isAgreeChecked &&
-                                      _emailController.text.trim().isNotEmpty
+                            : (_emailController.text.trim().isNotEmpty
                                   ? _sendLoginOTP
                                   : null),
                         child: _isLoading
@@ -223,32 +178,102 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    SizedBox(height: 32),
+                    SizedBox(height: 24),
+
+                    // Divider with "or"
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(color: Colors.grey[300], thickness: 1),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'or',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(color: Colors.grey[300], thickness: 1),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 24),
 
                     // Register link
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            "Don't have an account?",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          CustomTextButton(
+                            text: "Register here!",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SignUnPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 32),
+
+                    // Terms and Privacy Policy moved to bottom
                     Center(
                       child: RichText(
                         textAlign: TextAlign.center,
                         text: TextSpan(
                           style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            height: 1.4,
                           ),
                           children: [
-                            TextSpan(text: "Don't have an account? "),
+                            TextSpan(text: "By continuing, I agree to the "),
                             WidgetSpan(
                               alignment: PlaceholderAlignment.baseline,
                               baseline: TextBaseline.alphabetic,
-                              child: CustomTextButton(
-                                text: "Register Here",
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => RegistrationPage(),
-                                    ),
-                                  );
-                                },
+                              child: GestureDetector(
+                                onTap: _launchTermsUrl,
+                                child: Text(
+                                  "Terms of Use",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            TextSpan(text: " & "),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: GestureDetector(
+                                onTap: _launchPrivacyPolicyUrl,
+                                child: Text(
+                                  "Privacy Policy",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -267,10 +292,20 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Add this new method to launch the privacy policy URL
+  // Add method for Terms of Use
+  Future<void> _launchTermsUrl() async {
+    const url = 'https://www.klayons.com/terms-of-use';
+    await _launchUrl(url, 'Terms of Use');
+  }
+
+  // Updated privacy policy method
   Future<void> _launchPrivacyPolicyUrl() async {
     const url = 'https://www.klayons.com/privacy-policy';
+    await _launchUrl(url, 'Privacy Policy');
+  }
 
+  // Generic URL launcher method
+  Future<void> _launchUrl(String url, String title) async {
     try {
       final Uri uri = Uri.parse(url);
 
@@ -311,21 +346,21 @@ class _LoginPageState extends State<LoginPage> {
 
       // If still not launched, show fallback dialog
       if (!launched) {
-        _showUrlFallbackDialog(url);
+        _showUrlFallbackDialog(url, title);
       }
     } catch (e) {
       print('Error launching URL: $e');
-      _showUrlFallbackDialog(url);
+      _showUrlFallbackDialog(url, title);
     }
   }
 
   // Fallback dialog when URL launcher fails
-  void _showUrlFallbackDialog(String url) {
+  void _showUrlFallbackDialog(String url, String title) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Privacy Policy'),
+          title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,11 +401,29 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // UPDATED: Use new LoginAuthService
   Future<void> _sendLoginOTP() async {
-    // Basic email validation
-    if (!_isValidEmail(_emailController.text.trim())) {
-      _showErrorMessage('Please enter a valid email address');
+    String emailOrPhone = _emailController.text.trim();
+
+    // Basic validation for email or phone
+    if (emailOrPhone.isEmpty) {
+      _showErrorMessage('Please enter your email or phone number');
       return;
+    }
+
+    // More thorough validation
+    if (emailOrPhone.contains('@')) {
+      // Validate email format
+      if (!_isValidEmail(emailOrPhone)) {
+        _showErrorMessage('Please enter a valid email address');
+        return;
+      }
+    } else {
+      // Validate phone format (basic check)
+      if (!_isValidPhone(emailOrPhone)) {
+        _showErrorMessage('Please enter a valid phone number');
+        return;
+      }
     }
 
     setState(() {
@@ -378,89 +431,119 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.getFullUrl(ApiConfig.loginEndpoint)),
-        headers: ApiConfig.getHeaders(),
-        body: json.encode({'email': _emailController.text.trim()}),
+      print('🔄 Sending login OTP to: $emailOrPhone');
+
+      // Use the updated LoginAuthService
+      final response = await LoginAuthService.sendLoginOTP(
+        emailOrPhone: emailOrPhone,
       );
 
-      final data = json.decode(response.body);
+      print('📡 Login OTP response: ${response.isSuccess}');
+      print('💬 Message: ${response.message}');
 
-      if (response.statusCode == 200) {
-        // Check if token is provided immediately (some APIs do this)
-        if (data.containsKey('token') || data.containsKey('access_token')) {
-          String token = data['token'] ?? data['access_token'];
-          Map<String, dynamic> userData = data['user'] ?? {};
-
-          // Save authentication data using your auth service
-          await LoginAuthService.saveAuthData(token: token, userData: userData);
-
-          print('Authentication data saved via LoginAuthService');
-        }
-
-        // Login credentials verified, OTP sent
-        _showSuccessMessage(data['message'] ?? 'OTP sent to your email');
+      if (response.isSuccess) {
+        // OTP sent successfully
+        _showSuccessMessage(
+          response.message.isNotEmpty
+              ? response.message
+              : 'OTP sent successfully!',
+        );
 
         // Navigate to OTP verification page
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => OTPVerificationPage(
-              email: _emailController.text.trim(),
+              email: emailOrPhone, // Pass email or phone
               purpose: 'login',
             ),
           ),
         );
       } else {
         // Handle error responses
-        String errorMessage = data['message'] ?? 'Login failed';
-        if (data.containsKey('error')) {
-          errorMessage = data['error'];
-        } else if (data.containsKey('detail')) {
-          errorMessage = data['detail'];
+        String errorMessage = response.message.isNotEmpty
+            ? response.message
+            : 'Failed to send OTP. Please try again.';
+
+        // Handle specific error cases
+        if (response.httpStatusCode == 400) {
+          errorMessage = response.message.isNotEmpty
+              ? response.message
+              : 'Account not found. Please register first.';
+        } else if (response.httpStatusCode == 500) {
+          errorMessage = 'Server error. Please try again later.';
         }
+
         _showErrorMessage(errorMessage);
       }
     } catch (e) {
+      print('❌ Login OTP error: $e');
       _showErrorMessage(
         'Network error. Please check your connection and try again.',
       );
-      print('Login error: $e'); // For debugging
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
+  // Email validation
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
+  // Phone validation (basic check)
+  bool _isValidPhone(String phone) {
+    // Remove any non-digit characters for validation
+    String digitsOnly = phone.replaceAll(RegExp(r'[^\d]'), '');
+
+    // Check if it's a valid phone number (between 7-15 digits)
+    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+  }
+
   void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
 
   void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+    }
   }
 
   @override

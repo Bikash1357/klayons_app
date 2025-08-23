@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 
-import '../../../services/auth/login_auth_service.dart';
+import '../../../services/auth/login_service.dart';
 import '../../../services/get_userprofile_service.dart';
 
 class SettingsPage extends StatefulWidget {

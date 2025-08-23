@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:klayons/config/api_config.dart';
-import 'package:klayons/services/auth/login_auth_service.dart';
+import 'package:klayons/services/auth/login_service.dart';
 
 class UserProfile {
   final String name;
