@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/screens/notification.dart';
-
+import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
+import 'batch_details_page.dart';
 import 'bottom_screens/calander.dart';
-import 'bottom_screens/ticketbox_page.dart';
+import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
 
 class KlayonsHomePage extends StatefulWidget {
@@ -18,53 +19,25 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   late AnimationController _slideController;
   late Animation<double> _slideAnimation;
 
-  // List of pages for bottom navigation
   final List<Widget> _pages = [
-    HomePage(), // Index 0 - Home
-    ActivitySchedulePage(), // Index 1 - Calendar
-    ActivityBookingPage(), // Index 2 - School
-    UserProfilePage(), // Index 3 - Profile
+    Container(), // Home content handled separately
+    ActivitySchedulePage(),
+    EnrolledPage(),
+    UserProfilePage(),
   ];
 
-  // Sample batch data
-  final List<Map<String, String>> batchData = [
-    {
-      'ageGroup': '8-14',
-      'categoryName': 'Robotics Workshop',
-      'activityName': 'Arduino Robot Building',
-      'price': '₹699',
-      'location': 'Tech Hub, Sector-15',
-      'organiser': 'RoboTech Academy',
-    },
-    {
-      'ageGroup': '6-14',
-      'categoryName': 'Chess Masters',
-      'activityName': 'Advanced Chess Strategies',
-      'price': '₹499',
-      'location': 'Chess Club, Sector-22',
-      'organiser': 'GrandMaster Institute',
-    },
-    {
-      'ageGroup': '5-12',
-      'categoryName': 'Art & Craft',
-      'activityName': 'Creative Painting Workshop',
-      'price': '₹399',
-      'location': 'Art Studio, Sector-18',
-      'organiser': 'Creative Minds Academy',
-    },
-    {
-      'ageGroup': '10-16',
-      'categoryName': 'Programming',
-      'activityName': 'Python Coding Basics',
-      'price': '₹899',
-      'location': 'Code Hub, Sector-12',
-      'organiser': 'Tech Academy',
-    },
-  ];
+  List<BatchWithActivity> batchData = [];
+  bool isLoading = false;
+  String? errorMessage;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimation();
+    _loadBatchData();
+  }
+
+  void _initializeAnimation() {
     _slideController = AnimationController(
       duration: Duration(milliseconds: 300),
       vsync: this,
@@ -74,171 +47,106 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  void _onBottomNavTapped(int index) {
-    if (selectedIndex != index) {
-      // Create new tween for sliding from current position to new position
-      _slideAnimation =
-          Tween<double>(
-            begin: selectedIndex.toDouble(),
-            end: index.toDouble(),
-          ).animate(
-            CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
-          );
+  Future<void> _loadBatchData() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
 
-      _slideController.reset();
-      _slideController.forward();
-
+    try {
+      final batches = await BatchService.getAllBatches(page: 1, pageSize: 20);
       setState(() {
-        selectedIndex = index;
+        batchData = batches;
+        isLoading = false;
       });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Failed to load activities: ${e.toString()}';
+        isLoading = false;
+      });
+      _showErrorSnackBar();
     }
   }
 
-  List<Map<String, String>> getFilteredBatches() {
-    if (searchQuery.isEmpty) {
-      return batchData;
+  void _showErrorSnackBar() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to load activities. Please check your connection.',
+          ),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _loadBatchData,
+          ),
+        ),
+      );
     }
+  }
 
+  void _onBottomNavTapped(int index) {
+    if (selectedIndex == index) return;
+
+    _slideAnimation =
+        Tween<double>(
+          begin: selectedIndex.toDouble(),
+          end: index.toDouble(),
+        ).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+        );
+
+    _slideController.reset();
+    _slideController.forward();
+
+    setState(() {
+      selectedIndex = index;
+    });
+  }
+
+  List<BatchWithActivity> get filteredBatches {
+    if (searchQuery.isEmpty) return batchData;
+
+    final query = searchQuery.toLowerCase();
     return batchData.where((batch) {
-      final query = searchQuery.toLowerCase();
-      return batch['ageGroup']!.toLowerCase().contains(query) ||
-          batch['categoryName']!.toLowerCase().contains(query) ||
-          batch['activityName']!.toLowerCase().contains(query) ||
-          batch['price']!.toLowerCase().contains(query) ||
-          batch['location']!.toLowerCase().contains(query) ||
-          batch['organiser']!.toLowerCase().contains(query);
+      return batch.ageRange.toLowerCase().contains(query) ||
+          batch.activity.categoryDisplay.toLowerCase().contains(query) ||
+          batch.activity.name.toLowerCase().contains(query) ||
+          batch.name.toLowerCase().contains(query) ||
+          batch.priceDisplay.toLowerCase().contains(query) ||
+          batch.activity.societyName.toLowerCase().contains(query) ||
+          batch.activity.instructorName.toLowerCase().contains(query);
     }).toList();
   }
 
-  // Method to get the current page content
-  Widget _getCurrentPage() {
-    // Only show the home content when selectedIndex is 0
-    if (selectedIndex == 0) {
-      return HomePageWithAppBar(
-        searchQuery: searchQuery,
-        searchController: searchController,
-        onSearchChanged: (value) {
-          setState(() {
-            searchQuery = value;
-          });
-        },
-        onClearSearch: () {
-          setState(() {
-            searchQuery = '';
-            searchController.clear();
-          });
-        },
-        batchData: batchData,
-        getFilteredBatches: getFilteredBatches,
-      );
-    } else {
-      // For other tabs, return the respective pages (they should have their own AppBars)
-      return _pages[selectedIndex];
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
-      // Remove AppBar from here - each page will have its own
-      body: _getCurrentPage(),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedItemColor: Color(0xFFFF6B35),
-              unselectedItemColor: Colors.grey,
-              currentIndex: selectedIndex,
-              onTap: _onBottomNavTapped,
-              items: [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.calendar_today),
-                  label: '',
-                ),
-                BottomNavigationBarItem(icon: Icon(Icons.school), label: ''),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-              ],
-            ),
-            // Animated Orange Line - Always visible, slides between tabs
-            AnimatedBuilder(
-              animation: _slideAnimation,
-              builder: (context, child) {
-                double screenWidth = MediaQuery.of(context).size.width;
-                double tabWidth = screenWidth / 4;
-                double lineWidth = 40;
-                double currentPosition = _slideAnimation.value;
-
-                return Positioned(
-                  bottom: 0,
-                  left:
-                      (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
-                  child: Container(
-                    width: lineWidth,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF6B35),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
+  void _navigateToBatchDetail(BatchWithActivity batch) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivityBookingPage(
+          batchId: batch.id,
+          activityId: batch.activity.id,
         ),
       ),
     );
   }
 
   @override
-  void dispose() {
-    searchController.dispose();
-    _slideController.dispose();
-    super.dispose();
-  }
-}
-
-// New Home page widget with its own AppBar
-class HomePageWithAppBar extends StatelessWidget {
-  final String searchQuery;
-  final TextEditingController searchController;
-  final Function(String) onSearchChanged;
-  final VoidCallback onClearSearch;
-  final List<Map<String, String>> batchData;
-  final List<Map<String, String>> Function() getFilteredBatches;
-
-  const HomePageWithAppBar({
-    Key? key,
-    required this.searchQuery,
-    required this.searchController,
-    required this.onSearchChanged,
-    required this.onClearSearch,
-    required this.batchData,
-    required this.getFilteredBatches,
-  }) : super(key: key);
-
-  @override
   Widget build(BuildContext context) {
-    final filteredBatches = getFilteredBatches();
+    return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5),
+      body: selectedIndex == 0 ? _buildHomePage() : _pages[selectedIndex],
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
 
+  Widget _buildHomePage() {
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
         elevation: 0,
         title: Text(
           'klayons',
@@ -251,428 +159,526 @@ class HomePageWithAppBar extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.notifications_outlined, color: Colors.black54),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationsPage()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationsPage()),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Search Field
-            Container(
-              margin: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _loadBatchData,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildSearchField(),
+              if (searchQuery.isEmpty && !isLoading && batchData.isNotEmpty)
+                _buildFeeReminderCard(),
+              _buildSectionTitle(),
+              SizedBox(height: 16),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: _buildContent(),
               ),
-              child: TextField(
-                controller: searchController,
-                onChanged: onSearchChanged,
-                decoration: InputDecoration(
-                  hintText: 'Search activities...',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
-                  suffixIcon: searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear, color: Colors.grey, size: 20),
-                          onPressed: onClearSearch,
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
-                  ),
-                ),
-              ),
-            ),
-
-            // Fee Reminder Card (only show when not searching)
-            if (searchQuery.isEmpty) ...[
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFFF6B35), Color(0xFFFF8A50)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'FEE REMINDER',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Robotics',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'Due date on 5th June',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.smart_toy_outlined,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 30),
+              SizedBox(height: 100),
             ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            // Section Title
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildSearchField() {
+    return Container(
+      margin: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: searchController,
+        onChanged: (value) => setState(() => searchQuery = value),
+        decoration: InputDecoration(
+          hintText: 'Search activities...',
+          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+          prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
+          suffixIcon: searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(Icons.clear, color: Colors.grey, size: 20),
+                  onPressed: () => setState(() {
+                    searchQuery = '';
+                    searchController.clear();
+                  }),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeeReminderCard() {
+    return Container(
+      margin: EdgeInsets.fromLTRB(16, 0, 16, 30),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFFF6B35), Color(0xFFFF8A50)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    searchQuery.isEmpty
-                        ? 'Explore Activities'
-                        : 'Search Results (${filteredBatches.length})',
+                    'FEE REMINDER',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                  if (searchQuery.isNotEmpty)
-                    Text(
-                      'for "$searchQuery"',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
+                  SizedBox(height: 8),
+                  Text(
+                    batchData.isNotEmpty
+                        ? batchData.first.activity.name
+                        : 'Activity',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Due date on 5th June',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
                 ],
               ),
             ),
-
-            SizedBox(height: 16),
-
-            // Activities List or No Results
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: filteredBatches.isEmpty
-                  ? Container(
-                      padding: EdgeInsets.all(40),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No activities found',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Try searching with different keywords',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      children: filteredBatches
-                          .map(
-                            (batch) => Column(
-                              children: [
-                                BatchCard(
-                                  ageGroup: batch['ageGroup']!,
-                                  categoryName: batch['categoryName']!,
-                                  activityName: batch['activityName']!,
-                                  price: batch['price']!,
-                                  location: batch['location']!,
-                                  organiser: batch['organiser']!,
-                                ),
-                                SizedBox(height: 16),
-                              ],
-                            ),
-                          )
-                          .toList(),
-                    ),
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.notifications, color: Colors.white, size: 30),
             ),
-
-            SizedBox(height: 100), // Extra space for bottom navigation
           ],
         ),
       ),
     );
   }
-}
 
-// Empty Home page content widget (no longer needed)
-class HomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // This will be handled by the main widget when selectedIndex is 0
-    return Container();
+  Widget _buildSectionTitle() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            searchQuery.isEmpty
+                ? 'Explore Activities'
+                : 'Search Results (${filteredBatches.length})',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          if (searchQuery.isNotEmpty)
+            Text(
+              'for "$searchQuery"',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+        ],
+      ),
+    );
   }
-}
 
-// Keep your existing BatchCard class unchanged
-class BatchCard extends StatelessWidget {
-  final String ageGroup;
-  final String categoryName;
-  final String activityName;
-  final String price;
-  final String location;
-  final String organiser;
+  Widget _buildContent() {
+    if (isLoading) return _buildLoadingWidget();
+    if (errorMessage != null) return _buildErrorWidget();
+    if (filteredBatches.isEmpty) return _buildEmptyWidget();
 
-  const BatchCard({
-    Key? key,
-    required this.ageGroup,
-    required this.categoryName,
-    required this.activityName,
-    required this.price,
-    required this.location,
-    required this.organiser,
-  }) : super(key: key);
+    return Column(
+      children: filteredBatches
+          .map(
+            (batch) => Padding(
+              padding: EdgeInsets.only(bottom: 16),
+              child: BatchCard(
+                batch: batch,
+                onTap: () => _navigateToBatchDetail(batch),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildLoadingWidget() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: Offset(0, 4),
+      padding: EdgeInsets.all(40),
+      child: Column(
+        children: [
+          CircularProgressIndicator(color: Color(0xFFFF6B35)),
+          SizedBox(height: 16),
+          Text(
+            'Loading activities...',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      padding: EdgeInsets.all(40),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image Header with Age Tag
+          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+          SizedBox(height: 16),
+          Text(
+            'Something went wrong',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            errorMessage!,
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadBatchData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF6B35),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: Text(
+              'Try Again',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyWidget() {
+    return Container(
+      padding: EdgeInsets.all(40),
+      child: Column(
+        children: [
+          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+          SizedBox(height: 16),
+          Text(
+            searchQuery.isEmpty
+                ? 'No activities available'
+                : 'No activities found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            searchQuery.isEmpty
+                ? 'Check back later for new activities'
+                : 'Try searching with different keywords',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          if (searchQuery.isEmpty) ...[
+            SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadBatchData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFFF6B35),
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                'Refresh',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            selectedItemColor: Color(0xFFFF6B35),
+            unselectedItemColor: Colors.grey,
+            currentIndex: selectedIndex,
+            onTap: _onBottomNavTapped,
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today),
+                label: '',
+              ),
+              BottomNavigationBarItem(icon: Icon(Icons.school), label: ''),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+            ],
+          ),
+          AnimatedBuilder(
+            animation: _slideAnimation,
+            builder: (context, child) {
+              double screenWidth = MediaQuery.of(context).size.width;
+              double tabWidth = screenWidth / 4;
+              double lineWidth = 40;
+              double currentPosition = _slideAnimation.value;
+
+              return Positioned(
+                bottom: 0,
+                left: (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
+                child: Container(
+                  width: lineWidth,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFF6B35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    _slideController.dispose();
+    super.dispose();
+  }
+}
+
+class BatchCard extends StatelessWidget {
+  final BatchWithActivity batch;
+  final VoidCallback onTap;
+
+  const BatchCard({Key? key, required this.batch, required this.onTap})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [_buildImageHeader(), _buildContentSection()],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageHeader() {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        gradient: LinearGradient(
+          colors: [Color(0xFFE8F5E8), Color(0xFFF0F8FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Banner Image
+          if (batch.activity.bannerImageUrl.isNotEmpty)
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(batch.activity.bannerImageUrl),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            )
+          else
+            Center(
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(60),
+                ),
+                child: Icon(
+                  _getActivityIcon(batch.activity.category),
+                  size: 60,
+                  color: Colors.blue[600],
+                ),
+              ),
+            ),
+
+          // Gradient overlay
           Container(
-            height: 200,
-            width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
               gradient: LinearGradient(
-                colors: [Color(0xFFE8F5E8), Color(0xFFF0F8FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.2),
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.6),
+                ],
               ),
-            ),
-            child: Stack(
-              children: [
-                // Activity illustration (placeholder)
-                Center(
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(60),
-                    ),
-                    child: Icon(
-                      _getActivityIcon(categoryName),
-                      size: 60,
-                      color: Colors.blue[600],
-                    ),
-                  ),
-                ),
-
-                // Age Tag
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF6B35),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Age: $ageGroup',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Category Name only
-                Positioned(
-                  bottom: 16,
-                  left: 16,
-                  right: 16,
-                  child: Text(
-                    categoryName,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withOpacity(0.5),
-                          offset: Offset(1, 1),
-                          blurRadius: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
 
-          // Content Section
-          Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Activity Name and Price
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        activityName,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      price,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF6B35),
-                      ),
-                    ),
-                  ],
+          // Age Tag
+          Positioned(
+            top: 16,
+            left: 16,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Color(0xFFFF6B35),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
+            ),
+          ),
 
-                SizedBox(height: 16),
-
-                // Location
-                Row(
-                  children: [
-                    Icon(Icons.location_on, color: Colors.grey[600], size: 18),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ),
-                  ],
+          // Activity Status
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: batch.isActive
+                    ? Colors.green.withOpacity(0.9)
+                    : Colors.grey.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                batch.isActive ? 'Active' : 'Inactive',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
                 ),
+              ),
+            ),
+          ),
 
-                SizedBox(height: 12),
-
-                // Organiser
-                Row(
-                  children: [
-                    Icon(Icons.person, color: Colors.grey, size: 18),
-                    SizedBox(width: 8),
-                    Text(
-                      organiser,
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 20),
-
-                // Save a Spot Button
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Color(0xFFFF6B35), width: 1.5),
-                      padding: EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: Text(
-                      'Save a spot',
-                      style: TextStyle(
-                        color: Color(0xFFFF6B35),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+          // Activity Category
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Text(
+              batch.activity.categoryDisplay.isNotEmpty
+                  ? batch.activity.categoryDisplay
+                  : batch.activity.category,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.8),
+                    offset: Offset(1, 1),
+                    blurRadius: 3,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -680,18 +686,134 @@ class BatchCard extends StatelessWidget {
     );
   }
 
-  IconData _getActivityIcon(String categoryName) {
-    switch (categoryName.toLowerCase()) {
-      case 'robotics workshop':
-        return Icons.smart_toy;
-      case 'chess masters':
-        return Icons.grid_on;
-      case 'art & craft':
+  Widget _buildContentSection() {
+    return Padding(
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Activity Name and Price
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      batch.activity.name,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (batch.name != batch.activity.name) ...[
+                      SizedBox(height: 4),
+                      Text(
+                        batch.name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Text(
+                batch.priceDisplay,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFF6B35),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+
+          // Details
+          if (batch.activity.societyName.isNotEmpty) ...[
+            _buildInfoRow(Icons.location_on, batch.activity.societyName),
+            SizedBox(height: 12),
+          ],
+          if (batch.activity.instructorName.isNotEmpty) ...[
+            _buildInfoRow(Icons.person, batch.activity.instructorName),
+            SizedBox(height: 12),
+          ],
+          _buildInfoRow(
+            Icons.schedule,
+            '${batch.startDate} - ${batch.endDate}',
+          ),
+          SizedBox(height: 16),
+          _buildInfoRow(Icons.people, 'Capacity: ${batch.capacity}'),
+          SizedBox(height: 20),
+
+          // Action Button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: batch.isActive ? onTap : null,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(
+                  color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
+                  width: 1.5,
+                ),
+                padding: EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                batch.isActive ? 'View Details' : 'Not Available',
+                style: TextStyle(
+                  color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.grey[600], size: 18),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getActivityIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'sports':
+        return Icons.sports_soccer;
+      case 'arts':
         return Icons.palette;
-      case 'programming':
-        return Icons.code;
-      default:
+      case 'technology':
+      case 'tech':
+        return Icons.computer;
+      case 'music':
+        return Icons.music_note;
+      case 'dance':
+        return Icons.music_video;
+      case 'academic':
         return Icons.school;
+      default:
+        return Icons.extension;
     }
   }
 }

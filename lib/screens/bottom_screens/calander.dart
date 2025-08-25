@@ -73,6 +73,7 @@ class _ActivitySchedulePageState extends State<ActivitySchedulePage> {
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
         title: Text(
@@ -84,12 +85,6 @@ class _ActivitySchedulePageState extends State<ActivitySchedulePage> {
             letterSpacing: 1.2,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_none, color: Colors.grey[600]),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Column(
         children: [

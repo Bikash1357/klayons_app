@@ -17,12 +17,15 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoading = true;
   bool _isUpdating = false;
 
-  // Controllers for text fields
+  // Controllers for text fields - Updated for new API fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _flatController = TextEditingController();
-  final TextEditingController _societyController = TextEditingController();
+  final TextEditingController _societyIdController = TextEditingController();
+  final TextEditingController _societyNameController = TextEditingController();
+  final TextEditingController _towerController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   // User data
   UserProfile? _userProfile;
@@ -45,7 +48,10 @@ class _SettingsPageState extends State<SettingsPage> {
     _emailController.dispose();
     _phoneController.dispose();
     _flatController.dispose();
-    _societyController.dispose();
+    _societyIdController.dispose();
+    _societyNameController.dispose();
+    _towerController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -66,7 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return phone.length >= 10 && phoneRegex.hasMatch(phone);
   }
 
-  // Fetch user profile using the service
+  // Fetch user profile using the updated service
   Future<void> _fetchUserProfile() async {
     try {
       setState(() {
@@ -79,12 +85,19 @@ class _SettingsPageState extends State<SettingsPage> {
         setState(() {
           _userProfile = profile;
 
-          // Populate all form fields
+          // Populate all form fields with new API fields
           _nameController.text = profile.name;
-          _emailController.text = profile.userEmail;
+          _emailController.text = profile.userEmail.isNotEmpty
+              ? profile.userEmail
+              : '';
           _phoneController.text = profile.userPhone;
           _flatController.text = profile.flatNo;
-          _societyController.text = profile.societyId.toString();
+          _societyIdController.text = profile.societyId > 0
+              ? profile.societyId.toString()
+              : '';
+          _societyNameController.text = profile.societyName;
+          _towerController.text = profile.tower;
+          _addressController.text = profile.address;
 
           // Set validation states
           _isNameValid = profile.name.isEmpty || _validateName(profile.name);
@@ -95,6 +108,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
           _isLoading = false;
         });
+
+        print('Profile loaded successfully:');
+        print('Name: ${profile.name}');
+        print('Email: ${profile.userEmail}');
+        print('Phone: ${profile.userPhone}');
+        print('Society: ${profile.societyName} (ID: ${profile.societyId})');
+        print('Tower: ${profile.tower}');
+        print('Flat: ${profile.flatNo}');
+        print('Address: ${profile.address}');
+        print('Profile Complete: ${profile.profileComplete}');
       }
     } catch (e) {
       print('Error fetching user profile: $e');
@@ -116,7 +139,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // Update user profile using the service
+  // Update user profile using the updated service
   Future<void> _updateProfile() async {
     try {
       // Validate all fields before sending
@@ -152,8 +175,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
       // Parse society ID, default to current value if invalid
       int? societyId;
-      if (_societyController.text.trim().isNotEmpty) {
-        societyId = int.tryParse(_societyController.text.trim());
+      if (_societyIdController.text.trim().isNotEmpty) {
+        societyId = int.tryParse(_societyIdController.text.trim());
         if (societyId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -169,6 +192,16 @@ class _SettingsPageState extends State<SettingsPage> {
         }
       }
 
+      print('Updating profile with data:');
+      print('Name: ${_nameController.text.trim()}');
+      print('Email: ${_emailController.text.trim()}');
+      print('Phone: ${_phoneController.text.trim()}');
+      print('Society ID: $societyId');
+      print('Society Name: ${_societyNameController.text.trim()}');
+      print('Tower: ${_towerController.text.trim()}');
+      print('Flat: ${_flatController.text.trim()}');
+      print('Address: ${_addressController.text.trim()}');
+
       final updatedProfile = await GetUserProfileService.updateUserProfile(
         name: _nameController.text.trim().isEmpty
             ? null
@@ -180,9 +213,19 @@ class _SettingsPageState extends State<SettingsPage> {
             ? null
             : _phoneController.text.trim(),
         societyId: societyId,
+        societyName: _societyNameController.text.trim().isEmpty
+            ? null
+            : _societyNameController.text.trim(),
+        tower: _towerController.text.trim().isEmpty
+            ? null
+            : _towerController.text.trim(),
         flatNo: _flatController.text.trim().isEmpty
             ? null
             : _flatController.text.trim(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
+        residenceType: 'society', // Default to society for now
       );
 
       if (updatedProfile != null) {
@@ -197,6 +240,8 @@ class _SettingsPageState extends State<SettingsPage> {
             duration: Duration(seconds: 2),
           ),
         );
+
+        print('Profile updated successfully!');
       }
     } catch (e) {
       print('Error updating profile: $e');
@@ -395,6 +440,7 @@ class _SettingsPageState extends State<SettingsPage> {
     String? errorText,
     Widget? suffixIcon,
     Function(String)? onChanged,
+    int maxLines = 1,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -403,6 +449,7 @@ class _SettingsPageState extends State<SettingsPage> {
           controller: controller,
           keyboardType: keyboardType,
           onChanged: onChanged,
+          maxLines: maxLines,
           decoration: InputDecoration(
             labelText: label,
             hintText: hint,
@@ -480,7 +527,22 @@ class _SettingsPageState extends State<SettingsPage> {
                       _buildProfileAvatar(),
                       const SizedBox(height: 30),
 
-                      // Name Field - Now functional with backend data
+                      // Basic Info Section
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'BASIC INFORMATION',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Name Field
                       _buildTextField(
                         controller: _nameController,
                         label: 'Name',
@@ -550,11 +612,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 30),
 
-                      // Change Address Section
+                      // Address Information Section
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'CHANGE ADDRESS',
+                          'ADDRESS INFORMATION',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -565,22 +627,92 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Society ID Field - Now functional with backend data
+                      // Society Name Field
                       _buildTextField(
-                        controller: _societyController,
+                        controller: _societyNameController,
+                        label: 'Society Name',
+                        hint: 'Enter society name',
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Society ID Field
+                      _buildTextField(
+                        controller: _societyIdController,
                         label: 'Society ID',
                         hint: 'Enter society ID',
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
 
-                      // Flat Number Field - Now functional with backend data
+                      // Tower Field
+                      _buildTextField(
+                        controller: _towerController,
+                        label: 'Tower/Block',
+                        hint: 'Enter tower or block',
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Flat Number Field
                       _buildTextField(
                         controller: _flatController,
                         label: 'Flat Number',
                         hint: 'Enter flat number',
                       ),
+                      const SizedBox(height: 16),
+
+                      // Address Field
+                      _buildTextField(
+                        controller: _addressController,
+                        label: 'Address',
+                        hint: 'Enter complete address',
+                        maxLines: 3,
+                      ),
                       const SizedBox(height: 30),
+
+                      // Profile Status Display
+                      if (_userProfile != null) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _userProfile!.profileComplete
+                                ? Colors.green[50]
+                                : Colors.orange[50],
+                            border: Border.all(
+                              color: _userProfile!.profileComplete
+                                  ? Colors.green[300]!
+                                  : Colors.orange[300]!,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _userProfile!.profileComplete
+                                    ? Icons.check_circle
+                                    : Icons.info,
+                                color: _userProfile!.profileComplete
+                                    ? Colors.green[600]
+                                    : Colors.orange[600],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _userProfile!.profileComplete
+                                    ? 'Profile Complete'
+                                    : 'Profile Incomplete',
+                                style: TextStyle(
+                                  color: _userProfile!.profileComplete
+                                      ? Colors.green[700]
+                                      : Colors.orange[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
                       // Save Details Button
                       SizedBox(

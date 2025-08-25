@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class ActivityBookingPage extends StatefulWidget {
-  const ActivityBookingPage({Key? key}) : super(key: key);
+class EnrolledPage extends StatefulWidget {
+  const EnrolledPage({Key? key}) : super(key: key);
 
   @override
-  State<ActivityBookingPage> createState() => _ActivityBookingPageState();
+  State<EnrolledPage> createState() => _EnrolledPageState();
 }
 
-class _ActivityBookingPageState extends State<ActivityBookingPage> {
+class _EnrolledPageState extends State<EnrolledPage> {
   List<ActivityItem> activities = [
     ActivityItem(
       name: "ACTIVITY NAME",
@@ -42,7 +42,11 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.white),
+      appBar: AppBar(
+        title: Text("Enrolled Batches"),
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+      ),
       body: SafeArea(
         child: Column(
           children: [

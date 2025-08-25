@@ -2,7 +2,85 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'model_batchWithActivity.dart';
+// MODELS
+
+class BatchWithActivity {
+  final int id;
+  final String name;
+  final String ageRange;
+  final int capacity;
+  final int price;
+  final String startDate;
+  final String endDate;
+  final bool isActive;
+  final ActivityInfo activity;
+
+  BatchWithActivity({
+    required this.id,
+    required this.name,
+    required this.ageRange,
+    required this.capacity,
+    required this.price,
+    required this.startDate,
+    required this.endDate,
+    required this.isActive,
+    required this.activity,
+  });
+
+  factory BatchWithActivity.fromJson(Map<String, dynamic> json) {
+    return BatchWithActivity(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      ageRange: json['age_range'] ?? '',
+      capacity: json['capacity'] ?? 0,
+      price: json['price'] ?? 0,
+      startDate: json['start_date'] ?? '',
+      endDate: json['end_date'] ?? '',
+      isActive: json['is_active'] ?? false,
+      activity: ActivityInfo.fromJson(json['activity'] ?? {}),
+    );
+  }
+
+  String get displayName => '$name';
+  String get priceDisplay => '₹$price';
+}
+
+class ActivityInfo {
+  final int id;
+  final String name;
+  final String category;
+  final String categoryDisplay;
+  final String description;
+  final String bannerImageUrl;
+  final String societyName;
+  final String instructorName;
+
+  ActivityInfo({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.categoryDisplay,
+    required this.description,
+    required this.bannerImageUrl,
+    required this.societyName,
+    required this.instructorName,
+  });
+
+  factory ActivityInfo.fromJson(Map<String, dynamic> json) {
+    return ActivityInfo(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      category: json['category'] ?? '',
+      categoryDisplay: json['category_display'] ?? '',
+      description: json['description'] ?? '',
+      bannerImageUrl: json['banner_image_url'] ?? '',
+      societyName: json['society_name'] ?? '',
+      instructorName: json['instructor_name'] ?? '',
+    );
+  }
+}
+
+// SERVICE
 
 class BatchService {
   static const String baseUrl = 'https://klayons-backend.vercel.app';
@@ -27,14 +105,12 @@ class BatchService {
     int? pageSize,
   }) async {
     try {
-      // Get authentication token
       final token = await getAuthToken();
       if (token == null || token.isEmpty) {
         print('❌ No authentication token found');
         throw Exception('No authentication token found. Please login again.');
       }
 
-      // Build URL with query parameters
       String url = '$baseUrl/api/activities/batches-with-activity/';
       List<String> queryParams = [];
 
@@ -83,13 +159,12 @@ class BatchService {
       print('💥 Error in getBatchesWithActivity: $e');
       if (e.toString().contains('No authentication token') ||
           e.toString().contains('Authentication failed')) {
-        rethrow; // Re-throw auth errors as-is
+        rethrow;
       }
       throw Exception('Error fetching batches: $e');
     }
   }
 
-  // Method to get batches by specific category
   static Future<List<BatchWithActivity>> getBatchesByCategory(
     String category,
   ) async {
@@ -106,7 +181,6 @@ class BatchService {
     }
   }
 
-  // Method to get all batches with pagination
   static Future<List<BatchWithActivity>> getAllBatches({
     int page = 1,
     int pageSize = 10,
@@ -120,15 +194,12 @@ class BatchService {
     }
   }
 
-  // Method to refresh token if needed (optional utility method)
   static Future<bool> validateToken() async {
     try {
       final token = await getAuthToken();
       if (token == null || token.isEmpty) {
         return false;
       }
-
-      // Test the token with a simple API call
       final response = await http.get(
         Uri.parse(
           '$baseUrl/api/activities/batches-with-activity/?page=1&page_size=1',
@@ -139,7 +210,6 @@ class BatchService {
           'Content-Type': 'application/json',
         },
       );
-
       return response.statusCode == 200;
     } catch (e) {
       print('❌ Token validation error: $e');
@@ -147,7 +217,6 @@ class BatchService {
     }
   }
 
-  // Method to clear token (for logout scenarios)
   static Future<void> clearAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();

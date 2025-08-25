@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/auth/login_screen.dart';
 import 'package:klayons/auth/signupPage.dart';
-import 'package:klayons/screens/bottom_screens/ticketbox_page.dart';
+import 'package:klayons/screens/batch_details_page.dart';
+import 'package:klayons/screens/bottom_screens/enrolledpage.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
@@ -39,8 +40,9 @@ class Klayons extends StatelessWidget {
         '/demo_registration': (context) => SignUnPage(),
         '/home': (context) => KlayonsHomePage(),
         '/user_setting': (context) => SettingsPage(),
+        // '/batch_details': (context) => ActivityBookingPage(),
         '/notification': (context) => NotificationsPage(),
-        '/activity_booking_page': (context) => ActivityBookingPage(),
+        '/activity_booking_page': (context) => EnrolledPage(),
         //'/course_detail_page': (context) => CourseDetailPage(),
         '/user_profile_page': (context) => UserProfilePage(),
         '/add_child': (context) => AddChildPage(),

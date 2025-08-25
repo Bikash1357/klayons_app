@@ -7,10 +7,6 @@ import '../../../../services/user_child/post_addchildservice.dart';
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../utils/confermation_page.dart';
 
-// Import your ConfirmationPage widget here
-// import 'path/to/confirmation_page.dart';
-
-// Interest model class
 class Interest {
   final int id;
   final String name;

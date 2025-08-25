@@ -172,6 +172,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         centerTitle: false,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+            );
+          },
+          icon: Icon(Icons.arrow_back_ios),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.black87, size: 24),
@@ -355,19 +364,67 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
               const SizedBox(height: 4),
               Text(
-                userProfile?.userEmail ?? 'No email available',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                _getDisplayEmail(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: _getEmailTextColor(),
+                  fontStyle: _isEmailAvailable()
+                      ? FontStyle.normal
+                      : FontStyle.italic,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
-                userProfile?.userPhone ?? 'No phone available',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                _getDisplayPhone(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: _getPhoneTextColor(),
+                  fontStyle: _isPhoneAvailable()
+                      ? FontStyle.normal
+                      : FontStyle.italic,
+                ),
               ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  // Helper methods for email handling
+  String _getDisplayEmail() {
+    if (userProfile?.userEmail == null ||
+        userProfile!.userEmail.trim().isEmpty) {
+      return 'Email not provided';
+    }
+    return userProfile!.userEmail;
+  }
+
+  Color _getEmailTextColor() {
+    return _isEmailAvailable() ? Colors.grey[600]! : Colors.grey[400]!;
+  }
+
+  bool _isEmailAvailable() {
+    return userProfile?.userEmail != null &&
+        userProfile!.userEmail.trim().isNotEmpty;
+  }
+
+  // Helper methods for phone handling
+  String _getDisplayPhone() {
+    if (userProfile?.userPhone == null ||
+        userProfile!.userPhone.trim().isEmpty) {
+      return 'Phone not provided';
+    }
+    return userProfile!.userPhone;
+  }
+
+  Color _getPhoneTextColor() {
+    return _isPhoneAvailable() ? Colors.grey[600]! : Colors.grey[400]!;
+  }
+
+  bool _isPhoneAvailable() {
+    return userProfile?.userPhone != null &&
+        userProfile!.userPhone.trim().isNotEmpty;
   }
 
   Widget _buildChildrenProfilesSection(BuildContext context) {
