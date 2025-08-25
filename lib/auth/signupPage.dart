@@ -233,133 +233,241 @@ class _SignUnPageState extends State<SignUnPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header Image
-            Container(
-              height: 280,
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(20),
-                ),
-                child: Image.asset(
-                  'assets/images/klayons_auth_cover.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-
-            // Form
-            Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Top section with background image - SAME AS LOGIN PAGE
+              Stack(
                 children: [
-                  SizedBox(height: 20),
-
-                  // Name
-                  _buildTextField(_nameController, 'Name*'),
-                  SizedBox(height: 16),
-
-                  // Email or Phone
-                  _buildTextField(_emailOrPhoneController, 'Email or Phone*'),
-                  SizedBox(height: 24),
-
-                  // Residence Type
-                  Text(
-                    'Where do you reside?',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildResidenceOption(
-                        'Society Complex',
-                        Icons.apartment,
-                        'society',
-                      ),
-                      SizedBox(width: 12),
-                      _buildResidenceOption(
-                        'Individual Housing',
-                        Icons.home,
-                        'individual',
-                      ),
-                    ],
-                  ),
-
-                  // Dynamic Fields
-                  if (_selectedResidence == 'society') _buildSocietyField(),
-                  if (_selectedResidence == 'individual') _buildAddressField(),
-
-                  SizedBox(height: 24),
-
-                  // Terms and Privacy Policy with Clickable Links
-                  _buildTermsAndPrivacy(),
-
-                  SizedBox(height: 24),
-
-                  // Submit Button
-                  SizedBox(
+                  Container(
+                    height:
+                        MediaQuery.of(context).size.height *
+                        0.45, // Same as login page
                     width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _isFormValid() && !_isSubmitting
-                          ? _submitForm
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isFormValid() && !_isSubmitting
-                            ? Color(0xFFFF6B35)
-                            : Colors.grey,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(
+                          'assets/images/cropped_cover_img.png',
                         ),
+                        fit: BoxFit.cover, // Same as login page
                       ),
-                      child: _isSubmitting
-                          ? CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            )
-                          : Text(
-                              'Send OTP',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
                   ),
-
-                  SizedBox(height: 20),
-
-                  // Login Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Already have an account? ',
-                        style: TextStyle(color: Colors.grey[600]),
+                  // Back Button positioned at top-left
+                  Positioned(
+                    top: 8,
+                    left: 16,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginPage()),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.black,
+                          size: 20,
                         ),
-                        child: Text(
-                          'Log in',
-                          style: TextStyle(
-                            color: Color(0xFFFF6B35),
-                            fontWeight: FontWeight.w600,
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                        padding: EdgeInsets.all(8),
+                      ),
+                    ),
+                  ),
+                  // Rounded overlay to blend with form section with "Register Here" text
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 45, // Increased height to accommodate text
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                        ),
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Register Here',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+
+              // Form section - SAME STRUCTURE AS LOGIN PAGE
+              Container(
+                width: double.infinity,
+                color: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: 16,
+                    ), // Removed the header text since it's now positioned on the image
+                    // Name
+                    _buildTextField(_nameController, 'Name*'),
+                    SizedBox(height: 16),
+
+                    // Email or Phone
+                    _buildTextField(_emailOrPhoneController, 'Email or Phone*'),
+                    SizedBox(height: 24),
+
+                    // Residence Type
+                    Text(
+                      'Where do you reside?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildResidenceOption(
+                          'Society Complex',
+                          Icons.apartment,
+                          'society',
+                        ),
+                        SizedBox(width: 12),
+                        _buildResidenceOption(
+                          'Individual Housing',
+                          Icons.home,
+                          'individual',
+                        ),
+                      ],
+                    ),
+
+                    // Dynamic Fields
+                    if (_selectedResidence == 'society') _buildSocietyField(),
+                    if (_selectedResidence == 'individual')
+                      _buildAddressField(),
+
+                    SizedBox(height: 32),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isFormValid() && !_isSubmitting
+                            ? _submitForm
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isFormValid() && !_isSubmitting
+                              ? Color(0xFFFF6B35)
+                              : Colors.grey,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: _isSubmitting
+                            ? CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              )
+                            : Text(
+                                'Send OTP',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    SizedBox(height: 24),
+
+                    // Divider with "or"
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(color: Colors.grey[300], thickness: 1),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'or',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(color: Colors.grey[300], thickness: 1),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 24),
+
+                    // Login Link
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            "Already have an account?",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginPage(),
+                              ),
+                            ),
+                            child: Text(
+                              'Log in',
+                              style: TextStyle(
+                                color: Color(0xFFFF6B35),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 32),
+
+                    // Terms and Privacy Policy with Clickable Links
+                    _buildTermsAndPrivacy(),
+
+                    SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -421,6 +529,7 @@ class _SignUnPageState extends State<SignUnPage> {
           decoration: BoxDecoration(
             border: Border.all(
               color: isSelected ? Color(0xFFFF6B35) : Colors.grey[300]!,
+              width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
             color: isSelected
@@ -484,6 +593,14 @@ class _SignUnPageState extends State<SignUnPage> {
             decoration: BoxDecoration(
               border: Border.all(color: Color(0xFFFF6B35)),
               borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             child: ListView.builder(
               shrinkWrap: true,
@@ -544,6 +661,7 @@ class _SignUnPageState extends State<SignUnPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
+              elevation: 2,
             ),
           ),
         ),
@@ -582,7 +700,7 @@ class _SignUnPageState extends State<SignUnPage> {
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
-          style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4),
           children: [
             TextSpan(text: 'By continuing, I agree to the '),
             TextSpan(

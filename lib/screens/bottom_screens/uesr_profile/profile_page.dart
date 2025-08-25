@@ -172,13 +172,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         centerTitle: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
-          ),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.black87, size: 24),

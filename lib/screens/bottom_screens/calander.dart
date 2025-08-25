@@ -75,10 +75,6 @@ class _ActivitySchedulePageState extends State<ActivitySchedulePage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.grey[600]),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Text(
           'ACTIVITY SCHEDULE',
           style: TextStyle(

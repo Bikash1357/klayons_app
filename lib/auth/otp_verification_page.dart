@@ -25,6 +25,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     (index) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
+  bool _isEmail(String input) {
+    return input.contains('@');
+  }
+
   bool _isLoading = false;
   bool _isResending = false;
 
@@ -45,28 +49,56 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Header with background image
+              // Header with background image and back button - UPDATED TO 45%
               Stack(
                 children: [
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.35,
+                    height: MediaQuery.of(context).size.height * 0.45,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage(
-                          'assets/images/klayons_auth_cover.png',
+                          'assets/images/cropped_cover_img.png',
                         ),
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
-                  // Rounded overlay to blend with form section
+                  // iOS-style back button
+                  Positioned(
+                    top: 16,
+                    left: 16,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.black87,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Rounded overlay to blend with form section with "Verify OTP" text
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
                     child: Container(
-                      height: 30,
+                      height: 45,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
@@ -74,27 +106,38 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                           topRight: Radius.circular(30),
                         ),
                       ),
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: Text(
+                            'Verify OTP',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
 
-              // OTP Form Section
+              // OTP Form Section - ADJUSTED FOR NEW LAYOUT
               Container(
                 width: double.infinity,
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height * 0.65,
-                ),
+                color: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: 20),
-
+                    SizedBox(
+                      height: 8,
+                    ), // Reduced spacing since text is now in overlay
                     // Title Text
                     Text(
-                      'We have sent you an One-Time\nPassword on your email',
+                      'We have sent otp on your ${_isEmail(widget.email) ? 'email' : 'phone'}',
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.black87,
@@ -109,7 +152,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     Text(
                       widget.email,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 20,
                         color: Color(0xFFFF6B35),
                         fontWeight: FontWeight.w500,
                       ),
@@ -145,8 +188,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       ),
                     ),
 
-                    SizedBox(height: 100),
-
+                    SizedBox(height: 60), // Adjusted spacing
                     // Submit Button
                     Container(
                       width: double.infinity,
@@ -163,7 +205,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           ),
-                          elevation: 0,
+                          elevation: 2,
                         ),
                         child: _isLoading
                             ? Row(

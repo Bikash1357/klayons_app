@@ -114,252 +114,34 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Widget _getCurrentPage() {
     // Only show the home content when selectedIndex is 0
     if (selectedIndex == 0) {
-      return _getHomePageContent();
+      return HomePageWithAppBar(
+        searchQuery: searchQuery,
+        searchController: searchController,
+        onSearchChanged: (value) {
+          setState(() {
+            searchQuery = value;
+          });
+        },
+        onClearSearch: () {
+          setState(() {
+            searchQuery = '';
+            searchController.clear();
+          });
+        },
+        batchData: batchData,
+        getFilteredBatches: getFilteredBatches,
+      );
     } else {
-      // For other tabs, return the respective pages
+      // For other tabs, return the respective pages (they should have their own AppBars)
       return _pages[selectedIndex];
     }
-  }
-
-  // Extract home page content to a separate method
-  Widget _getHomePageContent() {
-    final filteredBatches = getFilteredBatches();
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Search Field
-          Container(
-            margin: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: TextField(
-              controller: searchController,
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-              decoration: InputDecoration(
-                hintText: 'Search activities...',
-                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-                prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: Colors.grey, size: 20),
-                        onPressed: () {
-                          setState(() {
-                            searchQuery = '';
-                            searchController.clear();
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
-              ),
-            ),
-          ),
-
-          // Fee Reminder Card (only show when not searching)
-          if (searchQuery.isEmpty) ...[
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFF6B35), Color(0xFFFF8A50)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'FEE REMINDER',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Robotics',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Due date on 5th June',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.smart_toy_outlined,
-                        color: Colors.white,
-                        size: 30,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 30),
-          ],
-
-          // Section Title
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  searchQuery.isEmpty
-                      ? 'Explore Activities'
-                      : 'Search Results (${filteredBatches.length})',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (searchQuery.isNotEmpty)
-                  Text(
-                    'for "$searchQuery"',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: 16),
-
-          // Activities List or No Results
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: filteredBatches.isEmpty
-                ? Container(
-                    padding: EdgeInsets.all(40),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.search_off,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No activities found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Try searching with different keywords',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Column(
-                    children: filteredBatches
-                        .map(
-                          (batch) => Column(
-                            children: [
-                              BatchCard(
-                                ageGroup: batch['ageGroup']!,
-                                categoryName: batch['categoryName']!,
-                                activityName: batch['activityName']!,
-                                price: batch['price']!,
-                                location: batch['location']!,
-                                organiser: batch['organiser']!,
-                              ),
-                              SizedBox(height: 16),
-                            ],
-                          ),
-                        )
-                        .toList(),
-                  ),
-          ),
-
-          SizedBox(height: 100), // Extra space for bottom navigation
-        ],
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'klayons',
-          style: TextStyle(
-            color: Color(0xFFFF6B35),
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.black54),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationsPage()),
-              );
-            },
-          ),
-        ],
-      ),
+      // Remove AppBar from here - each page will have its own
       body: _getCurrentPage(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -430,7 +212,256 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 }
 
-// Home page content widget
+// New Home page widget with its own AppBar
+class HomePageWithAppBar extends StatelessWidget {
+  final String searchQuery;
+  final TextEditingController searchController;
+  final Function(String) onSearchChanged;
+  final VoidCallback onClearSearch;
+  final List<Map<String, String>> batchData;
+  final List<Map<String, String>> Function() getFilteredBatches;
+
+  const HomePageWithAppBar({
+    Key? key,
+    required this.searchQuery,
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+    required this.batchData,
+    required this.getFilteredBatches,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredBatches = getFilteredBatches();
+
+    return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text(
+          'klayons',
+          style: TextStyle(
+            color: Color(0xFFFF6B35),
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.notifications_outlined, color: Colors.black54),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationsPage()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Search Field
+            Container(
+              margin: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: searchController,
+                onChanged: onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Search activities...',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear, color: Colors.grey, size: 20),
+                          onPressed: onClearSearch,
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
+                ),
+              ),
+            ),
+
+            // Fee Reminder Card (only show when not searching)
+            if (searchQuery.isEmpty) ...[
+              Container(
+                margin: EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFF6B35), Color(0xFFFF8A50)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'FEE REMINDER',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Robotics',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Due date on 5th June',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.smart_toy_outlined,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+            ],
+
+            // Section Title
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    searchQuery.isEmpty
+                        ? 'Explore Activities'
+                        : 'Search Results (${filteredBatches.length})',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (searchQuery.isNotEmpty)
+                    Text(
+                      'for "$searchQuery"',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: 16),
+
+            // Activities List or No Results
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: filteredBatches.isEmpty
+                  ? Container(
+                      padding: EdgeInsets.all(40),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No activities found',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Try searching with different keywords',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: filteredBatches
+                          .map(
+                            (batch) => Column(
+                              children: [
+                                BatchCard(
+                                  ageGroup: batch['ageGroup']!,
+                                  categoryName: batch['categoryName']!,
+                                  activityName: batch['activityName']!,
+                                  price: batch['price']!,
+                                  location: batch['location']!,
+                                  organiser: batch['organiser']!,
+                                ),
+                                SizedBox(height: 16),
+                              ],
+                            ),
+                          )
+                          .toList(),
+                    ),
+            ),
+
+            SizedBox(height: 100), // Extra space for bottom navigation
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Empty Home page content widget (no longer needed)
 class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -35,54 +35,13 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: BoxDecoration(
                       image: DecorationImage(
                         image: AssetImage(
-                          'assets/images/klayons_auth_cover.png',
+                          'assets/images/cropped_cover_img.png',
                         ),
                         fit: BoxFit.cover,
                       ),
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.5),
-                          ],
-                        ),
-                      ),
-                    ),
                   ),
                   // Branding overlay on the image
-                  Positioned(
-                    bottom: 60,
-                    left: 24,
-                    right: 24,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'klayons',
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Where Children Learn\nand Grow Together',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white.withOpacity(0.9),
-                            height: 1.3,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   // Rounded overlay to blend with form section
                   Positioned(
                     bottom: 0,
@@ -130,6 +89,11 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _emailController,
                       keyboardType: TextInputType
                           .text, // Changed from emailAddress to text
+                      style: TextStyle(
+                        fontSize: 22, // Match OTP input size
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
                     ),
 
                     SizedBox(height: 32),
@@ -254,8 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                                   "Terms of Use",
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.orange,
-                                    decoration: TextDecoration.underline,
+                                    color: Color(0xFFFF6B35),
                                   ),
                                 ),
                               ),
@@ -270,8 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                                   "Privacy Policy",
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.orange,
-                                    decoration: TextDecoration.underline,
+                                    color: Color(0xFFFF6B35),
                                   ),
                                 ),
                               ),
@@ -401,7 +363,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // UPDATED: Use new LoginAuthService
   Future<void> _sendLoginOTP() async {
     String emailOrPhone = _emailController.text.trim();
 
