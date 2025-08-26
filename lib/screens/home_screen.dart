@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
+import 'package:klayons/services/notification/notification_service.dart';
 import 'batch_details_page.dart';
 import 'bottom_screens/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
@@ -30,11 +31,16 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   bool isLoading = false;
   String? errorMessage;
 
+  // Notification badge state
+  int unreadNotificationCount = 0;
+  bool isLoadingNotifications = false;
+
   @override
   void initState() {
     super.initState();
     _initializeAnimation();
     _loadBatchData();
+    _loadNotificationCount(); // Load notification count on init
   }
 
   void _initializeAnimation() {
@@ -66,6 +72,38 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       });
       _showErrorSnackBar();
     }
+  }
+
+  // Load notification count
+  Future<void> _loadNotificationCount() async {
+    if (isLoadingNotifications) return;
+
+    setState(() {
+      isLoadingNotifications = true;
+    });
+
+    try {
+      final announcements = await NotificationService.getAnnouncements();
+      final unreadCount = announcements
+          .where((announcement) => announcement.isUnread)
+          .length;
+
+      setState(() {
+        unreadNotificationCount = unreadCount;
+        isLoadingNotifications = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoadingNotifications = false;
+      });
+      // Silently handle notification count loading errors
+      print('Error loading notification count: $e');
+    }
+  }
+
+  // Method to refresh notification count (call this when returning from notifications page)
+  Future<void> _refreshNotificationCount() async {
+    await _loadNotificationCount();
   }
 
   void _showErrorSnackBar() {
@@ -132,6 +170,16 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
+  // Navigate to notifications page and refresh count on return
+  void _navigateToNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NotificationsPage()),
+    );
+    // Refresh notification count when returning from notifications page
+    _refreshNotificationCount();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,17 +205,49 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.black54),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => NotificationsPage()),
-            ),
+          // Notification icon with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications_outlined, color: Colors.black54),
+                onPressed: _navigateToNotifications,
+              ),
+              // Badge for unread notifications
+              if (unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF6B35),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      unreadNotificationCount > 99
+                          ? '99+'
+                          : unreadNotificationCount.toString(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _loadBatchData,
+        onRefresh: () async {
+          await Future.wait([
+            _loadBatchData(),
+            _refreshNotificationCount(), // Also refresh notification count on pull-to-refresh
+          ]);
+        },
         child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -514,6 +594,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 }
 
+// BatchCard widget remains the same
 class BatchCard extends StatelessWidget {
   final BatchWithActivity batch;
   final VoidCallback onTap;

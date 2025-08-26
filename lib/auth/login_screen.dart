@@ -26,7 +26,6 @@ class _LoginPageState extends State<LoginPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Top section with background image and branding overlay
               Stack(
                 children: [
                   Container(

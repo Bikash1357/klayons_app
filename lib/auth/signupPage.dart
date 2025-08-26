@@ -650,9 +650,7 @@ class _SignUnPageState extends State<SignUnPage> {
                   )
                 : Icon(Icons.my_location, color: Colors.white),
             label: Text(
-              _isLoadingLocation
-                  ? 'Getting Location...'
-                  : 'Auto-fill Area & Pincode',
+              _isLoadingLocation ? 'Getting Location...' : 'locality',
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
             style: ElevatedButton.styleFrom(
