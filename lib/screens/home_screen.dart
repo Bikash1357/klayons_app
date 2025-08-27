@@ -3,7 +3,7 @@ import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/services/notification/notification_service.dart';
 import 'batch_details_page.dart';
-import 'bottom_screens/calander.dart';
+import 'user_calender/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
 
@@ -22,7 +22,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   final List<Widget> _pages = [
     Container(), // Home content handled separately
-    ActivitySchedulePage(),
+    CalendarScreen(),
     EnrolledPage(),
     UserProfilePage(),
   ];

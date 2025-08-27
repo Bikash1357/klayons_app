@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-// models/announcement.dart
 class Announcement {
   final int id;
   final String title;
