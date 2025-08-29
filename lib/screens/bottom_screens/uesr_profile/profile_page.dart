@@ -64,31 +64,82 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-  Future<void> _loadChildren() async {
+  Future<void> _loadChildren({bool clearCache = false}) async {
     try {
       setState(() {
         isLoadingChildren = true;
         childrenErrorMessage = null;
       });
 
+      // Clear cache if requested
+      if (clearCache) {
+        GetChildservices.clearAllCache();
+        print('🗑️ Children cache cleared');
+      }
+
+      // First try to get cached data (unless we just cleared cache)
+      if (!clearCache) {
+        final cachedChildren = GetChildservices.getCachedChildren();
+        if (cachedChildren != null) {
+          setState(() {
+            children = cachedChildren;
+            isLoadingChildren = false;
+          });
+          print(
+            '✅ Children loaded from cache (${cachedChildren.length} items)',
+          );
+          return;
+        }
+      }
+
+      // If no valid cache, fetch from server
       final childrenData = await GetChildservices.fetchChildren();
 
       setState(() {
         children = childrenData;
         isLoadingChildren = false;
       });
+
+      print('✅ Children loaded from server (${childrenData.length} items)');
     } catch (e) {
       setState(() {
         childrenErrorMessage = e.toString();
         isLoadingChildren = false;
       });
 
-      print('Error loading children: $e');
+      print('❌ Error loading children: $e');
     }
   }
 
+  // Add this helper method for refresh with cache clear
+  Future<void> _loadChildrenWithCacheClear() async {
+    return _loadChildren(clearCache: true);
+  }
+
   Future<void> _refreshAll() async {
-    await Future.wait([_loadUserProfile(), _loadChildren()]);
+    print('🔄 Refreshing all data - clearing caches...');
+
+    try {
+      setState(() {
+        isLoading = true;
+        isLoadingChildren = true;
+        errorMessage = null;
+        childrenErrorMessage = null;
+      });
+
+      // Clear the children cache before refreshing
+      GetChildservices.clearAllCache();
+
+      // Clear user profile cache if your GetUserProfileService has cache
+      // GetUserProfileService.clearCache(); // Add this if your service has cache
+
+      // Fetch fresh data from both services
+      await Future.wait([_loadUserProfile(), _loadChildren(clearCache: true)]);
+
+      print('✅ All data refreshed successfully');
+    } catch (e) {
+      print('❌ Error during refresh: $e');
+    }
   }
 
   String _getUserName() {
@@ -710,13 +761,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
 
               // Replace your existing edit button onPressed in _buildChildCard method with this:
+              // In your _buildChildCard method, update the edit button onPressed:
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.grey, size: 16),
                 onPressed: () async {
-                  print('Editing child with ID: ${child.id}'); // Debug log
+                  print('Editing child with ID: ${child.id}');
 
                   try {
-                    // Navigate to AddChildPage in edit mode with child data
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -725,12 +776,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       ),
                     );
 
-                    // If changes were made (result == true), refresh the children list
+                    // If changes were made, clear cache and refresh
                     if (result == true) {
-                      print('Child updated, refreshing list...'); // Debug log
-                      await _loadChildren(); // Reload children data
+                      print('Child updated, clearing cache and refreshing...');
 
-                      // Show success message
+                      // Clear cache and reload with fresh data
+                      GetChildservices.clearAllCache();
+                      await _loadChildren();
+
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -744,7 +797,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       }
                     }
                   } catch (e) {
-                    print('Error navigating to edit page: $e');
+                    print('Error in child edit flow: $e');
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

@@ -101,7 +101,6 @@ class _AddChildPageState extends State<AddChildPage> {
 
   // Delete child API call
   // Updated delete child API call with proper authentication
-  // Updated delete child API call with proper authentication
   Future<bool> _deleteChild(int childId) async {
     try {
       // Use LoginAuthService.getToken() instead of getToken()

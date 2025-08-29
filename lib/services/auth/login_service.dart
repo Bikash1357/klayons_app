@@ -96,19 +96,29 @@ class LoginAuthService {
   }
 
   // Check authentication status
+  // Check authentication status
   static Future<bool> isAuthenticated() async {
     try {
       print('🔍 Starting authentication check...');
 
-      final hasToken = await hasValidToken();
+      final token = await getToken();
 
-      if (hasToken) {
-        print('✅ Authentication successful');
-      } else {
+      if (token == null || token.isEmpty) {
         print('❌ No token found, navigating to login');
+        return false;
       }
 
-      return hasToken;
+      if (!_isValidTokenFormat(token)) {
+        print('❌ Invalid token format');
+        return false;
+      }
+
+      // If token exists and is valid, sync the logged-in flag
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_isLoggedInKey, true);
+
+      print('✅ Authentication successful');
+      return true;
     } catch (e) {
       print('❌ Authentication check error: $e');
       return false;
@@ -370,7 +380,7 @@ class OTPVerificationResponse {
       statusCode: json['status_code'] ?? 0,
       message: json['message'] ?? '',
       isSuccess: httpCode == 200,
-      token: json['access'], // API returns 'access' field for token
+      token: json['access'],
       userData: json['user_data'],
     );
   }

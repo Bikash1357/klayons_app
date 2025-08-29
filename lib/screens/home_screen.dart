@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/services/notification/notification_service.dart';
+import '../services/notification/local_notification_service.dart';
 import 'batch_details_page.dart';
 import 'user_calender/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class KlayonsHomePage extends StatefulWidget {
   @override
@@ -41,6 +43,43 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     _initializeAnimation();
     _loadBatchData();
     _loadNotificationCount(); // Load notification count on init
+    _requestNotificationPermission();
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    final bool hasPermission =
+        await LocalNotificationService.areNotificationsEnabled();
+
+    if (!hasPermission) {
+      // Show dialog explaining why notifications are needed
+      _showPermissionDialog();
+    }
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Enable Notifications'),
+        content: Text(
+          'Please enable notifications to receive important announcements and updates.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Later'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // Use the correct method name
+              await LocalNotificationService.showPermissionDialog();
+            },
+            child: Text('Enable'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _initializeAnimation() {
@@ -206,37 +245,48 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         ),
         actions: [
           // Notification icon with badge
-          Stack(
+          Row(
             children: [
-              IconButton(
-                icon: Icon(Icons.notifications_outlined, color: Colors.black54),
-                onPressed: _navigateToNotifications,
-              ),
-              // Badge for unread notifications
-              if (unreadNotificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF6B35),
-                      borderRadius: BorderRadius.circular(10),
+              Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.black54,
                     ),
-                    constraints: BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      unreadNotificationCount > 99
-                          ? '99+'
-                          : unreadNotificationCount.toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    onPressed: _navigateToNotifications,
                   ),
-                ),
+                  // Badge for unread notifications
+                  if (unreadNotificationCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFFF6B35),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadNotificationCount > 99
+                              ? '99+'
+                              : unreadNotificationCount.toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              SizedBox(width: 10),
             ],
           ),
         ],
