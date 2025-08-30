@@ -29,13 +29,11 @@ class _LoginPageState extends State<LoginPage> {
               Stack(
                 children: [
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.45,
+                    height: MediaQuery.of(context).size.height * 0.35,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage(
-                          'assets/images/cropped_cover_img.png',
-                        ),
+                        image: AssetImage('assets/images/app_cover_img.png'),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -47,12 +45,12 @@ class _LoginPageState extends State<LoginPage> {
                     left: 0,
                     right: 0,
                     child: Container(
-                      height: 30,
+                      height: 15,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(0),
                         ),
                       ),
                     ),
@@ -75,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                          color: Colors.grey[700],
                         ),
                       ),
                     ),
@@ -89,8 +87,8 @@ class _LoginPageState extends State<LoginPage> {
                       keyboardType: TextInputType
                           .text, // Changed from emailAddress to text
                       style: TextStyle(
-                        fontSize: 22, // Match OTP input size
-                        fontWeight: FontWeight.w500,
+                        fontSize: 28, // Match OTP input size
+                        fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
                     ),

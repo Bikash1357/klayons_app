@@ -14,7 +14,7 @@ class CustomTextField extends StatelessWidget {
     required this.controller,
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
-    required TextStyle style,
+    required TextStyle style , fontWeight, fontSize 
   });
 
   @override
@@ -23,7 +23,7 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(fontSize: 14),
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 16),

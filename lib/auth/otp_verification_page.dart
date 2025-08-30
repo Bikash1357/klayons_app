@@ -137,7 +137,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     ), // Reduced spacing since text is now in overlay
                     // Title Text
                     Text(
-                      'We have sent otp on your ${_isEmail(widget.email) ? 'email' : 'phone'}',
+                      'We have sent otp on your ${_isEmail(widget.email) ? 'email' : 'Whatsapp'}',
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.black87,

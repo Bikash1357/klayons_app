@@ -259,10 +259,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
                 // Children Profiles Section
                 _buildChildrenProfilesSection(context),
-                const SizedBox(height: 24),
-
-                // Your Bookings Section
-                _buildYourBookingsSection(),
               ],
             ),
           ),
@@ -900,97 +896,5 @@ class _UserProfilePageState extends State<UserProfilePage> {
       'Interests: ${child.interests.map((i) => '${i.id}: ${i.name}').join(', ')}',
     );
     print('========================');
-  }
-
-  Widget _buildYourBookingsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'YOUR BOOKINGS',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Booking Card
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Booking Image
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey[300],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      color: const Color(0xFF8B4513),
-                      child: const Icon(
-                        Icons.smart_toy,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // Booking Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Robotics',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Batch Starts 1st May',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '₹ 1,299',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFFF6B35),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
   }
 }
