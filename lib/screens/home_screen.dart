@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/services/notification/notification_service.dart';
+import 'package:klayons/utils/styles/fonts.dart';
 import '../services/notification/local_notification_service.dart';
 import 'batch_details_page.dart';
 import 'user_calender/calander.dart';
@@ -237,9 +238,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         elevation: 0,
         title: Text(
           'klayons',
-          style: TextStyle(
+          style: AppTextStyles.headlineSmall.copyWith(
             color: Color(0xFFFF6B35),
-            fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -338,7 +338,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         onChanged: (value) => setState(() => searchQuery = value),
         decoration: InputDecoration(
           hintText: 'Search activities...',
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+          hintStyle: AppTextStyles.titleMedium.copyWith(color: Colors.grey[500]),
           prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
@@ -389,16 +389,15 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                     batchData.isNotEmpty
                         ? batchData.first.activity.name
                         : 'Activity',
-                    style: TextStyle(
+                    style: AppTextStyles.headlineSmall.copyWith(
                       color: Colors.white,
-                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
                     'Due date on 5th June',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    style: AppTextStyles.titleSmall.copyWith(color: Colors.white70),
                   ),
                 ],
               ),
@@ -428,8 +427,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             searchQuery.isEmpty
                 ? 'Explore Activities'
                 : 'Search Results (${filteredBatches.length})',
-            style: TextStyle(
-              fontSize: 20,
+            style: AppTextStyles.titleLarge.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
@@ -437,8 +435,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           if (searchQuery.isNotEmpty)
             Text(
               'for "$searchQuery"',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTextStyles.titleSmall.copyWith(
                 color: Colors.grey[600],
                 fontStyle: FontStyle.italic,
               ),
@@ -477,7 +474,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           SizedBox(height: 16),
           Text(
             'Loading activities...',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -493,7 +490,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           SizedBox(height: 16),
           Text(
             'Something went wrong',
-            style: TextStyle(
+            style: AppTextStyles.titleMedium.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
@@ -502,7 +499,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           SizedBox(height: 8),
           Text(
             errorMessage!,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
@@ -539,7 +536,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             searchQuery.isEmpty
                 ? 'No activities available'
                 : 'No activities found',
-            style: TextStyle(
+            style: AppTextStyles.titleMedium.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[600],
@@ -550,7 +547,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             searchQuery.isEmpty
                 ? 'Check back later for new activities'
                 : 'Try searching with different keywords',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[500]),
           ),
           if (searchQuery.isEmpty) ...[
             SizedBox(height: 16),
@@ -834,11 +831,11 @@ class BatchCard extends StatelessWidget {
                   children: [
                     Text(
                       batch.activity.name,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                                      style: AppTextStyles.titleMedium.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
                     ),
                     if (batch.name != batch.activity.name) ...[
                       SizedBox(height: 4),
@@ -856,10 +853,9 @@ class BatchCard extends StatelessWidget {
               ),
               Text(
                 batch.priceDisplay,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                style: AppTextStyles.titleLarge.copyWith(
                   color: Color(0xFFFF6B35),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
@@ -900,9 +896,8 @@ class BatchCard extends StatelessWidget {
               ),
               child: Text(
                 batch.isActive ? 'View Details' : 'Not Available',
-                style: TextStyle(
+                style: AppTextStyles.titleMedium.copyWith(
                   color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
-                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -921,7 +916,7 @@ class BatchCard extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
           ),
         ),
       ],

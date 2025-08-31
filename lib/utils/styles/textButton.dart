@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/utils/colour.dart';
+import 'fonts.dart';
 
 class CustomTextButton extends StatelessWidget {
   final String text;
@@ -26,7 +27,7 @@ class CustomTextButton extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: AppTextStyles.bodyMedium.copyWith(
           color: textColor,
           fontWeight: FontWeight.w600,
           fontSize: fontSize,

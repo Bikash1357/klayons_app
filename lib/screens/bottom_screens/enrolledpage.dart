@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/activity/activities_batchServices/get_delete_enrolled_service.dart';
+import '../../utils/styles/fonts.dart';
 
 class EnrolledPage extends StatefulWidget {
   const EnrolledPage({Key? key}) : super(key: key);

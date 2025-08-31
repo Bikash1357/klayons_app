@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth/signup_service.dart';
 import '../utils/colour.dart';
 import '../utils/styles/klayonsFont.dart';
+import '../utils/styles/fonts.dart';
 
 class KlayonsSplashScreen extends StatefulWidget {
   const KlayonsSplashScreen({super.key});
@@ -65,11 +66,10 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
                     children: [
                       KlayonsText(),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Fun and Engaging Activities for Kids',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: AppTextStyles.titleMedium.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w300,
                           letterSpacing: 0.2,
@@ -92,10 +92,9 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Loading...',
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: AppTextStyles.titleSmall.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w300,
                       ),

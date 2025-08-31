@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
+import 'package:klayons/utils/styles/fonts.dart';
 import '../services/activity/activities_batchServices/enrollment_service.dart';
 import '../services/user_child/get_ChildServices.dart';
 
@@ -223,7 +224,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           SizedBox(height: 16),
           Text(
             'Loading activity details...',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -250,7 +251,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
             SizedBox(height: 8),
             Text(
               errorMessage!,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16),
@@ -374,7 +375,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
 
                 Text(
                   'Recommended for ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All ages'}',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
                 ),
                 SizedBox(height: 16),
 
@@ -391,7 +392,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                     SizedBox(width: 8),
                     Text(
                       'for full course',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -589,7 +590,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                   Spacer(),
                   Text(
                     '${selectedChild!.gender}, Age: ${_calculateAge(selectedChild!.dob)}',
-                    style: TextStyle(fontSize: 12, color: Colors.green[600]),
+                    style: AppTextStyles.bodySmall.copyWith(color: Colors.green[600]),
                   ),
                 ],
               ),
@@ -745,7 +746,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           batch.activity.description.isNotEmpty
               ? batch.activity.description
               : 'This ${batch.activity.categoryDisplay.toLowerCase()} activity is designed to provide students with hands-on learning experience. Join us for an engaging and educational journey that will help develop new skills and build confidence.',
-          style: TextStyle(fontSize: 14, height: 1.6, color: Colors.grey[700]),
+          style: AppTextStyles.titleSmall.copyWith(height: 1.6, color: Colors.grey[700]),
         ),
       ],
     );
@@ -1315,7 +1316,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                 SizedBox(height: 16),
                 Text(
                   'Would you like to go to login?',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
                 ),
               ],
             ],

@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../../services/calander/children_calendar_service.dart';
 import '../../services/calander/society_batch_calander.dart';
 import '../../services/user_child/get_ChildServices.dart';
+import '../../utils/styles/fonts.dart';
 import 'create_event_dialog.dart';
 import 'event_model.dart';
 
@@ -448,7 +449,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             SizedBox(width: 8),
             Text(
               'Loading...',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -462,10 +463,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: [
             Icon(Icons.error_outline, color: Colors.red, size: 16),
             SizedBox(width: 4),
-            Text('Error', style: TextStyle(fontSize: 12, color: Colors.red)),
+            Text('Error', style: AppTextStyles.bodySmall.copyWith(color: Colors.red)),
             TextButton(
               onPressed: _refreshChildren,
-              child: Text('Retry', style: TextStyle(fontSize: 10)),
+              child: Text('Retry', style: AppTextStyles.bodySmall.copyWith(fontSize: 10)),
             ),
           ],
         ),
@@ -477,7 +478,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
           'No children found',
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey.shade600),
         ),
       );
     }
@@ -516,8 +517,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               child: Text(
                 child.name,
-                style: TextStyle(
-                  fontSize: 12,
+                style: AppTextStyles.bodySmall.copyWith(
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected ? Colors.orange.shade700 : Colors.black,
                 ),
@@ -551,10 +551,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         title: Text(
           'Activity Schedule',
-          style: TextStyle(
+          style: AppTextStyles.headlineSmall.copyWith(
             color: Colors.black,
             fontSize: 20,
-            fontWeight: FontWeight.w600,
           ),
         ),
         backgroundColor: Colors.white,
@@ -608,8 +607,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 padding: EdgeInsets.only(left: 12),
                                 child: Text(
                                   _selectedFilter,
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                  style: AppTextStyles.bodyMedium.copyWith(
                                     color: Colors.black,
                                   ),
                                 ),
@@ -648,9 +646,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text(
+                        child:                         Text(
                           DateFormat('MMMM yyyy').format(_focusedDay),
-                          style: TextStyle(
+                          style: AppTextStyles.titleLarge.copyWith(
                             fontSize: 19,
                             fontWeight: FontWeight.bold,
                             color: Colors.orange,
@@ -668,10 +666,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             color: Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
+                          child:                           Text(
                             '${_selectedChildIds.length} selected',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: AppTextStyles.bodySmall.copyWith(
                               color: Colors.orange.shade700,
                               fontWeight: FontWeight.w500,
                             ),
@@ -731,13 +728,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   },
                   calendarStyle: CalendarStyle(
                     outsideDaysVisible: false,
-                    weekendTextStyle: TextStyle(color: Colors.black),
-                    defaultTextStyle: TextStyle(color: Colors.black),
+                    weekendTextStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.black),
+                    defaultTextStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.black),
                     selectedDecoration: BoxDecoration(
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    selectedTextStyle: TextStyle(
+                    selectedTextStyle: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -745,7 +742,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       color: Colors.orange.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    todayTextStyle: TextStyle(
+                    todayTextStyle: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,
                     ),
@@ -762,16 +759,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     leftChevronVisible: false,
                     rightChevronVisible: false,
                     headerPadding: EdgeInsets.zero,
-                    titleTextStyle: TextStyle(fontSize: 0),
+                    titleTextStyle: AppTextStyles.bodySmall.copyWith(fontSize: 0),
                   ),
                   daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: TextStyle(
+                    weekdayStyle: AppTextStyles.bodySmall.copyWith(
                       color: Colors.grey.shade600,
-                      fontSize: 12,
                     ),
-                    weekendStyle: TextStyle(
+                    weekendStyle: AppTextStyles.bodySmall.copyWith(
                       color: Colors.grey.shade600,
-                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -794,8 +789,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         children: [
                           Text(
                             'No activities for this day',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: AppTextStyles.bodyLarge.copyWith(
                               color: Colors.grey.shade600,
                             ),
                           ),
@@ -804,8 +798,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             SizedBox(height: 8),
                             Text(
                               'Showing schedule for ${_selectedChildIds.length} selected children',
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: AppTextStyles.bodySmall.copyWith(
                                 color: Colors.grey.shade500,
                               ),
                             ),
@@ -815,7 +808,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             SizedBox(height: 16),
                             Text(
                               'Error loading activities',
-                              style: TextStyle(fontSize: 14, color: Colors.red),
+                              style: AppTextStyles.bodyMedium.copyWith(color: Colors.red),
                             ),
                             TextButton(
                               onPressed: _refreshSocietyBatches,
@@ -827,7 +820,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             SizedBox(height: 16),
                             Text(
                               'Error loading booked activities',
-                              style: TextStyle(fontSize: 14, color: Colors.red),
+                              style: AppTextStyles.bodyMedium.copyWith(color: Colors.red),
                             ),
                             TextButton(
                               onPressed: _refreshChildrenCalendar,
@@ -915,8 +908,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     Expanded(
                                       child: Text(
                                         title,
-                                        style: TextStyle(
-                                          fontSize: 16,
+                                        style: AppTextStyles.bodyLarge.copyWith(
                                           fontWeight: FontWeight.w600,
                                           decoration: isCancelled
                                               ? TextDecoration.lineThrough
@@ -939,9 +931,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                             10,
                                           ),
                                         ),
-                                        child: Text(
+                                        child:                                         Text(
                                           'CANCELLED',
-                                          style: TextStyle(
+                                          style: AppTextStyles.bodySmall.copyWith(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w600,
                                             color: Colors.red.shade700,
@@ -953,8 +945,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 SizedBox(height: 4),
                                 Text(
                                   timeText,
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                  style: AppTextStyles.bodyMedium.copyWith(
                                     color: isCancelled
                                         ? Colors.grey.shade500
                                         : Colors.grey.shade600,
@@ -964,8 +955,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   SizedBox(height: 2),
                                   Text(
                                     venue,
-                                    style: TextStyle(
-                                      fontSize: 12,
+                                    style: AppTextStyles.bodySmall.copyWith(
                                       color: isCancelled
                                           ? Colors.grey.shade400
                                           : Colors.grey.shade500,
@@ -976,8 +966,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   SizedBox(height: 2),
                                   Text(
                                     childInfo,
-                                    style: TextStyle(
-                                      fontSize: 12,
+                                    style: AppTextStyles.bodySmall.copyWith(
                                       fontWeight: FontWeight.w500,
                                       color: isCancelled
                                           ? Colors.grey.shade400
@@ -1080,12 +1069,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Activity'),
-        content: Text('Are you sure you want to delete "${event.title}"?'),
+        title: Text('Delete Activity', style: AppTextStyles.titleMedium),
+        content: Text('Are you sure you want to delete "${event.title}"?', style: AppTextStyles.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel'),
+            child: Text('Cancel', style: AppTextStyles.bodyMedium),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1097,7 +1086,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Navigator.of(context).pop();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Delete', style: TextStyle(color: Colors.white)),
+            child: Text('Delete', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
           ),
         ],
       ),

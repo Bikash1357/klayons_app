@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:klayons/config/api_config.dart';
+import 'package:klayons/utils/styles/fonts.dart';
 import 'login_screen.dart';
 import 'otp_verification_page.dart';
 
@@ -203,7 +204,7 @@ class _SignUnPageState extends State<SignUnPage> {
       builder: (context) => AlertDialog(
         title: Text(
           'Already Registered',
-          style: TextStyle(color: Color(0xFFFF6B35)),
+          style: AppTextStyles.titleMedium.copyWith(color: Color(0xFFFF6B35)),
         ),
         content: Text(
           'You have already registered with this ${emailOrPhone.contains('@') ? 'email' : 'phone'}. Please login instead.',
@@ -302,9 +303,7 @@ class _SignUnPageState extends State<SignUnPage> {
                           padding: EdgeInsets.only(top: 16),
                           child: Text(
                             'Register Here',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
+                            style: AppTextStyles.titleLarge.copyWith(
                               color: Colors.black87,
                             ),
                           ),
@@ -337,10 +336,7 @@ class _SignUnPageState extends State<SignUnPage> {
                     // Residence Type
                     Text(
                       'Where do you reside?',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTextStyles.titleMedium,
                     ),
                     SizedBox(height: 12),
                     Row(
@@ -390,8 +386,7 @@ class _SignUnPageState extends State<SignUnPage> {
                               )
                             : Text(
                                 'Send OTP',
-                                style: TextStyle(
-                                  fontSize: 16,
+                                style: AppTextStyles.titleMedium.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -411,9 +406,8 @@ class _SignUnPageState extends State<SignUnPage> {
                           padding: EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'or',
-                            style: TextStyle(
+                            style: AppTextStyles.titleSmall.copyWith(
                               color: Colors.grey[500],
-                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -431,8 +425,7 @@ class _SignUnPageState extends State<SignUnPage> {
                         children: [
                           Text(
                             "Already have an account?",
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: AppTextStyles.titleSmall.copyWith(
                               color: Colors.grey[600],
                             ),
                           ),
@@ -446,10 +439,9 @@ class _SignUnPageState extends State<SignUnPage> {
                             ),
                             child: Text(
                               'Log in',
-                              style: TextStyle(
+                              style: AppTextStyles.titleMedium.copyWith(
                                 color: Color(0xFFFF6B35),
                                 fontWeight: FontWeight.w600,
-                                fontSize: 16,
                               ),
                             ),
                           ),
@@ -480,7 +472,7 @@ class _SignUnPageState extends State<SignUnPage> {
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[500]),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
             // Grey border when inactive
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -546,7 +538,7 @@ class _SignUnPageState extends State<SignUnPage> {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: isSelected ? Color(0xFFFF6B35) : Colors.grey,
                     fontWeight: isSelected
                         ? FontWeight.w600
@@ -569,7 +561,7 @@ class _SignUnPageState extends State<SignUnPage> {
           controller: _searchController,
           decoration: InputDecoration(
             hintText: 'Search Society Complex*',
-            hintStyle: TextStyle(color: Colors.grey[500]),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
             prefixIcon: Icon(Icons.search, color: Color(0xFFFF6B35)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -649,10 +641,10 @@ class _SignUnPageState extends State<SignUnPage> {
                     ),
                   )
                 : Icon(Icons.my_location, color: Colors.white),
-            label: Text(
-              _isLoadingLocation ? 'Getting Location...' : 'locality',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
+                          label: Text(
+                _isLoadingLocation ? 'Getting Location...' : 'locality',
+                style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
+              ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFFF6B35),
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -671,7 +663,7 @@ class _SignUnPageState extends State<SignUnPage> {
           controller: _addressController,
           decoration: InputDecoration(
             hintText: 'Area, Pincode*',
-            hintStyle: TextStyle(color: Colors.grey[500]),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Color(0xFFFF6B35)),
@@ -698,7 +690,7 @@ class _SignUnPageState extends State<SignUnPage> {
       child: RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
-          style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4),
+          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[500], height: 1.4),
           children: [
             TextSpan(text: 'By continuing, I agree to the '),
             TextSpan(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:klayons/screens/user_calender/recurrence_dialog.dart';
 
+import '../../utils/styles/fonts.dart';
 import 'event_model.dart';
 
 class CreateEventDialog extends StatefulWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:klayons/services/auth/signup_service.dart';
 import 'package:klayons/services/auth/login_service.dart';
+import 'package:klayons/utils/styles/fonts.dart';
 
 import '../screens/home_screen.dart';
 
@@ -111,9 +112,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                           padding: EdgeInsets.only(top: 16),
                           child: Text(
                             'Verify OTP',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
+                            style: AppTextStyles.titleLarge.copyWith(
                               color: Colors.black87,
                             ),
                           ),
@@ -138,10 +137,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     // Title Text
                     Text(
                       'We have sent otp on your ${_isEmail(widget.email) ? 'email' : 'Whatsapp'}',
-                      style: TextStyle(
-                        fontSize: 18,
+                      style: AppTextStyles.titleMedium.copyWith(
                         color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
@@ -151,10 +149,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     // Show email for clarity
                     Text(
                       widget.email,
-                      style: TextStyle(
-                        fontSize: 20,
+                      style: AppTextStyles.titleLarge.copyWith(
                         color: Color(0xFFFF6B35),
-                        fontWeight: FontWeight.w500,
+                        fontSize: 20,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -178,11 +175,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       onPressed: _isResending ? null : _resendOTP,
                       child: Text(
                         _isResending ? 'Resending...' : 'Resend Code',
-                        style: TextStyle(
+                        style: AppTextStyles.titleMedium.copyWith(
                           color: _isResending
                               ? Colors.grey
                               : Color(0xFFFF6B35), // Orange color
-                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -224,8 +220,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                   SizedBox(width: 10),
                                   Text(
                                     'Verifying...',
-                                    style: TextStyle(
-                                      fontSize: 16,
+                                    style: AppTextStyles.titleMedium.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -233,8 +228,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                               )
                             : Text(
                                 'Submit',
-                                style: TextStyle(
-                                  fontSize: 16.0,
+                                style: AppTextStyles.titleMedium.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -289,7 +283,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             controller: _otpControllers[index],
             focusNode: _focusNodes[index],
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: AppTextStyles.titleLarge.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.black87,

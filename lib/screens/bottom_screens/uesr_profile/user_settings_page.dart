@@ -4,6 +4,7 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 
 import '../../../services/auth/login_service.dart';
 import '../../../services/get_userprofile_service.dart';
+import '../../../utils/styles/fonts.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -268,23 +269,18 @@ class _SettingsPageState extends State<SettingsPage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            'Confirm Logout',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
+          title: const Text('Confirm Logout', style: AppTextStyles.titleLarge),
           content: const Text(
             'Are you sure you want to log out?',
-            style: TextStyle(fontSize: 16),
+            style: AppTextStyles.bodyLarge,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 'Cancel',
-                style: TextStyle(
+                style: AppTextStyles.bodyLarge.copyWith(
                   color: Colors.grey[600],
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -293,11 +289,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 Navigator.of(context).pop();
                 _performLogout();
               },
-              child: const Text(
+              child: Text(
                 'Yes',
-                style: TextStyle(
+                style: AppTextStyles.bodyLarge.copyWith(
                   color: Colors.orange,
-                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -484,7 +479,7 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.only(top: 4, left: 12),
             child: Text(
               errorText,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: AppTextStyles.bodySmall.copyWith(color: Colors.red),
             ),
           ),
       ],
@@ -495,10 +490,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'SETTINGS',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
+        title: const Text('SETTINGS', style: AppTextStyles.titleLarge),
         backgroundColor: const Color(0xFFF5F5F5),
         elevation: 0,
         leading: IconButton(
@@ -532,9 +524,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'BASIC INFORMATION',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                          style: AppTextStyles.titleSmall.copyWith(
                             color: Colors.grey[600],
                             letterSpacing: 0.5,
                           ),
@@ -617,9 +607,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'ADDRESS INFORMATION',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                          style: AppTextStyles.titleSmall.copyWith(
                             color: Colors.grey[600],
                             letterSpacing: 0.5,
                           ),
@@ -701,11 +689,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _userProfile!.profileComplete
                                     ? 'Profile Complete'
                                     : 'Profile Incomplete',
-                                style: TextStyle(
+                                style: AppTextStyles.titleMedium.copyWith(
                                   color: _userProfile!.profileComplete
                                       ? Colors.green[700]
                                       : Colors.orange[700],
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -737,10 +724,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Save Details',
-                                  style: TextStyle(
-                                    fontSize: 16,
+                                  style: AppTextStyles.bodyLarge.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),
@@ -771,19 +757,15 @@ class _SettingsPageState extends State<SettingsPage> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Logging out...',
-                                  style: TextStyle(
+                                  style: AppTextStyles.titleMedium.copyWith(
                                     color: Colors.grey[600],
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ] else ...[
-                                const Text(
+                                Text(
                                   'Log Out',
-                                  style: TextStyle(
+                                  style: AppTextStyles.titleMedium.copyWith(
                                     color: Colors.orange,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],

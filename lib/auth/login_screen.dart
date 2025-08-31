@@ -6,6 +6,7 @@ import 'package:klayons/utils/styles/textButton.dart';
 import 'package:klayons/utils/styles/textboxes.dart';
 import 'package:klayons/services/auth/login_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/styles/errorMessage.dart';
 import 'otp_verification_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,239 +14,301 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
   final TextEditingController _emailController = TextEditingController();
-  bool _isAgreeChecked = false;
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode _emailFocusNode = FocusNode();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Add listener to text controller to enable/disable button
+    _emailController.addListener(_onTextChanged);
+
+    // Add focus listener to auto-scroll when keyboard appears
+    _emailFocusNode.addListener(_onFocusChanged);
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      // This will trigger rebuild and update button state
+    });
+  }
+
+  void _onFocusChanged() {
+    if (_emailFocusNode.hasFocus) {
+      // Delay scroll to allow keyboard to appear
+      Future.delayed(Duration(milliseconds: 300), () {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    height: MediaQuery.of(context).size.height * 0.35,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/app_cover_img.png'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  // Branding overlay on the image
-                  // Rounded overlay to blend with form section
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 15,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(0),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Form section
-              Container(
-                width: double.infinity,
-                color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Login form header
-                    Center(
-                      child: Text(
-                        'Log in to your account',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 32),
-
-                    // Email input field
-                    CustomTextField(
-                      hintText: "Email or Phone",
-                      controller: _emailController,
-                      keyboardType: TextInputType
-                          .text, // Changed from emailAddress to text
-                      style: TextStyle(
-                        fontSize: 28, // Match OTP input size
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-
-                    SizedBox(height: 32),
-
-                    // Send OTP Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OrangeButton(
-                        onPressed: _isLoading
-                            ? null
-                            : (_emailController.text.trim().isNotEmpty
-                                  ? _sendLoginOTP
-                                  : null),
-                        child: _isLoading
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Text(
-                                    "Sending OTP...",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Text(
-                                "Send OTP",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
-
-                    SizedBox(height: 24),
-
-                    // Divider with "or"
-                    Row(
+        child: Stack(
+          children: [
+            // Main content
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: Divider(color: Colors.grey[300], thickness: 1),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'or',
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(color: Colors.grey[300], thickness: 1),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 24),
-
-                    // Register link
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            "Don't have an account?",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          CustomTextButton(
-                            text: "Register here!",
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SignUnPage(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 32),
-
-                    // Terms and Privacy Policy moved to bottom
-                    Center(
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                            height: 1.4,
-                          ),
+                        Stack(
                           children: [
-                            TextSpan(text: "By continuing, I agree to the "),
-                            WidgetSpan(
-                              alignment: PlaceholderAlignment.baseline,
-                              baseline: TextBaseline.alphabetic,
-                              child: GestureDetector(
-                                onTap: _launchTermsUrl,
-                                child: Text(
-                                  "Terms of Use",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFFF6B35),
+                            Container(
+                              height: MediaQuery.of(context).size.height * 0.35,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: AssetImage(
+                                    'assets/images/app_cover_img.png',
                                   ),
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
-                            TextSpan(text: " & "),
-                            WidgetSpan(
-                              alignment: PlaceholderAlignment.baseline,
-                              baseline: TextBaseline.alphabetic,
-                              child: GestureDetector(
-                                onTap: _launchPrivacyPolicyUrl,
-                                child: Text(
-                                  "Privacy Policy",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFFF6B35),
+                            // Rounded overlay to blend with form section
+                            Positioned(
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              child: Container(
+                                height: 15,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(20),
+                                    topRight: Radius.circular(0),
                                   ),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
 
-                    SizedBox(height: 24),
-                  ],
+                        // Form section
+                        Container(
+                          width: double.infinity,
+                          color: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24.0,
+                            vertical: 32.0,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Login form header
+                              Center(
+                                child: Text(
+                                  'Log in to your account',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(height: 32),
+
+                              // Email/Phone input field with input formatter
+                              CustomTextField(
+                                hintText: "Email or Phone",
+                                controller: _emailController,
+                                focusNode: _emailFocusNode,
+                                keyboardType: TextInputType.text,
+                                inputFormatters: [PhoneNumberInputFormatter()],
+                              ),
+
+                              SizedBox(height: 32),
+
+                              // Send OTP Button - now activates when user starts typing
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: OrangeButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : (_emailController.text.trim().isNotEmpty
+                                            ? _sendLoginOTP
+                                            : null),
+                                  child: _isLoading
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
+                                            ),
+                                            SizedBox(width: 12),
+                                            Text(
+                                              "Sending OTP...",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          "Send OTP",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                ),
+                              ),
+
+                              SizedBox(height: 24),
+
+                              // Divider with "or"
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(
+                                      color: Colors.grey[300],
+                                      thickness: 1,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Text(
+                                      'or',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Divider(
+                                      color: Colors.grey[300],
+                                      thickness: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: 24),
+
+                              // Register link
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "Don't have an account?",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    CustomTextButton(
+                                      text: "Register here!",
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => SignUnPage(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              SizedBox(height: 32),
+
+                              // Terms and Privacy Policy moved to bottom
+                              Center(
+                                child: RichText(
+                                  textAlign: TextAlign.center,
+                                  text: TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[500],
+                                      height: 1.4,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: "By continuing, I agree to the ",
+                                      ),
+                                      WidgetSpan(
+                                        alignment:
+                                            PlaceholderAlignment.baseline,
+                                        baseline: TextBaseline.alphabetic,
+                                        child: GestureDetector(
+                                          onTap: _launchTermsUrl,
+                                          child: Text(
+                                            "Terms of Use",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFFFF6B35),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      TextSpan(text: " & "),
+                                      WidgetSpan(
+                                        alignment:
+                                            PlaceholderAlignment.baseline,
+                                        baseline: TextBaseline.alphabetic,
+                                        child: GestureDetector(
+                                          onTap: _launchPrivacyPolicyUrl,
+                                          child: Text(
+                                            "Privacy Policy",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFFFF6B35),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+
+            // Bottom error message overlay
+            buildBottomErrorMessage(),
+          ],
         ),
       ),
     );
@@ -365,7 +428,7 @@ class _LoginPageState extends State<LoginPage> {
 
     // Basic validation for email or phone
     if (emailOrPhone.isEmpty) {
-      _showErrorMessage('Please enter your email or phone number');
+      showBottomError('Please enter your email or phone number');
       return;
     }
 
@@ -373,13 +436,13 @@ class _LoginPageState extends State<LoginPage> {
     if (emailOrPhone.contains('@')) {
       // Validate email format
       if (!_isValidEmail(emailOrPhone)) {
-        _showErrorMessage('Please enter a valid email address');
+        showBottomError('Please enter a valid email address');
         return;
       }
     } else {
-      // Validate phone format (basic check)
+      // Validate phone format - check for exactly 10 digits
       if (!_isValidPhone(emailOrPhone)) {
-        _showErrorMessage('Please enter a valid phone number');
+        showBottomError('Please enter a valid 10-digit phone number');
         return;
       }
     }
@@ -432,11 +495,11 @@ class _LoginPageState extends State<LoginPage> {
           errorMessage = 'Server error. Please try again later.';
         }
 
-        _showErrorMessage(errorMessage);
+        showBottomError(errorMessage);
       }
     } catch (e) {
       print('❌ Login OTP error: $e');
-      _showErrorMessage(
+      showBottomError(
         'Network error. Please check your connection and try again.',
       );
     } finally {
@@ -453,13 +516,13 @@ class _LoginPageState extends State<LoginPage> {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  // Phone validation (basic check)
+  // Enhanced phone validation - must be exactly 10 digits
   bool _isValidPhone(String phone) {
     // Remove any non-digit characters for validation
     String digitsOnly = phone.replaceAll(RegExp(r'[^\d]'), '');
 
-    // Check if it's a valid phone number (between 7-15 digits)
-    return digitsOnly.length >= 7 && digitsOnly.length <= 15;
+    // Check if it's exactly 10 digits for phone numbers
+    return digitsOnly.length == 10;
   }
 
   void _showSuccessMessage(String message) {
@@ -483,30 +546,46 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _showErrorMessage(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-    }
-  }
-
   @override
   void dispose() {
+    _emailController.removeListener(_onTextChanged);
     _emailController.dispose();
+    _emailFocusNode.removeListener(_onFocusChanged);
+    _emailFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+}
+
+// Custom input formatter for phone number limitation
+class PhoneNumberInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String newText = newValue.text;
+
+    // If the new text contains '@', it's likely an email, so allow it
+    if (newText.contains('@')) {
+      return newValue;
+    }
+
+    // Remove any non-digit characters
+    String digitsOnly = newText.replaceAll(RegExp(r'[^\d]'), '');
+
+    // If all characters are digits, limit to 10 digits
+    if (digitsOnly == newText) {
+      if (digitsOnly.length > 10) {
+        // Limit to 10 digits
+        digitsOnly = digitsOnly.substring(0, 10);
+        return TextEditingValue(
+          text: digitsOnly,
+          selection: TextSelection.collapsed(offset: digitsOnly.length),
+        );
+      }
+    }
+
+    return newValue;
   }
 }

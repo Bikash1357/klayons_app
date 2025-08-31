@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../utils/styles/fonts.dart';
 import 'event_model.dart';
 
 class RecurrenceDialog extends StatefulWidget {

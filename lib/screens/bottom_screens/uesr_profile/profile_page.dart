@@ -5,6 +5,7 @@ import 'package:klayons/screens/home_screen.dart';
 
 import '../../../services/user_child/get_ChildServices.dart';
 import '../../../services/get_userprofile_service.dart';
+import '../../../utils/styles/fonts.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({Key? key}) : super(key: key);
@@ -215,12 +216,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         elevation: 0,
         title: const Text(
           'YOUR PROFILE',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
-          ),
+          style: AppTextStyles.titleMedium,
         ),
         centerTitle: false,
         leading: IconButton(
@@ -350,14 +346,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
       children: [
         const Icon(Icons.error_outline, color: Colors.red, size: 48),
         const SizedBox(height: 12),
-        Text(
-          'Failed to load profile',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+                  Text(
+            'Failed to load profile',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: Colors.grey[700],
+            ),
           ),
-        ),
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed: _loadUserProfile,
@@ -403,17 +397,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
             children: [
               Text(
                 _getUserName(),
-                style: const TextStyle(
+                style: AppTextStyles.titleLarge.copyWith(
                   fontSize: 18,
-                  fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 _getDisplayEmail(),
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: _getEmailTextColor(),
                   fontStyle: _isEmailAvailable()
                       ? FontStyle.normal
@@ -423,8 +415,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               const SizedBox(height: 2),
               Text(
                 _getDisplayPhone(),
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: _getPhoneTextColor(),
                   fontStyle: _isPhoneAvailable()
                       ? FontStyle.normal
@@ -484,12 +475,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           children: [
             const Text(
               'CHILDREN PROFILES',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-                letterSpacing: 0.5,
-              ),
+              style: AppTextStyles.titleMedium,
             ),
             IconButton(
               icon: const Icon(Icons.add, color: Colors.black87, size: 24),
@@ -658,9 +644,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 12),
           Text(
             'Failed to load children profiles',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            style: AppTextStyles.titleMedium.copyWith(
               color: Colors.grey[700],
             ),
           ),
@@ -702,16 +686,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 12),
           Text(
             'No children profiles found',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            style: AppTextStyles.titleMedium.copyWith(
               color: Colors.grey[700],
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Add your first child profile',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -819,7 +801,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Child ID (for debugging - you can remove this in production)
               Text(
                 'ID: ${child.id}',
-                style: TextStyle(
+                style: AppTextStyles.bodySmall.copyWith(
                   fontSize: 10,
                   color: Colors.grey[400],
                   fontStyle: FontStyle.italic,
@@ -830,9 +812,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Child Name
               Text(
                 child.name,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                style: AppTextStyles.titleSmall.copyWith(
                   color: Colors.black87,
                 ),
               ),
@@ -841,14 +821,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Birth Date
               Text(
                 'Birthdate: ${_formatDate(child.dob)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
               ),
               const SizedBox(height: 2),
 
               // Gender
               Text(
                 'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
               ),
 
               // Show interests if available
@@ -856,7 +836,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 const SizedBox(height: 4),
                 Text(
                   'Interests: ${child.interests.take(2).map((i) => i.name).join(', ')}${child.interests.length > 2 ? '...' : ''}',
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 10,
                     color: Colors.grey[500],
                     fontStyle: FontStyle.italic,
@@ -868,7 +848,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 const SizedBox(height: 4),
                 Text(
                   'No interests added',
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontSize: 10,
                     color: Colors.grey[400],
                     fontStyle: FontStyle.italic,
