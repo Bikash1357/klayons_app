@@ -8,6 +8,7 @@ import 'package:klayons/services/auth/login_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/styles/errorMessage.dart';
 import 'otp_verification_page.dart';
+import '../utils/colour.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -75,7 +76,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                               decoration: BoxDecoration(
                                 image: DecorationImage(
                                   image: AssetImage(
-                                    'assets/images/app_cover_img.png',
+                                    'assets/images/Auth_Header_img.png',
                                   ),
                                   fit: BoxFit.cover,
                                 ),
@@ -92,7 +93,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.only(
                                     topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(0),
+                                    topRight: Radius.circular(20),
                                   ),
                                 ),
                               ),
@@ -118,7 +119,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey[700],
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),

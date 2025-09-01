@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:klayons/services/auth/signup_service.dart';
 import 'package:klayons/services/auth/login_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
-
+import '../utils/colour.dart';
 import '../screens/home_screen.dart';
+import 'dart:async';
+
+import '../utils/styles/button.dart'; // Adjust the import path as needed
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
@@ -26,12 +29,19 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     (index) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
-  bool _isEmail(String input) {
-    return input.contains('@');
-  }
 
   bool _isLoading = false;
   bool _isResending = false;
+  int _currentFocusIndex = 0;
+
+  // Timer for resend functionality
+  Timer? _resendTimer;
+  int _resendCountdown = 0;
+  bool _canResend = true;
+
+  bool _isEmail(String input) {
+    return input.contains('@');
+  }
 
   @override
   void initState() {
@@ -39,6 +49,39 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     // Auto focus on first field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
+      _currentFocusIndex = 0;
+    });
+
+    // Add focus listeners to track current focus
+    for (int i = 0; i < _focusNodes.length; i++) {
+      _focusNodes[i].addListener(() {
+        if (_focusNodes[i].hasFocus) {
+          setState(() {
+            _currentFocusIndex = i;
+          });
+        }
+      });
+    }
+
+    // Start resend timer
+    _startResendTimer();
+  }
+
+  void _startResendTimer() {
+    setState(() {
+      _canResend = false;
+      _resendCountdown = 30;
+    });
+
+    _resendTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (_resendCountdown > 0) {
+          _resendCountdown--;
+        } else {
+          _canResend = true;
+          timer.cancel();
+        }
+      });
     });
   }
 
@@ -50,17 +93,15 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Header with background image and back button - UPDATED TO 45%
+              // Header with background image and back button
               Stack(
                 children: [
                   Container(
-                    height: MediaQuery.of(context).size.height * 0.45,
+                    height: MediaQuery.of(context).size.height * 0.35,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage(
-                          'assets/images/cropped_cover_img.png',
-                        ),
+                        image: AssetImage('assets/images/Auth_Header_img.png'),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -93,29 +134,18 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       ),
                     ),
                   ),
-                  // Rounded overlay to blend with form section with "Verify OTP" text
+                  // Rounded overlay to blend with form section
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
                     child: Container(
-                      height: 45,
+                      height: 15,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                      ),
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 16),
-                          child: Text(
-                            'Verify OTP',
-                            style: AppTextStyles.titleLarge.copyWith(
-                              color: Colors.black87,
-                            ),
-                          ),
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
                       ),
                     ),
@@ -123,116 +153,154 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                 ],
               ),
 
-              // OTP Form Section - ADJUSTED FOR NEW LAYOUT
+              // Title
+              Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: Text(
+                    'Verify Profile',
+                    style: AppTextStyles.titleLarge.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+              ),
+
+              // OTP Form Section
               Container(
                 width: double.infinity,
                 color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(
-                      height: 8,
-                    ), // Reduced spacing since text is now in overlay
-                    // Title Text
+                    SizedBox(height: 8),
+
+                    // Description Text
                     Text(
-                      'We have sent otp on your ${_isEmail(widget.email) ? 'email' : 'Whatsapp'}',
+                      'We have sent you an OTP on ${_isEmail(widget.email) ? 'email' : 'WhatsApp'} at',
                       style: AppTextStyles.titleMedium.copyWith(
-                        color: Colors.black87,
-                        fontSize: 18,
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
                         height: 1.4,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 8),
 
-                    // Show email for clarity
+                    // Email/Phone display
                     Text(
                       widget.email,
                       style: AppTextStyles.titleLarge.copyWith(
-                        color: Color(0xFFFF6B35),
-                        fontSize: 20,
+                        color: AppColors.primaryOrange,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 40),
 
-                    // OTP Input Boxes
+                    // OTP Input Boxes with timer and resend
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: List.generate(
-                          6,
-                          (index) => _buildOTPBox(index),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 30),
-
-                    // Resend Code
-                    TextButton(
-                      onPressed: _isResending ? null : _resendOTP,
-                      child: Text(
-                        _isResending ? 'Resending...' : 'Resend Code',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: _isResending
-                              ? Colors.grey
-                              : Color(0xFFFF6B35), // Orange color
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 60), // Adjusted spacing
-                    // Submit Button
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _verifyOTP,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isLoading
-                              ? Colors.grey[300]
-                              : Color(
-                                  0xFFFF6B35,
-                                ), // Match registration page color
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
+                      child: Column(
+                        children: [
+                          // OTP Boxes
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: List.generate(
+                              6,
+                              (index) => _buildOTPBox(index),
+                            ),
                           ),
-                          elevation: 2,
-                        ),
-                        child: _isLoading
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
+                          SizedBox(height: 12),
+
+                          // Timer and Resend Code aligned with OTP boxes
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Timer display on left - aligned with first OTP box
+                              Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Text(
+                                  '00:${_resendCountdown.toString().padLeft(2, '0')}',
+                                  style: AppTextStyles.titleMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14,
                                   ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'Verifying...',
-                                    style: AppTextStyles.titleMedium.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Text(
-                                'Submit',
-                                style: AppTextStyles.titleMedium.copyWith(
-                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
+
+                              // Resend Code on right - aligned with last OTP box
+                              TextButton(
+                                onPressed: (_canResend && !_isResending)
+                                    ? _resendOTP
+                                    : null,
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size(0, 0),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  _isResending ? 'Resending...' : 'Resend Code',
+                                  style: AppTextStyles.titleMedium.copyWith(
+                                    color: (_canResend && !_isResending)
+                                        ? AppColors.primaryOrange
+                                        : Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
+                    ),
+
+                    SizedBox(height: 60),
+
+                    // Submit Button using OrangeButton
+                    OrangeButton(
+                      onPressed: _verifyOTP,
+                      isDisabled: _isLoading || !_isOTPComplete(),
+                      child: _isLoading
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Verifying...',
+                                  style: AppTextStyles.titleMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'Submit',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                     SizedBox(height: 30),
                   ],
@@ -246,20 +314,33 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   }
 
   Widget _buildOTPBox(int index) {
+    bool isCurrentFocus = _currentFocusIndex == index;
+    bool isFilled = _otpControllers[index].text.isNotEmpty;
+
     return Flexible(
       child: Container(
-        width: 50,
-        height: 55,
+        width: 45,
+        height: 50,
         margin: EdgeInsets.symmetric(horizontal: 4.0),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: Colors.white,
           border: Border.all(
-            color: _otpControllers[index].text.isNotEmpty
-                ? Color(0xFFFF6B35) // Orange border when filled
-                : Colors.grey[300]!,
-            width: 2,
+            color: isCurrentFocus
+                ? AppColors
+                      .primaryOrange // Orange border only for focused field
+                : Colors.grey[300]!, // Grey border for unfocused fields
+            width: isCurrentFocus ? 2 : 1,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isCurrentFocus
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryOrange.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: RawKeyboardListener(
           focusNode: FocusNode(),
@@ -270,7 +351,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   // Move to previous field and clear it
                   _focusNodes[index - 1].requestFocus();
                   _otpControllers[index - 1].clear();
-                  setState(() {});
+                  setState(() {
+                    _currentFocusIndex = index - 1;
+                  });
                 } else if (_otpControllers[index].text.isNotEmpty) {
                   // Clear current field
                   _otpControllers[index].clear();
@@ -284,9 +367,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             focusNode: _focusNodes[index],
             textAlign: TextAlign.center,
             style: AppTextStyles.titleLarge.copyWith(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: AppColors.textSecondary,
             ),
             keyboardType: TextInputType.number,
             maxLength: 1,
@@ -310,6 +393,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                 // Move to next field
                 if (index < 5) {
                   _focusNodes[index + 1].requestFocus();
+                  _currentFocusIndex = index + 1;
                 } else {
                   // Last field, remove focus
                   _focusNodes[index].unfocus();
@@ -317,6 +401,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
               }
             },
             onTap: () {
+              setState(() {
+                _currentFocusIndex = index;
+              });
               // Select all text when tapped, so typing replaces it
               _otpControllers[index].selection = TextSelection(
                 baseOffset: 0,
@@ -383,9 +470,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             // Use direct navigation instead of named routes
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (context) => KlayonsHomePage(),
-              ), // Make sure to import this
+              MaterialPageRoute(builder: (context) => KlayonsHomePage()),
               (route) => false,
             );
           }
@@ -416,6 +501,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   }
 
   Future<void> _resendOTP() async {
+    if (!_canResend || _isResending) return;
+
     setState(() {
       _isResending = true;
     });
@@ -436,10 +523,14 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         _showSuccessMessage(
           result.message.isNotEmpty
               ? result.message
-              : 'OTP has been resent to your email.',
+              : 'OTP has been resent to your ${_isEmail(widget.email) ? 'email' : 'WhatsApp'}.',
         );
         _clearOTPFields();
         _focusNodes[0].requestFocus();
+        _currentFocusIndex = 0;
+
+        // Restart the timer
+        _startResendTimer();
       } else {
         print('Failed to resend OTP: ${result.message}');
         _showErrorMessage(
@@ -509,6 +600,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     for (var controller in _otpControllers) {
       controller.dispose();
     }

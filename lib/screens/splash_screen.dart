@@ -3,6 +3,7 @@ import '../services/auth/signup_service.dart';
 import '../utils/colour.dart';
 import '../utils/styles/klayonsFont.dart';
 import '../utils/styles/fonts.dart';
+import 'package:klayons/utils/colour.dart';
 
 class KlayonsSplashScreen extends StatefulWidget {
   const KlayonsSplashScreen({super.key});
@@ -55,7 +56,7 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(color: Color(0xFFFF6B35)),
+        decoration: const BoxDecoration(color: AppColors.primaryOrange),
         child: SafeArea(
           child: Column(
             children: [

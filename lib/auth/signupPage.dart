@@ -7,8 +7,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'package:klayons/config/api_config.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import 'package:klayons/utils/styles/button.dart';
+import 'package:klayons/utils/colour.dart';
+import 'package:klayons/utils/styles/textboxes.dart';
+import '../utils/styles/textButton.dart';
 import 'login_screen.dart';
 import 'otp_verification_page.dart';
+import 'package:klayons/utils/styles/button.dart';
 
 class Society {
   final int id;
@@ -214,7 +219,7 @@ class _SignUnPageState extends State<SignUnPage> {
             onPressed: () => Navigator.pop(context),
             child: Text('Cancel'),
           ),
-          ElevatedButton(
+          OrangeButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.push(
@@ -223,7 +228,6 @@ class _SignUnPageState extends State<SignUnPage> {
               );
             },
             child: Text('Go to Login'),
-            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFFF6B35)),
           ),
         ],
       ),
@@ -244,13 +248,11 @@ class _SignUnPageState extends State<SignUnPage> {
                   Container(
                     height:
                         MediaQuery.of(context).size.height *
-                        0.45, // Same as login page
+                        0.35, // Same as login page
                     width: double.infinity,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: AssetImage(
-                          'assets/images/cropped_cover_img.png',
-                        ),
+                        image: AssetImage('assets/images/Auth_Header_img.png'),
                         fit: BoxFit.cover, // Same as login page
                       ),
                     ),
@@ -284,29 +286,18 @@ class _SignUnPageState extends State<SignUnPage> {
                       ),
                     ),
                   ),
-                  // Rounded overlay to blend with form section with "Register Here" text
+                  // Rounded overlay to blend with form section - SAME AS LOGIN PAGE
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
                     child: Container(
-                      height: 45, // Increased height to accommodate text
+                      height: 15, // Same as login page
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                      ),
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 16),
-                          child: Text(
-                            'Register Here',
-                            style: AppTextStyles.titleLarge.copyWith(
-                              color: Colors.black87,
-                            ),
-                          ),
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
                         ),
                       ),
                     ),
@@ -322,15 +313,34 @@ class _SignUnPageState extends State<SignUnPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      height: 16,
-                    ), // Removed the header text since it's now positioned on the image
+                    // Signup form header - SAME STYLING AS LOGIN PAGE
+                    Center(
+                      child: Text(
+                        'Create your account',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: 32),
+
                     // Name
-                    _buildTextField(_nameController, 'Name*'),
+                    CustomTextField(
+                      hintText: 'Name*',
+                      controller: _nameController,
+                      keyboardType: TextInputType.text,
+                    ),
                     SizedBox(height: 16),
 
                     // Email or Phone
-                    _buildTextField(_emailOrPhoneController, 'Email or Phone*'),
+                    CustomTextField(
+                      hintText: 'Email or Phone*',
+                      controller: _emailOrPhoneController,
+                      keyboardType: TextInputType.text,
+                    ),
                     SizedBox(height: 24),
 
                     // Residence Type
@@ -362,41 +372,50 @@ class _SignUnPageState extends State<SignUnPage> {
 
                     SizedBox(height: 32),
 
-                    // Submit Button
+                    // Submit Button - SAME STYLING AS LOGIN PAGE
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: ElevatedButton(
+                      child: OrangeButton(
                         onPressed: _isFormValid() && !_isSubmitting
                             ? _submitForm
                             : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _isFormValid() && !_isSubmitting
-                              ? Color(0xFFFF6B35)
-                              : Colors.grey,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 2,
-                        ),
                         child: _isSubmitting
-                            ? CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text(
+                                    "Sending OTP...",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               )
                             : Text(
                                 'Send OTP',
-                                style: AppTextStyles.titleMedium.copyWith(
+                                style: TextStyle(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
                                 ),
                               ),
                       ),
                     ),
-
                     SizedBox(height: 24),
 
-                    // Divider with "or"
+                    // Divider with "or" - SAME AS LOGIN PAGE
                     Row(
                       children: [
                         Expanded(
@@ -406,8 +425,9 @@ class _SignUnPageState extends State<SignUnPage> {
                           padding: EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'or',
-                            style: AppTextStyles.titleSmall.copyWith(
+                            style: TextStyle(
                               color: Colors.grey[500],
+                              fontSize: 14,
                             ),
                           ),
                         ),
@@ -419,29 +439,24 @@ class _SignUnPageState extends State<SignUnPage> {
 
                     SizedBox(height: 24),
 
-                    // Login Link
+                    // Login Link - SAME STYLING AS LOGIN PAGE
                     Center(
                       child: Column(
                         children: [
                           Text(
                             "Already have an account?",
-                            style: AppTextStyles.titleSmall.copyWith(
+                            style: TextStyle(
+                              fontSize: 14,
                               color: Colors.grey[600],
                             ),
                           ),
                           SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: () => Navigator.push(
+                          CustomTextButton(
+                            text: "Log in",
+                            onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => LoginPage(),
-                              ),
-                            ),
-                            child: Text(
-                              'Log in',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                color: Color(0xFFFF6B35),
-                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -451,8 +466,71 @@ class _SignUnPageState extends State<SignUnPage> {
 
                     SizedBox(height: 32),
 
-                    // Terms and Privacy Policy with Clickable Links
-                    _buildTermsAndPrivacy(),
+                    // Terms and Privacy Policy - SAME AS LOGIN PAGE
+                    Center(
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            height: 1.4,
+                          ),
+                          children: [
+                            TextSpan(text: "By continuing, I agree to the "),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final url = Uri.parse(
+                                    'https://www.klayons.com/terms-conditions',
+                                  );
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(
+                                      url,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  "Terms of Use",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFFF6B35),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            TextSpan(text: " & "),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.baseline,
+                              baseline: TextBaseline.alphabetic,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final url = Uri.parse(
+                                    'https://www.klayons.com/privacy-policy',
+                                  );
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(
+                                      url,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  "Privacy Policy",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFFF6B35),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     SizedBox(height: 24),
                   ],
@@ -472,7 +550,9 @@ class _SignUnPageState extends State<SignUnPage> {
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.grey[500],
+            ),
             // Grey border when inactive
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -557,26 +637,10 @@ class _SignUnPageState extends State<SignUnPage> {
     return Column(
       children: [
         SizedBox(height: 16),
-        TextField(
+        CustomTextField(
+          hintText: 'Search Society Complex*',
           controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Search Society Complex*',
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
-            prefixIcon: Icon(Icons.search, color: Color(0xFFFF6B35)),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35), width: 2),
-            ),
-            contentPadding: EdgeInsets.all(16),
-          ),
+          keyboardType: TextInputType.text,
         ),
         if (_showSuggestions)
           Container(
@@ -625,112 +689,41 @@ class _SignUnPageState extends State<SignUnPage> {
     return Column(
       children: [
         SizedBox(height: 16),
-
-        // Full-width Orange Auto-fill Button
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton.icon(
+          child: OrangeButton(
             onPressed: _isLoadingLocation ? null : _getCurrentLocation,
-            icon: _isLoadingLocation
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Icon(Icons.my_location, color: Colors.white),
-                          label: Text(
-                _isLoadingLocation ? 'Getting Location...' : 'locality',
-                style: AppTextStyles.titleMedium.copyWith(color: Colors.white),
-              ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF6B35),
-              padding: EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _isLoadingLocation
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(Icons.my_location, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  _isLoadingLocation ? 'Getting Location...' : 'locality',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-
         SizedBox(height: 16),
-
-        // Address TextField with Orange Border
-        TextField(
+        CustomTextField(
+          hintText: 'Area, Pincode*',
           controller: _addressController,
-          decoration: InputDecoration(
-            hintText: 'Area, Pincode*',
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35), width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-          onChanged: (_) => setState(() {}),
+          keyboardType: TextInputType.text,
         ),
       ],
-    );
-  }
-
-  // Terms and Privacy Policy with Clickable Links
-  Widget _buildTermsAndPrivacy() {
-    return Center(
-      child: RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[500], height: 1.4),
-          children: [
-            TextSpan(text: 'By continuing, I agree to the '),
-            TextSpan(
-              text: 'Terms & Conditions',
-              style: TextStyle(
-                color: Color(0xFFFF6B35),
-                decoration: TextDecoration.underline,
-                fontWeight: FontWeight.w500,
-              ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () async {
-                  final url = Uri.parse(
-                    'https://www.klayons.com/terms-conditions',
-                  );
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  }
-                },
-            ),
-            TextSpan(text: '\n& '),
-            TextSpan(
-              text: 'Privacy Policy',
-              style: TextStyle(
-                color: Color(0xFFFF6B35),
-                decoration: TextDecoration.underline,
-                fontWeight: FontWeight.w500,
-              ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () async {
-                  final url = Uri.parse(
-                    'https://www.klayons.com/privacy-policy',
-                  );
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  }
-                },
-            ),
-          ],
-        ),
-      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/utils/colour.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class KlayonsText extends StatelessWidget {
   const KlayonsText({super.key});
@@ -9,12 +10,11 @@ class KlayonsText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       'klayons',
-      style: GoogleFonts.fredoka(
-        // or try: baloo2, quicksand
+      style: GoogleFonts.poetsenOne(
         textStyle: const TextStyle(
-          fontSize: 45,
+          fontSize: 42,
           fontWeight: FontWeight.bold,
-          color: AppColors.orangeHighlight, // orange
+          color: AppColors.orangeHighlight,
         ),
       ),
     );

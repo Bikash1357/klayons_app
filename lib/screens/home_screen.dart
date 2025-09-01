@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/services/notification/notification_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import '../services/notification/local_notification_service.dart';
+import '../utils/colour.dart';
 import 'batch_details_page.dart';
 import 'user_calender/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
@@ -238,9 +240,12 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         elevation: 0,
         title: Text(
           'klayons',
-          style: AppTextStyles.headlineSmall.copyWith(
-            color: Color(0xFFFF6B35),
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.poetsenOne(
+            textStyle: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryOrange,
+            ),
           ),
         ),
         actions: [
@@ -304,8 +309,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             children: [
               _buildSearchField(),
               if (searchQuery.isEmpty && !isLoading && batchData.isNotEmpty)
-                _buildFeeReminderCard(),
-              _buildSectionTitle(),
+                _buildSectionTitle(),
               SizedBox(height: 16),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -338,7 +342,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         onChanged: (value) => setState(() => searchQuery = value),
         decoration: InputDecoration(
           hintText: 'Search activities...',
-          hintStyle: AppTextStyles.titleMedium.copyWith(color: Colors.grey[500]),
+          hintStyle: AppTextStyles.titleMedium.copyWith(
+            color: Colors.grey[500],
+          ),
           prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
@@ -397,7 +403,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                   SizedBox(height: 4),
                   Text(
                     'Due date on 5th June',
-                    style: AppTextStyles.titleSmall.copyWith(color: Colors.white70),
+                    style: AppTextStyles.titleSmall.copyWith(
+                      color: Colors.white70,
+                    ),
                   ),
                 ],
               ),
@@ -831,11 +839,11 @@ class BatchCard extends StatelessWidget {
                   children: [
                     Text(
                       batch.activity.name,
-                                      style: AppTextStyles.titleMedium.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                     if (batch.name != batch.activity.name) ...[
                       SizedBox(height: 4),
