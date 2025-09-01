@@ -7,7 +7,7 @@ import '../utils/colour.dart';
 import '../screens/home_screen.dart';
 import 'dart:async';
 
-import '../utils/styles/button.dart'; // Adjust the import path as needed
+import '../utils/styles/button.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
