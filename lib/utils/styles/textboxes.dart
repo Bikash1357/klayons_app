@@ -42,7 +42,7 @@ class CustomTextField extends StatelessWidget {
               ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: AppTextStyles.bodyLarge.copyWith(
+            hintStyle: AppTextStyles.bodyLargeEmphasized.copyWith(
               color: Colors.grey[500],
             ),
             // Removed filled and fillColor for transparent background

@@ -161,8 +161,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     'Verify Profile',
                     style: AppTextStyles.titleLarge.copyWith(
                       color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 24,
                     ),
                   ),
                 ),
@@ -195,8 +193,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                       widget.email,
                       style: AppTextStyles.titleLarge.copyWith(
                         color: AppColors.primaryOrange,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -226,9 +222,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                 padding: EdgeInsets.only(left: 4),
                                 child: Text(
                                   '00:${_resendCountdown.toString().padLeft(2, '0')}',
-                                  style: AppTextStyles.titleMedium.copyWith(
+                                  style: AppTextStyles.titleSmall.copyWith(
                                     color: AppColors.textSecondary,
-                                    fontSize: 14,
                                   ),
                                 ),
                               ),
@@ -249,12 +244,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                 ),
                                 child: Text(
                                   _isResending ? 'Resending...' : 'Resend Code',
-                                  style: AppTextStyles.titleMedium.copyWith(
+                                  style: AppTextStyles.titleSmall.copyWith(
                                     color: (_canResend && !_isResending)
                                         ? AppColors.primaryOrange
                                         : Colors.grey,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
                                   ),
                                 ),
                               ),

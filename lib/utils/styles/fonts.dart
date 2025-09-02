@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klayons/utils/colour.dart';
 
 class AppTextStyles {
   static const headlineLarge = TextStyle(
@@ -13,6 +14,9 @@ class AppTextStyles {
     fontSize: 22,
     fontWeight: FontWeight.w500,
   );
+
+  static const formLarge = TextStyle(fontSize: 18, fontWeight: FontWeight.w500);
+
   static const titleMedium = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w500,
@@ -21,7 +25,7 @@ class AppTextStyles {
     fontSize: 14,
     fontWeight: FontWeight.w500,
   );
-  static const bodyLarge = TextStyle(fontSize: 16);
+  static const bodyLargeEmphasized = TextStyle(fontSize: 16);
   static const bodyMedium = TextStyle(fontSize: 14);
   static const bodySmall = TextStyle(fontSize: 12);
 }

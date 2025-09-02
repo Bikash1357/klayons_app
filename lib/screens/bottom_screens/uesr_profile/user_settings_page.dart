@@ -272,14 +272,14 @@ class _SettingsPageState extends State<SettingsPage> {
           title: const Text('Confirm Logout', style: AppTextStyles.titleLarge),
           content: const Text(
             'Are you sure you want to log out?',
-            style: AppTextStyles.bodyLarge,
+            style: AppTextStyles.bodyLargeEmphasized,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 'Cancel',
-                style: AppTextStyles.bodyLarge.copyWith(
+                style: AppTextStyles.bodyLargeEmphasized.copyWith(
                   color: Colors.grey[600],
                 ),
               ),
@@ -291,7 +291,7 @@ class _SettingsPageState extends State<SettingsPage> {
               },
               child: Text(
                 'Yes',
-                style: AppTextStyles.bodyLarge.copyWith(
+                style: AppTextStyles.bodyLargeEmphasized.copyWith(
                   color: Colors.orange,
                   fontWeight: FontWeight.w600,
                 ),
@@ -726,10 +726,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                 )
                               : Text(
                                   'Save Details',
-                                  style: AppTextStyles.bodyLarge.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                  style: AppTextStyles.bodyLargeEmphasized
+                                      .copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
                                 ),
                         ),
                       ),

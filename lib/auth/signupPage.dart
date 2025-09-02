@@ -316,10 +316,8 @@ class _SignUnPageState extends State<SignUnPage> {
                     // Signup form header - SAME STYLING AS LOGIN PAGE
                     Center(
                       child: Text(
-                        'Create your account',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
+                        'Register your account',
+                        style: AppTextStyles.titleMedium.copyWith(
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -346,7 +344,9 @@ class _SignUnPageState extends State<SignUnPage> {
                     // Residence Type
                     Text(
                       'Where do you reside?',
-                      style: AppTextStyles.titleMedium,
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     SizedBox(height: 12),
                     Row(
@@ -445,9 +445,8 @@ class _SignUnPageState extends State<SignUnPage> {
                         children: [
                           Text(
                             "Already have an account?",
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           SizedBox(height: 8),

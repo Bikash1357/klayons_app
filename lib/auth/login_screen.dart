@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:klayons/auth/signupPage.dart' hide OTPVerificationPage;
 import 'package:klayons/utils/styles/button.dart';
+import 'package:klayons/utils/styles/fonts.dart';
 import 'package:klayons/utils/styles/textButton.dart';
 import 'package:klayons/utils/styles/textboxes.dart';
 import 'package:klayons/services/auth/login_service.dart';
@@ -9,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/styles/errorMessage.dart';
 import 'otp_verification_page.dart';
 import '../utils/colour.dart';
+import 'package:klayons/utils/colour.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -116,9 +118,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                               Center(
                                 child: Text(
                                   'Log in to your account',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
+                                  style: AppTextStyles.titleMedium.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
@@ -175,10 +175,10 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                         )
                                       : Text(
                                           "Send OTP",
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: AppTextStyles.titleSmall
+                                              .copyWith(
+                                                color: AppColors.background,
+                                              ),
                                         ),
                                 ),
                               ),
@@ -223,9 +223,8 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                   children: [
                                     Text(
                                       "Don't have an account?",
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey[600],
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     SizedBox(height: 8),
@@ -251,9 +250,8 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 child: RichText(
                                   textAlign: TextAlign.center,
                                   text: TextSpan(
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[500],
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textSecondary,
                                       height: 1.4,
                                     ),
                                     children: [
@@ -268,10 +266,11 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                           onTap: _launchTermsUrl,
                                           child: Text(
                                             "Terms of Use",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Color(0xFFFF6B35),
-                                            ),
+                                            style: AppTextStyles.bodySmall
+                                                .copyWith(
+                                                  color:
+                                                      AppColors.primaryOrange,
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -284,10 +283,11 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                           onTap: _launchPrivacyPolicyUrl,
                                           child: Text(
                                             "Privacy Policy",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Color(0xFFFF6B35),
-                                            ),
+                                            style: AppTextStyles.bodySmall
+                                                .copyWith(
+                                                  color:
+                                                      AppColors.primaryOrange,
+                                                ),
                                           ),
                                         ),
                                       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klayons/utils/colour.dart';
+import 'package:klayons/utils/styles/fonts.dart';
 
 class OrangeButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -17,7 +18,7 @@ class OrangeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 60,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
