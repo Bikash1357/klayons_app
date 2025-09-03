@@ -124,7 +124,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 ),
                               ),
 
-                              SizedBox(height: 32),
+                              SizedBox(height: 16),
 
                               // Email/Phone input field with input formatter
                               CustomTextField(
@@ -135,12 +135,11 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 inputFormatters: [PhoneNumberInputFormatter()],
                               ),
 
-                              SizedBox(height: 32),
+                              SizedBox(height: 30),
 
                               // Send OTP Button - now activates when user starts typing
                               SizedBox(
                                 width: double.infinity,
-                                height: 50,
                                 child: OrangeButton(
                                   onPressed: _isLoading
                                       ? null
@@ -175,7 +174,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                         )
                                       : Text(
                                           "Send OTP",
-                                          style: AppTextStyles.titleSmall
+                                          style: AppTextStyles.formLarge
                                               .copyWith(
                                                 color: AppColors.background,
                                               ),
@@ -227,7 +226,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                         color: AppColors.textSecondary,
                                       ),
                                     ),
-                                    SizedBox(height: 8),
+                                    //SizedBox(height: 5),
                                     CustomTextButton(
                                       text: "Register here!",
                                       onPressed: () {
@@ -243,7 +242,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 ),
                               ),
 
-                              SizedBox(height: 32),
+                              SizedBox(height: 60),
 
                               // Terms and Privacy Policy moved to bottom
                               Center(
@@ -296,7 +295,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 ),
                               ),
 
-                              SizedBox(height: 24),
+                              SizedBox(height: 54),
                             ],
                           ),
                         ),
