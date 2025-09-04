@@ -8,6 +8,7 @@ class Event {
   final DateTime endTime;
   final RecurrenceRule? recurrence;
   final Color color;
+  final String? childName;
 
   Event({
     required this.id,
@@ -17,6 +18,7 @@ class Event {
     required this.endTime,
     this.recurrence,
     this.color = Colors.orange,
+    this.childName,
   });
 
   Map<String, dynamic> toJson() {
@@ -28,6 +30,7 @@ class Event {
       'endTime': endTime.toIso8601String(),
       'recurrence': recurrence?.toJson(),
       'color': color.value,
+      'childName': childName,
     };
   }
 
@@ -42,6 +45,7 @@ class Event {
           ? RecurrenceRule.fromJson(json['recurrence'])
           : null,
       color: Color(json['color'] ?? Colors.orange.value),
+      childName: json['childName'],
     );
   }
 }

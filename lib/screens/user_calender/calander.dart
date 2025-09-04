@@ -22,7 +22,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   List<Event> _events = [];
-  String _selectedFilter = 'All Activities';
+
+  // Filter state
+  bool _showAllActivities = true; // "All Activities" selected by default
 
   // Child-related variables
   List<Child> _children = [];
@@ -46,6 +48,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _selectedDay = DateTime.now();
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
     _loadEvents();
+    _loadChildren();
     _loadSocietyBatches();
   }
 
@@ -97,30 +100,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Future<void> _refreshSocietyBatches() async {
+  Future<void> _loadChildren() async {
     try {
       setState(() {
-        _isLoadingBatches = true;
-        _batchError = null;
+        _isLoadingChildren = true;
+        _childError = null;
       });
 
-      SocietyBatchesResponse batchesResponse =
-          await SocietyBatchesService.fetchSocietyBatches(forceRefresh: true);
-      _generateBatchEvents(batchesResponse);
+      List<Child>? cachedChildren = GetChildservices.getCachedChildren();
+      if (cachedChildren != null) {
+        setState(() {
+          _children = cachedChildren;
+        });
+      }
 
+      List<Child> children = await GetChildservices.fetchChildren();
       setState(() {
-        _isLoadingBatches = false;
-        _selectedEvents.value = _getEventsForDay(_selectedDay!);
+        _children = children;
+        _isLoadingChildren = false;
       });
     } catch (e) {
       setState(() {
-        _batchError = e.toString();
-        _isLoadingBatches = false;
+        _childError = e.toString();
+        _isLoadingChildren = false;
       });
+      print('Error loading children: $e');
     }
   }
 
-  // Load children calendar when child IDs are selected
   Future<void> _loadChildrenCalendar() async {
     if (_selectedChildIds.isEmpty) {
       setState(() {
@@ -136,14 +143,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
         _childrenCalendarError = null;
       });
 
-      // Try to get cached children calendar first
       ChildrenCalendarResponse? cachedCalendar =
           ChildrenCalendarService.getCachedChildrenCalendar(_selectedChildIds);
       if (cachedCalendar != null) {
         _generateChildrenCalendarEvents(cachedCalendar);
       }
 
-      // Fetch fresh data from server
       ChildrenCalendarResponse calendarResponse =
           await ChildrenCalendarService.fetchChildrenCalendar(
             _selectedChildIds,
@@ -175,88 +180,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
           startDate,
           endDate,
         );
-
-    print(
-      'Generated ${_childrenCalendarEvents.length} children calendar events',
-    );
   }
 
-  Future<void> _refreshChildrenCalendar() async {
-    if (_selectedChildIds.isEmpty) return;
-
-    try {
-      setState(() {
-        _isLoadingChildrenCalendar = true;
-        _childrenCalendarError = null;
-      });
-
-      ChildrenCalendarResponse calendarResponse =
-          await ChildrenCalendarService.fetchChildrenCalendar(
-            _selectedChildIds,
-            forceRefresh: true,
-          );
-      _generateChildrenCalendarEvents(calendarResponse);
-
-      setState(() {
-        _isLoadingChildrenCalendar = false;
-        _selectedEvents.value = _getEventsForDay(_selectedDay!);
-      });
-    } catch (e) {
-      setState(() {
-        _childrenCalendarError = e.toString();
-        _isLoadingChildrenCalendar = false;
-      });
-    }
-  }
-
-  Future<void> _loadChildren() async {
-    if (_children.isNotEmpty) return;
-
-    try {
-      setState(() {
-        _isLoadingChildren = true;
-        _childError = null;
-      });
-
-      List<Child>? cachedChildren = GetChildservices.getCachedChildren();
-      if (cachedChildren != null) {
-        setState(() {
-          _children = cachedChildren;
-        });
-      }
-
-      List<Child> children = await GetChildservices.fetchChildren();
-      setState(() {
-        _children = children;
-        _isLoadingChildren = false;
-      });
-    } catch (e) {
-      setState(() {
-        _childError = e.toString();
-        _isLoadingChildren = false;
-      });
-      print('Error loading children: $e');
-    }
-  }
-
-  Future<void> _refreshChildren() async {
-    try {
-      setState(() {
-        _isLoadingChildren = true;
-        _childError = null;
-      });
-
-      List<Child> children = await GetChildservices.refreshChildren();
-      setState(() {
-        _children = children;
-        _isLoadingChildren = false;
-      });
-    } catch (e) {
-      setState(() {
-        _childError = e.toString();
-        _isLoadingChildren = false;
-      });
-    }
+  Future<void> _refreshData() async {
+    await Future.wait([
+      _loadSocietyBatches(),
+      if (_selectedChildIds.isNotEmpty) _loadChildrenCalendar(),
+    ]);
   }
 
   Future<void> _loadEvents() async {
@@ -277,55 +207,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
     await prefs.setString('calendar_events', eventsJson);
   }
 
-  // Updated to handle Event, BatchCalendarEvent, and ChildCalendarEvent types
   List<dynamic> _getEventsForDay(DateTime day) {
     List<dynamic> eventsForDay = [];
 
-    // Add regular events based on filter
-    if (_selectedFilter == 'All Activities' || _selectedFilter == 'Scheduled') {
-      for (Event event in _events) {
-        if (isSameDay(event.startTime, day)) {
-          eventsForDay.add(event);
-        }
+    // Always add custom events
+    for (Event event in _events) {
+      if (isSameDay(event.startTime, day)) {
+        eventsForDay.add(event);
+      }
 
-        if (event.recurrence != null) {
-          List<DateTime> occurrences = _calculateRecurrenceOccurrences(
-            event,
-            day,
-          );
-          for (DateTime occurrence in occurrences) {
-            if (isSameDay(occurrence, day)) {
-              eventsForDay.add(
-                Event(
-                  id: '${event.id}_${occurrence.millisecondsSinceEpoch}',
-                  title: event.title,
-                  address: event.address,
-                  startTime: DateTime(
-                    occurrence.year,
-                    occurrence.month,
-                    occurrence.day,
-                    event.startTime.hour,
-                    event.startTime.minute,
-                  ),
-                  endTime: DateTime(
-                    occurrence.year,
-                    occurrence.month,
-                    occurrence.day,
-                    event.endTime.hour,
-                    event.endTime.minute,
-                  ),
-                  color: event.color,
+      if (event.recurrence != null) {
+        List<DateTime> occurrences = _calculateRecurrenceOccurrences(
+          event,
+          day,
+        );
+        for (DateTime occurrence in occurrences) {
+          if (isSameDay(occurrence, day)) {
+            eventsForDay.add(
+              Event(
+                id: '${event.id}_${occurrence.millisecondsSinceEpoch}',
+                title: event.title,
+                address: event.address,
+                startTime: DateTime(
+                  occurrence.year,
+                  occurrence.month,
+                  occurrence.day,
+                  event.startTime.hour,
+                  event.startTime.minute,
                 ),
-              );
-              break;
-            }
+                endTime: DateTime(
+                  occurrence.year,
+                  occurrence.month,
+                  occurrence.day,
+                  event.endTime.hour,
+                  event.endTime.minute,
+                ),
+                color: event.color,
+                childName: event.childName,
+              ),
+            );
+            break;
           }
         }
       }
     }
 
-    // Add society batch events when "All Activities" is selected
-    if (_selectedFilter == 'All Activities') {
+    // Add society batch events if "All Activities" is selected
+    if (_showAllActivities) {
       for (BatchCalendarEvent batchEvent in _batchEvents) {
         if (isSameDay(batchEvent.startTime, day)) {
           eventsForDay.add(batchEvent);
@@ -333,8 +261,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     }
 
-    // Add children calendar events when "Booked" is selected and children are selected
-    if (_selectedFilter == 'Booked' && _selectedChildIds.isNotEmpty) {
+    // Add children calendar events if specific children are selected
+    if (_selectedChildIds.isNotEmpty) {
       for (ChildCalendarEvent childEvent in _childrenCalendarEvents) {
         if (isSameDay(childEvent.startTime, day)) {
           eventsForDay.add(childEvent);
@@ -428,11 +356,91 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  Widget _buildChildSelectionSection() {
-    if (_selectedFilter != 'Booked') {
-      return SizedBox.shrink();
-    }
+  // Custom event marker builder for dots + plus
+  Widget _eventMarkerBuilder(
+    BuildContext context,
+    DateTime day,
+    List<dynamic> events,
+  ) {
+    if (events.isEmpty) return SizedBox.shrink();
 
+    final int eventCount = events.length;
+
+    if (eventCount <= 2) {
+      // Show individual dots for 1-2 events
+      return Positioned(
+        bottom: 1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: events.take(2).map((event) {
+            Color dotColor = Colors.orange;
+            if (event is BatchCalendarEvent) {
+              dotColor = event.color;
+            } else if (event is ChildCalendarEvent) {
+              dotColor = event.color;
+            }
+
+            return Container(
+              margin: EdgeInsets.only(right: eventCount > 1 ? 2 : 0),
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    } else {
+      // Show 2 dots + plus for 3+ events
+      return Positioned(
+        bottom: 1,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // First dot
+            Container(
+              width: 6,
+              height: 6,
+              margin: EdgeInsets.only(right: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+            ),
+            // Second dot
+            Container(
+              width: 6,
+              height: 6,
+              margin: EdgeInsets.only(right: 2),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+            ),
+            // Plus sign
+            Container(
+              width: 8,
+              height: 8,
+              child: Center(
+                child: Text(
+                  '+',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Widget _buildFilterChips() {
     if (_isLoadingChildren) {
       return Container(
         padding: EdgeInsets.symmetric(vertical: 8),
@@ -448,7 +456,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             SizedBox(width: 8),
             Text(
-              'Loading...',
+              'Loading children...',
               style: AppTextStyles.bodySmall.copyWith(
                 color: Colors.grey.shade600,
               ),
@@ -458,98 +466,86 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    if (_childError != null) {
-      return Container(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red, size: 16),
-            SizedBox(width: 4),
-            Text(
-              'Error',
-              style: AppTextStyles.bodySmall.copyWith(color: Colors.red),
-            ),
-            TextButton(
-              onPressed: _refreshChildren,
-              child: Text(
-                'Retry',
-                style: AppTextStyles.bodySmall.copyWith(fontSize: 10),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_children.isEmpty) {
-      return Container(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          'No children found',
-          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey.shade600),
-        ),
-      );
-    }
-
     return Container(
       height: 35,
-      child: ListView.builder(
+      child: ListView(
         scrollDirection: Axis.horizontal,
-        itemCount: _children.length,
-        itemBuilder: (context, index) {
-          final child = _children[index];
-          bool isSelected = _selectedChildIds.contains(child.id);
-
-          return GestureDetector(
+        children: [
+          // "All Activities" chip (always first)
+          GestureDetector(
             onTap: () {
               setState(() {
-                if (isSelected) {
-                  _selectedChildIds.remove(child.id);
-                } else {
-                  _selectedChildIds.add(child.id);
-                }
+                _showAllActivities = !_showAllActivities;
+                _selectedEvents.value = _getEventsForDay(_selectedDay!);
               });
-              // Load children calendar when selection changes
-              _loadChildrenCalendar();
             },
             child: Container(
               margin: EdgeInsets.only(right: 8),
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.orange.shade50 : Colors.white,
+                color: _showAllActivities
+                    ? Colors.orange.shade50
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isSelected ? Colors.orange : Colors.grey.shade300,
-                  width: isSelected ? 2 : 1,
+                  color: _showAllActivities
+                      ? Colors.orange
+                      : Colors.grey.shade300,
+                  width: _showAllActivities ? 2 : 1,
                 ),
               ),
               child: Text(
-                child.name,
+                'All Activities',
                 style: AppTextStyles.bodySmall.copyWith(
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? Colors.orange.shade700 : Colors.black,
+                  fontWeight: _showAllActivities
+                      ? FontWeight.w600
+                      : FontWeight.w400,
+                  color: _showAllActivities
+                      ? Colors.orange.shade700
+                      : Colors.black,
                 ),
               ),
             ),
-          );
-        },
+          ),
+
+          // Children chips
+          ..._children.map((child) {
+            bool isSelected = _selectedChildIds.contains(child.id);
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedChildIds.remove(child.id);
+                  } else {
+                    _selectedChildIds.add(child.id);
+                  }
+                });
+                _loadChildrenCalendar();
+              },
+              child: Container(
+                margin: EdgeInsets.only(right: 8),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.orange.shade50 : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isSelected ? Colors.orange : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Text(
+                  "${child.name}'s Activities",
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? Colors.orange.shade700 : Colors.black,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
-  }
-
-  void _onFilterChanged(String value) async {
-    setState(() {
-      _selectedFilter = value;
-      if (value != 'Booked') {
-        _selectedChildIds.clear();
-        _childrenCalendarEvents = [];
-      }
-      _selectedEvents.value = _getEventsForDay(_selectedDay!);
-    });
-
-    if (value == 'Booked' && _children.isEmpty) {
-      await _loadChildren();
-    }
   }
 
   @override
@@ -568,26 +564,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
         actions: [
-          if (_selectedFilter == 'All Activities')
-            IconButton(
-              onPressed: _refreshSocietyBatches,
-              icon: Icon(
-                _isLoadingBatches ? Icons.hourglass_empty : Icons.refresh,
-                color: Colors.orange,
-              ),
-              tooltip: 'Refresh activities',
+          IconButton(
+            onPressed: _refreshData,
+            icon: Icon(
+              (_isLoadingBatches || _isLoadingChildrenCalendar)
+                  ? Icons.hourglass_empty
+                  : Icons.refresh,
+              color: Colors.orange,
             ),
-          if (_selectedFilter == 'Booked' && _selectedChildIds.isNotEmpty)
-            IconButton(
-              onPressed: _refreshChildrenCalendar,
-              icon: Icon(
-                _isLoadingChildrenCalendar
-                    ? Icons.hourglass_empty
-                    : Icons.refresh,
-                color: Colors.orange,
-              ),
-              tooltip: 'Refresh booked activities',
-            ),
+            tooltip: 'Refresh activities',
+          ),
         ],
       ),
       body: Column(
@@ -596,59 +582,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
             color: Colors.white,
             child: Column(
               children: [
-                // Header Row with Child Selection and Filter
+                // Filter chips section
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Row(
-                    children: [
-                      Expanded(child: _buildChildSelectionSection()),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: PopupMenuButton<String>(
-                          icon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(left: 12),
-                                child: Text(
-                                  _selectedFilter,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(
-                                Icons.keyboard_arrow_down,
-                                size: 16,
-                                color: Colors.black,
-                              ),
-                              SizedBox(width: 8),
-                            ],
-                          ),
-                          onSelected: _onFilterChanged,
-                          itemBuilder: (BuildContext context) {
-                            return [
-                              'All Activities',
-                              'Booked',
-                              'Scheduled',
-                            ].map((String choice) {
-                              return PopupMenuItem<String>(
-                                value: choice,
-                                child: Text(choice),
-                              );
-                            }).toList();
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: _buildFilterChips(),
                 ),
 
-                // Month Row with loading indicators
+                // Month Row
                 Padding(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Row(
@@ -663,27 +603,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                         ),
                       ),
-                      if (_selectedFilter == 'Booked' &&
-                          _selectedChildIds.isNotEmpty)
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_selectedChildIds.length} selected',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: Colors.orange.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      if (_selectedFilter == 'All Activities' &&
-                          _isLoadingBatches)
+                      if (_isLoadingBatches || _isLoadingChildrenCalendar)
                         Container(
                           margin: EdgeInsets.only(left: 8),
                           width: 16,
@@ -695,24 +615,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                           ),
                         ),
-                      if (_selectedFilter == 'Booked' &&
-                          _isLoadingChildrenCalendar)
-                        Container(
-                          margin: EdgeInsets.only(left: 8),
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.blue,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
 
-                // Calendar
+                // Calendar with custom markers
                 TableCalendar<dynamic>(
                   firstDay: DateTime.utc(2020, 1, 1),
                   lastDay: DateTime.utc(2030, 12, 31),
@@ -734,6 +641,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       _focusedDay = focusedDay;
                     });
                   },
+                  calendarBuilders: CalendarBuilders(
+                    // Custom marker builder
+                    markerBuilder: _eventMarkerBuilder,
+                  ),
                   calendarStyle: CalendarStyle(
                     outsideDaysVisible: false,
                     weekendTextStyle: AppTextStyles.bodyMedium.copyWith(
@@ -758,11 +669,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,
                     ),
-                    markerDecoration: BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
-                    ),
-                    markersMaxCount: 3,
+                    // Disable default markers since we're using custom ones
+                    markersMaxCount: 0,
                     canMarkersOverflow: false,
                   ),
                   headerStyle: HeaderStyle(
@@ -789,7 +697,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           const SizedBox(height: 8.0),
 
-          // Event List - Updated to handle all event types
+          // Event List
           Expanded(
             child: ValueListenableBuilder<List<dynamic>>(
               valueListenable: _selectedEvents,
@@ -807,44 +715,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               color: Colors.grey.shade600,
                             ),
                           ),
-                          if (_selectedChildIds.isNotEmpty &&
-                              _selectedFilter == 'Booked') ...[
-                            SizedBox(height: 8),
-                            Text(
-                              'Showing schedule for ${_selectedChildIds.length} selected children',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey.shade500,
-                              ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Select different activity filters above to see more events',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: Colors.grey.shade500,
                             ),
-                          ],
-                          if (_batchError != null &&
-                              _selectedFilter == 'All Activities') ...[
-                            SizedBox(height: 16),
-                            Text(
-                              'Error loading activities',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Colors.red,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _refreshSocietyBatches,
-                              child: Text('Retry'),
-                            ),
-                          ],
-                          if (_childrenCalendarError != null &&
-                              _selectedFilter == 'Booked') ...[
-                            SizedBox(height: 16),
-                            Text(
-                              'Error loading booked activities',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: Colors.red,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: _refreshChildrenCalendar,
-                              child: Text('Retry'),
-                            ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
@@ -882,9 +760,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     } else if (event is Event) {
                       title = event.title;
                       timeText =
-                          '${DateFormat('h:mma').format(event.startTime).toLowerCase()} onwards';
+                          '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
                       venue = event.address;
                       iconColor = Colors.orange;
+                      if (event.childName != null &&
+                          event.childName!.isNotEmpty) {
+                        childInfo = 'for ${event.childName}';
+                      }
                     } else {
                       return SizedBox.shrink();
                     }
@@ -1063,6 +945,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       builder: (context) => CreateEventDialog(
         selectedDate: _selectedDay ?? DateTime.now(),
         eventToEdit: eventToEdit,
+        children: _children,
         onEventCreated: (event) {
           setState(() {
             if (eventToEdit != null) {

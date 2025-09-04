@@ -73,7 +73,7 @@ class EnrollmentResponse {
 
 // Enrollment Service
 class EnrollmentService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app//api';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
   static const String _tokenKey = 'auth_token';
 
   static Future<String?> _getToken() async {
