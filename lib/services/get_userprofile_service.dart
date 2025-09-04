@@ -77,7 +77,7 @@ class UserProfile {
 }
 
 class GetUserProfileService {
-  static const String _baseUrl = 'https://klayons-backend.vercel.app';
+  static const String _baseUrl = 'https://dev-klayonsapi.vercel.app/';
   static const String _profileEndpoint = '/api/profiles/'; // Updated endpoint
 
   // Cache variables

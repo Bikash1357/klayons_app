@@ -124,7 +124,7 @@ class _AddChildPageState extends State<AddChildPage> {
 
       final response = await http.delete(
         Uri.parse(
-          'https://klayons-backend.vercel.app/api/profiles/children/$childId/',
+          'https://dev-klayonsapi.vercel.app//api/profiles/children/$childId/',
         ),
         headers: {
           'Content-Type': 'application/json',

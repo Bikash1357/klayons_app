@@ -29,7 +29,7 @@ class Society {
 }
 
 class SocietyService {
-  static const String _baseUrl = 'https://klayons-backend.vercel.app';
+  static const String _baseUrl = 'https://dev-klayonsapi.vercel.app/.app';
   static const String _societiesEndpoint = '/api/societies/';
 
   /// Fetches all societies from the backend

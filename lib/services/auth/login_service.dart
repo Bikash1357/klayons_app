@@ -7,7 +7,7 @@ class LoginAuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
   static const String _isLoggedInKey = 'is_logged_in';
-  static const String baseUrl = 'https://klayons-backend.vercel.app/api';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app//api';
 
   // Save authentication data with optional user data
   static Future<void> saveAuthData({

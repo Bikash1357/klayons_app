@@ -83,7 +83,7 @@ class ActivityInfo {
 // SERVICE
 
 class BatchService {
-  static const String baseUrl = 'https://klayons-backend.vercel.app';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/';
 
   static Future<String?> getAuthToken() async {
     try {

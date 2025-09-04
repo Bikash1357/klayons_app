@@ -136,8 +136,7 @@ class NotificationCountManager {
 }
 
 class ScheduleOverridesService {
-  static const String baseUrl =
-      'https://klayons-backend.vercel.app';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/';
 
   // Get all schedule overrides
   static Future<List<ScheduleOverride>> getScheduleOverrides({

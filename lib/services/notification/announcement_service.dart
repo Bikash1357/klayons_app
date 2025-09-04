@@ -103,7 +103,7 @@ extension AnnouncementScopeExtension on AnnouncementScope {
 // services/announcements_service.dart
 
 class AnnouncementsService {
-  static const String baseUrl = 'https://klayons-backend.vercel.app';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/';
   static const String endpoint = '/api/announcements/';
 
   // Optional: Add authentication token if needed

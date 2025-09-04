@@ -140,7 +140,7 @@ class BatchCalendarEvent {
 
 // API Service for Society Batches
 class SocietyBatchesService {
-  static const String baseUrl = 'https://klayons-backend.vercel.app/api';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app//api';
   static const String _tokenKey = 'auth_token';
 
   // Cache variables
