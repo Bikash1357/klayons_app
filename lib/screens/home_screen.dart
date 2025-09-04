@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/services/notification/notification_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import '../services/get_userprofile_service.dart';
 import '../services/notification/local_notification_service.dart';
 import '../utils/colour.dart';
 import 'batch_details_page.dart';
@@ -40,12 +42,20 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   int unreadNotificationCount = 0;
   bool isLoadingNotifications = false;
 
+  // User profile data
+  UserProfile? userProfile;
+  bool isLoadingUserProfile = false;
+  String userName = 'User'; // Default name
+  String userAddress = ''; // Default address
+  String? userProfileImage; // URL for user profile image
+
   @override
   void initState() {
     super.initState();
     _initializeAnimation();
     _loadBatchData();
-    _loadNotificationCount(); // Load notification count on init
+    _loadUserProfile(); // Load user profile data
+    _loadNotificationCount();
     _requestNotificationPermission();
   }
 
@@ -54,7 +64,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         await LocalNotificationService.areNotificationsEnabled();
 
     if (!hasPermission) {
-      // Show dialog explaining why notifications are needed
       _showPermissionDialog();
     }
   }
@@ -75,7 +84,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              // Use the correct method name
               await LocalNotificationService.showPermissionDialog();
             },
             child: Text('Enable'),
@@ -116,6 +124,62 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
   }
 
+  // Load user profile data
+  Future<void> _loadUserProfile() async {
+    setState(() {
+      isLoadingUserProfile = true;
+    });
+
+    try {
+      final profile = await GetUserProfileService.getUserProfile();
+      if (profile != null) {
+        setState(() {
+          userProfile = profile;
+          userName = profile.name.isNotEmpty ? profile.name : 'User';
+          // Create address from available location data
+          userAddress = _buildUserAddress(profile);
+          isLoadingUserProfile = false;
+        });
+      } else {
+        setState(() {
+          userName = 'User';
+          userAddress = '';
+          isLoadingUserProfile = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        userName = 'User';
+        userAddress = '';
+        isLoadingUserProfile = false;
+      });
+      print('Error loading user profile: $e');
+    }
+  }
+
+  // Build user address from profile data
+  String _buildUserAddress(UserProfile profile) {
+    List<String> addressParts = [];
+
+    if (profile.societyName.isNotEmpty) {
+      addressParts.add(profile.societyName);
+    }
+
+    if (profile.tower.isNotEmpty && profile.flatNo.isNotEmpty) {
+      addressParts.add('${profile.tower}-${profile.flatNo}');
+    } else if (profile.tower.isNotEmpty) {
+      addressParts.add(profile.tower);
+    } else if (profile.flatNo.isNotEmpty) {
+      addressParts.add(profile.flatNo);
+    }
+
+    if (profile.address.isNotEmpty && addressParts.isEmpty) {
+      addressParts.add(profile.address);
+    }
+
+    return addressParts.join(', ');
+  }
+
   // Load notification count
   Future<void> _loadNotificationCount() async {
     if (isLoadingNotifications) return;
@@ -138,12 +202,11 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       setState(() {
         isLoadingNotifications = false;
       });
-      // Silently handle notification count loading errors
       print('Error loading notification count: $e');
     }
   }
 
-  // Method to refresh notification count (call this when returning from notifications page)
+  // Method to refresh notification count
   Future<void> _refreshNotificationCount() async {
     await _loadNotificationCount();
   }
@@ -218,8 +281,30 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       context,
       MaterialPageRoute(builder: (context) => NotificationsPage()),
     );
-    // Refresh notification count when returning from notifications page
     _refreshNotificationCount();
+  }
+
+  // Navigate to profile page and refresh user data on return
+  void _navigateToProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SettingsPage()),
+    );
+    // Refresh user profile data when returning from profile page
+    _loadUserProfile();
+  }
+
+  // Build default avatar widget
+  Widget _buildDefaultAvatar() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primaryOrange.withOpacity(0.1),
+      ),
+      child: Icon(Icons.person, color: AppColors.primaryOrange, size: 22),
+    );
   }
 
   @override
@@ -238,60 +323,138 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
         elevation: 0,
-        title: Text(
-          'klayons',
-          style: GoogleFonts.poetsenOne(
-            textStyle: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryOrange,
-            ),
-          ),
-        ),
-        actions: [
-          // Notification icon with badge
-          Row(
-            children: [
-              Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.black54,
-                    ),
-                    onPressed: _navigateToNotifications,
+        title: Row(
+          children: [
+            // Profile Image
+            GestureDetector(
+              onTap: _navigateToProfile,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryOrange.withOpacity(0.1),
+                  border: Border.all(
+                    color: AppColors.primaryOrange.withOpacity(0.3),
+                    width: 1,
                   ),
-                  // Badge for unread notifications
-                  if (unreadNotificationCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFFF6B35),
-                          borderRadius: BorderRadius.circular(10),
+                ),
+                child: userProfileImage != null && userProfileImage!.isNotEmpty
+                    ? ClipOval(
+                        child: Image.network(
+                          userProfileImage!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildDefaultAvatar();
+                          },
                         ),
-                        constraints: BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          unreadNotificationCount > 99
-                              ? '99+'
-                              : unreadNotificationCount.toString(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      )
+                    : _buildDefaultAvatar(),
+              ),
+            ),
+            SizedBox(width: 12),
+            // User Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // User greeting
+                  isLoadingUserProfile
+                      ? Container(
+                          width: 80,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          textAlign: TextAlign.center,
+                        )
+                      : Text(
+                          'Hi, $userName!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
+                  SizedBox(height: 2),
+                  // User address
+                  if (userAddress.isNotEmpty || isLoadingUserProfile)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        SizedBox(width: 4),
+                        Flexible(
+                          child: isLoadingUserProfile
+                              ? Container(
+                                  width: 100,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                )
+                              : Text(
+                                  userAddress,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                        ),
+                      ],
                     ),
                 ],
               ),
-              SizedBox(width: 10),
+            ),
+          ],
+        ),
+        actions: [
+          // Notification icon with badge
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.black54,
+                ),
+                onPressed: _navigateToNotifications,
+              ),
+              // Badge for unread notifications
+              if (unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF6B35),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      unreadNotificationCount > 99
+                          ? '99+'
+                          : unreadNotificationCount.toString(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
@@ -300,7 +463,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         onRefresh: () async {
           await Future.wait([
             _loadBatchData(),
-            _refreshNotificationCount(), // Also refresh notification count on pull-to-refresh
+            _loadUserProfile(),
+            _refreshNotificationCount(),
           ]);
         },
         child: SingleChildScrollView(
@@ -310,7 +474,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
               _buildSearchField(),
               if (searchQuery.isEmpty && !isLoading && batchData.isNotEmpty)
                 _buildSectionTitle(),
-              SizedBox(height: 16),
+              SizedBox(height: 8),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: _buildContent(),
@@ -331,8 +495,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
             offset: Offset(0, 2),
           ),
         ],
@@ -341,14 +505,15 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         controller: searchController,
         onChanged: (value) => setState(() => searchQuery = value),
         decoration: InputDecoration(
-          hintText: 'Search activities...',
-          hintStyle: AppTextStyles.titleMedium.copyWith(
+          hintText: 'Find Activities',
+          hintStyle: TextStyle(
             color: Colors.grey[500],
+            fontSize: 14,
           ),
-          prefixIcon: Icon(Icons.search, color: Colors.grey, size: 22),
+          prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 20),
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey, size: 20),
+                  icon: Icon(Icons.clear, color: Colors.grey, size: 18),
                   onPressed: () => setState(() {
                     searchQuery = '';
                     searchController.clear();
@@ -356,70 +521,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeeReminderCard() {
-    return Container(
-      margin: EdgeInsets.fromLTRB(16, 0, 16, 30),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFFF6B35), Color(0xFFFF8A50)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'FEE REMINDER',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    batchData.isNotEmpty
-                        ? batchData.first.activity.name
-                        : 'Activity',
-                    style: AppTextStyles.headlineSmall.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Due date on 5th June',
-                    style: AppTextStyles.titleSmall.copyWith(
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.notifications, color: Colors.white, size: 30),
-            ),
-          ],
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),
     );
@@ -428,27 +530,16 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Widget _buildSectionTitle() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            searchQuery.isEmpty
-                ? 'Explore Activities'
-                : 'Search Results (${filteredBatches.length})',
-            style: AppTextStyles.titleLarge.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Explore Activities',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
-          if (searchQuery.isNotEmpty)
-            Text(
-              'for "$searchQuery"',
-              style: AppTextStyles.titleSmall.copyWith(
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -462,8 +553,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       children: filteredBatches
           .map(
             (batch) => Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: BatchCard(
+              padding: EdgeInsets.only(bottom: 12),
+              child: CompactBatchCard(
                 batch: batch,
                 onTap: () => _navigateToBatchDetail(batch),
               ),
@@ -482,7 +573,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           SizedBox(height: 16),
           Text(
             'Loading activities...',
-            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[600]),
+            style: TextStyle(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -498,7 +589,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           SizedBox(height: 16),
           Text(
             'Something went wrong',
-            style: AppTextStyles.titleMedium.copyWith(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
@@ -507,7 +598,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           SizedBox(height: 8),
           Text(
             errorMessage!,
-            style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
+            style: TextStyle(color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
@@ -544,7 +635,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             searchQuery.isEmpty
                 ? 'No activities available'
                 : 'No activities found',
-            style: AppTextStyles.titleMedium.copyWith(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.grey[600],
@@ -555,28 +646,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             searchQuery.isEmpty
                 ? 'Check back later for new activities'
                 : 'Try searching with different keywords',
-            style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[500]),
+            style: TextStyle(color: Colors.grey[500]),
           ),
-          if (searchQuery.isEmpty) ...[
-            SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadBatchData,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFF6B35),
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: Text(
-                'Refresh',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -649,13 +720,13 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 }
 
-// BatchCard widget remains the same
-class BatchCard extends StatelessWidget {
+// Updated CompactBatchCard widget that exactly matches your image
+class CompactBatchCard extends StatelessWidget {
   final BatchWithActivity batch;
   final VoidCallback onTap;
 
-  const BatchCard({Key? key, required this.batch, required this.onTap})
-    : super(key: key);
+  const CompactBatchCard({Key? key, required this.batch, required this.onTap})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -664,187 +735,61 @@ class BatchCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: Offset(0, 4),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: Offset(0, 3),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildImageHeader(), _buildContentSection()],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageHeader() {
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        gradient: LinearGradient(
-          colors: [Color(0xFFE8F5E8), Color(0xFFF0F8FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Banner Image
-          if (batch.activity.bannerImageUrl.isNotEmpty)
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                image: DecorationImage(
-                  image: NetworkImage(batch.activity.bannerImageUrl),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            )
-          else
-            Center(
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(60),
-                ),
-                child: Icon(
-                  _getActivityIcon(batch.activity.category),
-                  size: 60,
-                  color: Colors.blue[600],
-                ),
-              ),
-            ),
-
-          // Gradient overlay
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.2),
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.6),
-                ],
-              ),
-            ),
-          ),
-
-          // Age Tag
-          Positioned(
-            top: 16,
-            left: 16,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Color(0xFFFF6B35),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-
-          // Activity Status
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: batch.isActive
-                    ? Colors.green.withOpacity(0.9)
-                    : Colors.grey.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                batch.isActive ? 'Active' : 'Inactive',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-
-          // Activity Category
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Text(
-              batch.activity.categoryDisplay.isNotEmpty
-                  ? batch.activity.categoryDisplay
-                  : batch.activity.category,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withOpacity(0.8),
-                    offset: Offset(1, 1),
-                    blurRadius: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContentSection() {
-    return Padding(
-      padding: EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Activity Name and Price
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
             children: [
+              // Activity Image
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[100],
+                ),
+                child: batch.activity.bannerImageUrl.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          batch.activity.bannerImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return _buildPlaceholderImage();
+                          },
+                        ),
+                      )
+                    : _buildPlaceholderImage(),
+              ),
+              SizedBox(width: 16),
+              
+              // Activity Details
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Activity Name
                     Text(
                       batch.activity.name,
-                      style: AppTextStyles.titleMedium.copyWith(
+                      style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    
+                    // Batch Name (subcategory) - only show if different from activity name
                     if (batch.name != batch.activity.name) ...[
                       SizedBox(height: 4),
                       Text(
@@ -854,80 +799,125 @@ class BatchCard extends StatelessWidget {
                           color: Colors.grey[600],
                           fontStyle: FontStyle.italic,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
+                    
+                    SizedBox(height: 12),
+                    
+                    // Age Range
+                    Row(
+                      children: [
+                        Icon(Icons.person, size: 16, color: Colors.grey[700]),
+                        SizedBox(width: 6),
+                        Text(
+                          'Age: ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages'}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    
+                    // Location/Venue
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, size: 16, color: Colors.grey[700]),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            batch.activity.societyName.isNotEmpty 
+                                ? batch.activity.societyName 
+                                : 'Venue name',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    
+                    // Price with /month
+                    Text(
+                      '₹ ${_formatPrice(batch.priceDisplay)} / month',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF6B35),
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    
+                    // View Details Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: batch.isActive ? onTap : null,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
+                            width: 1.5,
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          batch.isActive ? 'View Details' : 'Not Available',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              Text(
-                batch.priceDisplay,
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: Color(0xFFFF6B35),
-                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          SizedBox(height: 16),
-
-          // Details
-          if (batch.activity.societyName.isNotEmpty) ...[
-            _buildInfoRow(Icons.location_on, batch.activity.societyName),
-            SizedBox(height: 12),
-          ],
-          if (batch.activity.instructorName.isNotEmpty) ...[
-            _buildInfoRow(Icons.person, batch.activity.instructorName),
-            SizedBox(height: 12),
-          ],
-          _buildInfoRow(
-            Icons.schedule,
-            '${batch.startDate} - ${batch.endDate}',
-          ),
-          SizedBox(height: 16),
-          _buildInfoRow(Icons.people, 'Capacity: ${batch.capacity}'),
-          SizedBox(height: 20),
-
-          // Action Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: batch.isActive ? onTap : null,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
-                  width: 1.5,
-                ),
-                padding: EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              child: Text(
-                batch.isActive ? 'View Details' : 'Not Available',
-                style: AppTextStyles.titleMedium.copyWith(
-                  color: batch.isActive ? Color(0xFFFF6B35) : Colors.grey,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.grey[600], size: 18),
-        SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
-          ),
-        ),
-      ],
+  // Helper method to format price (remove existing currency symbol if present)
+  String _formatPrice(String priceDisplay) {
+    // Remove ₹ symbol if it exists and any extra formatting
+    String cleanPrice = priceDisplay.replaceAll('₹', '').replaceAll('Rs.', '').trim();
+    
+    // Extract just the number part
+    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
+    if (numberMatch != null) {
+      return numberMatch.group(0) ?? priceDisplay;
+    }
+    return cleanPrice;
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey[200],
+      ),
+      child: Icon(
+        _getActivityIcon(batch.activity.category),
+        size: 40,
+        color: Colors.grey[500],
+      ),
     );
   }
 
@@ -946,6 +936,8 @@ class BatchCard extends StatelessWidget {
         return Icons.music_video;
       case 'academic':
         return Icons.school;
+      case 'robotics':
+        return Icons.precision_manufacturing;
       default:
         return Icons.extension;
     }
