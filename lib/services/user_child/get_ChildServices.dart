@@ -73,7 +73,7 @@ class EditChildRequest {
 
 // API Service with Caching
 class GetChildservices {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app//api';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
   static const String _tokenKey = 'auth_token';
 
   // Cache variables for children list

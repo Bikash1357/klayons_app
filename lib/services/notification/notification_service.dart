@@ -93,7 +93,7 @@ class AnnouncementModel {
 
 // Service class for handling API calls
 class NotificationService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app//api';
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
   static const String announcementsEndpoint = '/announcements';
 
   // Method to get all announcements

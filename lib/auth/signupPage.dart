@@ -147,7 +147,7 @@ class _SignUnPageState extends State<SignUnPage> {
         requestBody['society_name'] = _selectedSociety!.name;
 
       final response = await http.post(
-        Uri.parse('https://dev-klayonsapi.vercel.app//api/auth/signup/'),
+        Uri.parse('https://dev-klayonsapi.vercel.app/api/auth/signup/'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode(requestBody),
       );
