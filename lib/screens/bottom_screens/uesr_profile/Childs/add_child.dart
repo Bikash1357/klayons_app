@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../services/auth/login_service.dart';
 import '../../../../utils/styles/fonts.dart';
+import 'package:klayons/utils/colour.dart';
 
 class ChildData {
   final String firstName;
@@ -444,9 +445,9 @@ class _AddChildPageState extends State<AddChildPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),

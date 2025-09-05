@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:klayons/utils/colour.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
@@ -424,9 +424,9 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),

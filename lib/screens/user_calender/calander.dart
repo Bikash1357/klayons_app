@@ -10,6 +10,7 @@ import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
 import 'create_event_dialog.dart';
 import 'event_model.dart';
+import 'package:klayons/utils/colour.dart';
 
 class CalendarScreen extends StatefulWidget {
   @override
@@ -551,7 +552,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Activity Schedule',
@@ -560,7 +561,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
         actions: [

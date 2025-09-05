@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/home_screen.dart';
-
+import 'package:klayons/utils/colour.dart';
 import '../../../services/user_child/get_ChildServices.dart';
 import '../../../services/get_userprofile_service.dart';
 import '../../../utils/styles/fonts.dart';
@@ -210,9 +210,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: AppColors.background,
         elevation: 0,
         title: const Text(
           'YOUR PROFILE',

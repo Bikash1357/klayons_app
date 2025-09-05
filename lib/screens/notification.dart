@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/styles/fonts.dart';
+import 'package:klayons/utils/colour.dart';
 
 import '../services/notification/notification_service.dart';
 
@@ -59,9 +60,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8F8F8),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
@@ -80,12 +81,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ),
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.black87),
-            onPressed: _refreshAnnouncements,
-          ),
-        ],
       ),
       body: Column(
         children: [

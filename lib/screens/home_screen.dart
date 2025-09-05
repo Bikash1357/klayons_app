@@ -318,9 +318,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   Widget _buildHomePage() {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         automaticallyImplyLeading: false,
         elevation: 0,
         title: Row(

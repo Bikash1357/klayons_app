@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
-
+import 'package:klayons/utils/colour.dart';
 import '../../../services/auth/login_service.dart';
 import '../../../services/get_userprofile_service.dart';
 import '../../../utils/styles/fonts.dart';
@@ -489,9 +489,10 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('SETTINGS', style: AppTextStyles.titleLarge),
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
@@ -501,7 +502,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ),
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: _isLoading
             ? const Center(

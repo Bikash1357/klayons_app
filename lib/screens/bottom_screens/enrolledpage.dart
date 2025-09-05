@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/activity/activities_batchServices/get_delete_enrolled_service.dart';
 import '../../utils/styles/fonts.dart';
+import 'package:klayons/utils/colour.dart';
 
 class EnrolledPage extends StatefulWidget {
   const EnrolledPage({Key? key}) : super(key: key);
@@ -231,6 +232,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           "Enrolled Batches",
@@ -241,61 +243,8 @@ class _EnrolledPageState extends State<EnrolledPage> {
           ),
         ),
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
-        actions: [
-          // Debug button to show cache stats (remove in production)
-          if (true) // Set to false in production
-            IconButton(
-              icon: Icon(Icons.info_outline, color: Colors.grey[600]),
-              onPressed: () {
-                final stats = GetEnrollmentService.getCacheStats();
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('Cache Stats'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Has Cache: ${stats['hasCachedData']}'),
-                        Text('Count: ${stats['enrollmentCount']}'),
-                        Text('Age: ${stats['cacheAgeMinutes']} min'),
-                        Text('Valid: ${stats['isCacheValid']}'),
-                        Text('Loading: ${stats['isCurrentlyLoading']}'),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          GetEnrollmentService.clearCache();
-                          Navigator.pop(context);
-                        },
-                        child: Text('Clear Cache'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Close'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          IconButton(
-            icon: _isRefreshing
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.deepOrange,
-                    ),
-                  )
-                : const Icon(Icons.refresh, color: Colors.black87),
-            onPressed: _isRefreshing ? null : _refreshEnrollments,
-          ),
-        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(

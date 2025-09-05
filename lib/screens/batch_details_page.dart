@@ -3,6 +3,7 @@ import 'package:klayons/services/activity/activities_batchServices/batchWithActi
 import 'package:klayons/utils/styles/fonts.dart';
 import '../services/activity/activities_batchServices/enrollment_service.dart';
 import '../services/user_child/get_ChildServices.dart';
+import 'package:klayons/utils/colour.dart';
 
 class ActivityBookingPage extends StatefulWidget {
   final int batchId;
@@ -178,12 +179,12 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -195,10 +196,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.favorite_border, color: Colors.black),
-            onPressed: () {},
-          ),
           IconButton(
             icon: Icon(Icons.share, color: Colors.black),
             onPressed: () {},
