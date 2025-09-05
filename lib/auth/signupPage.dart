@@ -330,6 +330,7 @@ class _SignUnPageState extends State<SignUnPage> {
                       hintText: 'Name*',
                       controller: _nameController,
                       keyboardType: TextInputType.text,
+                      showDynamicBorders: false,
                     ),
                     SizedBox(height: 16),
 
@@ -338,6 +339,7 @@ class _SignUnPageState extends State<SignUnPage> {
                       hintText: 'Email or Phone*',
                       controller: _emailOrPhoneController,
                       keyboardType: TextInputType.text,
+                      showDynamicBorders: false,
                     ),
                     SizedBox(height: 24),
 
@@ -640,6 +642,7 @@ class _SignUnPageState extends State<SignUnPage> {
           hintText: 'Search Society Complex*',
           controller: _searchController,
           keyboardType: TextInputType.text,
+          showDynamicBorders: false,
         ),
         if (_showSuggestions)
           Container(
@@ -721,6 +724,7 @@ class _SignUnPageState extends State<SignUnPage> {
           hintText: 'Area, Pincode*',
           controller: _addressController,
           keyboardType: TextInputType.text,
+          showDynamicBorders: false,
         ),
       ],
     );
