@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 import '../../services/activity/activities_batchServices/get_delete_enrolled_service.dart';
 import '../../utils/styles/fonts.dart';
@@ -470,10 +471,14 @@ class _EnrolledPageState extends State<EnrolledPage> {
                                     color: Colors.red,
                                   ),
                                 )
-                              : Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                  size: 16,
+                              : SvgPicture.asset(
+                                  'assets/App_icons/iconDelete.svg',
+                                  width: 16,
+                                  height: 16,
+                                  colorFilter: ColorFilter.mode(
+                                    Colors.red,
+                                    BlendMode.srcIn,
+                                  ),
                                 ),
                         ),
                       ),

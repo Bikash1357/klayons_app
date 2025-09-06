@@ -66,7 +66,7 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       KlayonsText(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         'Fun and Engaging Activities for Kids',
                         textAlign: TextAlign.center,

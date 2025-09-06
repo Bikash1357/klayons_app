@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/notification.dart';
@@ -307,6 +308,25 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
+  // Helper method to build custom navigation icons
+  Widget _buildNavIcon(String assetPath, int index, {IconData? fallbackIcon}) {
+    bool isSelected = selectedIndex == index;
+    Color iconColor = isSelected ? Color(0xFFFF6B35) : Colors.grey;
+
+    if (assetPath.isNotEmpty) {
+      return SvgPicture.asset(
+        assetPath,
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+      );
+    } else if (fallbackIcon != null) {
+      return Icon(fallbackIcon, color: iconColor);
+    } else {
+      return Icon(Icons.help_outline, color: iconColor);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -326,35 +346,35 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         title: Row(
           children: [
             // Profile Image
-            GestureDetector(
-              onTap: _navigateToProfile,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primaryOrange.withOpacity(0.1),
-                  border: Border.all(
-                    color: AppColors.primaryOrange.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: userProfileImage != null && userProfileImage!.isNotEmpty
-                    ? ClipOval(
-                        child: Image.network(
-                          userProfileImage!,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildDefaultAvatar();
-                          },
-                        ),
-                      )
-                    : _buildDefaultAvatar(),
-              ),
-            ),
-            SizedBox(width: 12),
+            // GestureDetector(
+            //   onTap: _navigateToProfile,
+            //   child: Container(
+            //     width: 40,
+            //     height: 40,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       color: AppColors.primaryOrange.withOpacity(0.1),
+            //       border: Border.all(
+            //         color: AppColors.primaryOrange.withOpacity(0.3),
+            //         width: 1,
+            //       ),
+            //     ),
+            //     child: userProfileImage != null && userProfileImage!.isNotEmpty
+            //         ? ClipOval(
+            //             child: Image.network(
+            //               userProfileImage!,
+            //               width: 40,
+            //               height: 40,
+            //               fit: BoxFit.cover,
+            //               errorBuilder: (context, error, stackTrace) {
+            //                 return _buildDefaultAvatar();
+            //               },
+            //             ),
+            //           )
+            //         : _buildDefaultAvatar(),
+            //   ),
+            // ),
+            // SizedBox(width: 12),
             // User Info
             Expanded(
               child: Column(
@@ -373,44 +393,46 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                         )
                       : Text(
                           'Hi, $userName!',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                          style: GoogleFonts.poetsenOne(
+                            textStyle: const TextStyle(
+                              fontSize: 24,
+                              //fontWeight: FontWeight.bold,
+                              color: AppColors.primaryOrange,
+                            ),
                           ),
                         ),
                   SizedBox(height: 2),
                   // User address
-                  if (userAddress.isNotEmpty || isLoadingUserProfile)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(width: 4),
-                        Flexible(
-                          child: isLoadingUserProfile
-                              ? Container(
-                                  width: 100,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                )
-                              : Text(
-                                  userAddress,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                        ),
-                      ],
-                    ),
+                  //if (userAddress.isNotEmpty || isLoadingUserProfile)
+                  // Row(
+                  //   children: [
+                  //     Icon(
+                  //       Icons.location_on,
+                  //       size: 14,
+                  //       color: Colors.grey[600],
+                  //     ),
+                  //     SizedBox(width: 4),
+                  //     Flexible(
+                  //       child: isLoadingUserProfile
+                  //           ? Container(
+                  //               width: 100,
+                  //               height: 12,
+                  //               decoration: BoxDecoration(
+                  //                 color: Colors.grey[300],
+                  //                 borderRadius: BorderRadius.circular(6),
+                  //               ),
+                  //             )
+                  //           : Text(
+                  //               userAddress,
+                  //               style: TextStyle(
+                  //                 fontSize: 12,
+                  //                 color: Colors.grey[600],
+                  //               ),
+                  //               overflow: TextOverflow.ellipsis,
+                  //             ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -421,7 +443,15 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.notifications_outlined, color: Colors.black54),
+                icon: SvgPicture.asset(
+                  'assets/App_icons/iconBell.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    AppColors.darkElements,
+                    BlendMode.srcIn,
+                  ),
+                ),
                 onPressed: _navigateToNotifications,
               ),
               // Badge for unread notifications
@@ -667,13 +697,26 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             currentIndex: selectedIndex,
             onTap: _onBottomNavTapped,
             items: [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+              // Home Icon - Custom SVG
               BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today),
+                icon: _buildNavIcon('assets/App_icons/iconHome.svg', 0),
                 label: '',
               ),
-              BottomNavigationBarItem(icon: Icon(Icons.school), label: ''),
-              BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+              // Calendar Icon
+              BottomNavigationBarItem(
+                icon: _buildNavIcon('assets/App_icons/iconCalendar.svg', 1),
+                label: '',
+              ),
+              // Enrolled/Ticket Icon - Custom SVG
+              BottomNavigationBarItem(
+                icon: _buildNavIcon('assets/App_icons/iconTicket.svg', 2),
+                label: '',
+              ),
+              // Profile Icon - Custom SVG
+              BottomNavigationBarItem(
+                icon: _buildNavIcon('assets/App_icons/iconProfile.svg', 3),
+                label: '',
+              ),
             ],
           ),
           AnimatedBuilder(
@@ -888,7 +931,7 @@ class CompactBatchCard extends StatelessWidget {
                         // View Details Button
                         SizedBox(
                           width: double.infinity,
-                          height: 36,
+
                           child: OutlinedButton(
                             onPressed: batch.isActive ? onTap : null,
                             style: OutlinedButton.styleFrom(

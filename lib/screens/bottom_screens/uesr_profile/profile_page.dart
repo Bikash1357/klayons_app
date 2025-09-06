@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/home_screen.dart';
@@ -113,9 +114,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   // Add this helper method for refresh with cache clear
-  Future<void> _loadChildrenWithCacheClear() async {
-    return _loadChildren(clearCache: true);
-  }
+  // Future<void> _loadChildrenWithCacheClear() async {
+  //   return _loadChildren(clearCache: true);
+  // }
 
   Future<void> _refreshAll() async {
     print('🔄 Refreshing all data - clearing caches...');
@@ -214,10 +215,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text(
-          'YOUR PROFILE',
-          style: AppTextStyles.titleMedium,
-        ),
+        title: const Text('YOUR PROFILE', style: AppTextStyles.titleMedium),
         centerTitle: false,
         leading: IconButton(
           onPressed: () {
@@ -226,11 +224,27 @@ class _UserProfilePageState extends State<UserProfilePage> {
               MaterialPageRoute(builder: (context) => KlayonsHomePage()),
             );
           },
-          icon: Icon(Icons.arrow_back_ios),
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black87, size: 24),
+            icon: SvgPicture.asset(
+              'assets/App_icons/iconSettings.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                AppColors.darkElements,
+                BlendMode.srcIn,
+              ),
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -346,12 +360,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       children: [
         const Icon(Icons.error_outline, color: Colors.red, size: 48),
         const SizedBox(height: 12),
-                  Text(
-            'Failed to load profile',
-            style: AppTextStyles.titleMedium.copyWith(
-              color: Colors.grey[700],
-            ),
-          ),
+        Text(
+          'Failed to load profile',
+          style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[700]),
+        ),
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed: _loadUserProfile,
@@ -473,10 +485,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'CHILDREN PROFILES',
-              style: AppTextStyles.titleMedium,
-            ),
+            const Text('CHILDREN PROFILES', style: AppTextStyles.titleMedium),
             IconButton(
               icon: const Icon(Icons.add, color: Colors.black87, size: 24),
               onPressed: () {
@@ -644,9 +653,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 12),
           Text(
             'Failed to load children profiles',
-            style: AppTextStyles.titleMedium.copyWith(
-              color: Colors.grey[700],
-            ),
+            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[700]),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -686,9 +693,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 12),
           Text(
             'No children profiles found',
-            style: AppTextStyles.titleMedium.copyWith(
-              color: Colors.grey[700],
-            ),
+            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[700]),
           ),
           const SizedBox(height: 8),
           Text(
@@ -812,23 +817,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Child Name
               Text(
                 child.name,
-                style: AppTextStyles.titleSmall.copyWith(
-                  color: Colors.black87,
-                ),
+                style: AppTextStyles.titleSmall.copyWith(color: Colors.black87),
               ),
               const SizedBox(height: 4),
 
               // Birth Date
               Text(
                 'Birthdate: ${_formatDate(child.dob)}',
-                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.grey[600],
+                ),
               ),
               const SizedBox(height: 2),
 
               // Gender
               Text(
                 'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
-                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Colors.grey[600],
+                ),
               ),
 
               // Show interests if available

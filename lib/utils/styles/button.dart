@@ -16,9 +16,9 @@ class OrangeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return SizedBox( 
+      height: 60,
       width: double.infinity,
-      height: 56,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,
         style: ElevatedButton.styleFrom(

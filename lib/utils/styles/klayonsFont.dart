@@ -12,8 +12,8 @@ class KlayonsText extends StatelessWidget {
       'klayons',
       style: GoogleFonts.poetsenOne(
         textStyle: const TextStyle(
-          fontSize: 42,
-          fontWeight: FontWeight.bold,
+          fontSize: 70,
+          //fontWeight: FontWeight.bold,
           color: AppColors.orangeHighlight,
         ),
       ),
