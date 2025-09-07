@@ -86,19 +86,18 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
             children: [
               Text(
                 'Add Custom Activity',
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: AppTextStyles.titleLarge(
+                  context,
+                ).copyWith(color: Colors.orange, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 20),
 
               // Activity for section
               Text(
                 'Activity for',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.bodyMedium(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
               SizedBox(height: 8),
               Row(
@@ -132,7 +131,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                             ),
                             child: Text(
                               child.name,
-                              style: AppTextStyles.bodyMedium.copyWith(
+                              style: AppTextStyles.bodyMedium(context).copyWith(
                                 color: _selectedChild == child.name
                                     ? Colors.orange.shade700
                                     : Colors.grey.shade700,
@@ -205,7 +204,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                             SizedBox(width: 8),
                             Text(
                               DateFormat('EEE, d MMM').format(_selectedDate),
-                              style: AppTextStyles.bodyMedium,
+                              style: AppTextStyles.bodyMedium(context),
                             ),
                           ],
                         ),
@@ -234,7 +233,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               _neverStops
                                   ? 'Never Stops'
                                   : DateFormat('EEE, d MMM').format(_endDate),
-                              style: AppTextStyles.bodyMedium,
+                              style: AppTextStyles.bodyMedium(context),
                             ),
                           ],
                         ),
@@ -261,7 +260,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                           _startTime != null
                               ? _startTime!.format(context)
                               : '5:00 PM',
-                          style: AppTextStyles.bodyMedium,
+                          style: AppTextStyles.bodyMedium(context),
                         ),
                       ),
                     ),
@@ -286,7 +285,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                           _endTime != null
                               ? _endTime!.format(context)
                               : '6:00 PM',
-                          style: AppTextStyles.bodyMedium,
+                          style: AppTextStyles.bodyMedium(context),
                         ),
                       ),
                     ),
@@ -298,9 +297,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
               // Repeat every section
               Text(
                 'Repeat every',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.bodyMedium(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w500),
               ),
               SizedBox(height: 12),
 
@@ -333,7 +332,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       child: Center(
                         child: Text(
                           _dayLabels[index],
-                          style: AppTextStyles.bodyMedium.copyWith(
+                          style: AppTextStyles.bodyMedium(context).copyWith(
                             color: isSelected
                                 ? Colors.white
                                 : Colors.grey.shade600,
@@ -360,9 +359,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ),
                       child: Text(
                         'Cancel',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
+                        style: AppTextStyles.bodyMedium(
+                          context,
+                        ).copyWith(color: Colors.grey.shade600),
                       ),
                     ),
                   ),
@@ -379,7 +378,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ),
                       child: Text(
                         'Save',
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: AppTextStyles.bodyMedium(context).copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -395,248 +394,246 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
     );
   }
 
-  
-
-
-void _selectDate(BuildContext context, bool isStartDate) async {
-  if (isStartDate) {
-    // Custom dialog for start date with CalendarDatePicker and Save button
-    final DateTime? pickedDate = await showDialog<DateTime>(
-      context: context,
-      builder: (context) {
-        DateTime tempPickedDate = _selectedDate;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                'Select Start Date',
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.w600,
+  void _selectDate(BuildContext context, bool isStartDate) async {
+    if (isStartDate) {
+      // Custom dialog for start date with CalendarDatePicker and Save button
+      final DateTime? pickedDate = await showDialog<DateTime>(
+        context: context,
+        builder: (context) {
+          DateTime tempPickedDate = _selectedDate;
+          return StatefulBuilder(
+            builder: (context, setState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 300,
-                    height: 300,
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.light(primary: Colors.orange),
+                title: Text(
+                  'Select Start Date',
+                  style: AppTextStyles.titleMedium(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 300,
+                      height: 300,
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.light(
+                            primary: Colors.orange,
+                          ),
+                        ),
+                        child: CalendarDatePicker(
+                          initialDate: _selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(Duration(days: 365)),
+                          onDateChanged: (date) {
+                            tempPickedDate = date;
+                          },
+                        ),
                       ),
-                      child: CalendarDatePicker(
-                        initialDate: _selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                        onDateChanged: (date) {
-                          tempPickedDate = date;
-                        },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Cancel
+                    },
+                    child: Text(
+                      'Cancel',
+                      style: AppTextStyles.bodyMedium(
+                        context,
+                      ).copyWith(color: Colors.grey.shade600),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(
+                        context,
+                      ).pop(tempPickedDate); // Save selected date
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'Save',
+                      style: AppTextStyles.bodyMedium(context).copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Cancel
-                  },
-                  child: Text(
-                    'Cancel',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
+              );
+            },
+          );
+        },
+      );
+
+      if (pickedDate != null) {
+        setState(() {
+          _selectedDate = pickedDate;
+        });
+      }
+    } else {
+      // Custom dialog for end date with CalendarDatePicker, Save and "Set as Never Stop" buttons
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) {
+          DateTime tempPickedDate = _endDate;
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(tempPickedDate); // Save selected date
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Save',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                title: Text(
+                  'Select End Date',
+                  style: AppTextStyles.titleMedium(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w600),
                 ),
-              ],
-            );
-          },
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 300,
+                      height: 300,
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.light(
+                            primary: Colors.orange,
+                          ),
+                        ),
+                        child: CalendarDatePicker(
+                          initialDate: _neverStops ? DateTime.now() : _endDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(Duration(days: 365)),
+                          onDateChanged: (date) {
+                            tempPickedDate = date;
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  // Cancel button
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Cancel
+                    },
+                    child: Text(
+                      'Cancel',
+                      style: AppTextStyles.bodyMedium(
+                        context,
+                      ).copyWith(color: Colors.grey.shade600),
+                    ),
+                  ),
+                  // Save button
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop({'action': 'never_stop'});
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromRGBO(255, 152, 0, 1),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Set as Never Stop',
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(width: 40),
+
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(
+                            context,
+                          ).pop({'action': 'save', 'date': tempPickedDate});
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Save',
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      // Handle the result
+      if (result != null) {
+        if (result['action'] == 'save') {
+          setState(() {
+            _endDate = result['date'];
+            _neverStops = false;
+          });
+        } else if (result['action'] == 'never_stop') {
+          setState(() {
+            _neverStops = true;
+          });
+        }
+      }
+    }
+  }
+
+  void _selectTime(BuildContext context, bool isStartTime) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStartTime
+          ? (_startTime ?? TimeOfDay(hour: 17, minute: 0))
+          : (_endTime ?? TimeOfDay(hour: 18, minute: 0)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(
+            context,
+          ).copyWith(colorScheme: ColorScheme.light(primary: Colors.orange)),
+          child: child!,
         );
       },
     );
 
-    if (pickedDate != null) {
+    if (picked != null) {
+      int roundedMinute = (picked.minute / 5).round() * 5;
+      if (roundedMinute == 60) roundedMinute = 0;
+      final roundedTime = TimeOfDay(hour: picked.hour, minute: roundedMinute);
       setState(() {
-        _selectedDate = pickedDate;
+        if (isStartTime) {
+          _startTime = roundedTime;
+        } else {
+          _endTime = roundedTime;
+        }
       });
     }
-  } else {
-    // Custom dialog for end date with CalendarDatePicker, Save and "Set as Never Stop" buttons
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) {
-        DateTime tempPickedDate = _endDate;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(
-                'Select End Date',
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 300,
-                    height: 300,
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.light(primary: Colors.orange),
-                      ),
-                      child: CalendarDatePicker(
-                        initialDate: _neverStops ? DateTime.now() : _endDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                        onDateChanged: (date) {
-                          tempPickedDate = date;
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                // Cancel button
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(); // Cancel
-                  },
-                  child: Text(
-                    'Cancel',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ),
-                // Save button
-                Row(
-                  children: [
-                    ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop({
-                      'action': 'never_stop',
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(255, 152, 0, 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Set as Never Stop',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-                SizedBox(width: 40),
-
-                    ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop({
-                      'action': 'save',
-                      'date': tempPickedDate,
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    'Save',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-
-               
-                
-                ],
-                )
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    // Handle the result
-    if (result != null) {
-      if (result['action'] == 'save') {
-        setState(() {
-          _endDate = result['date'];
-          _neverStops = false;
-        });
-      } else if (result['action'] == 'never_stop') {
-        setState(() {
-          _neverStops = true;
-        });
-      }
-    }
   }
-}
-
-void _selectTime(BuildContext context, bool isStartTime) async {
-  final TimeOfDay? picked = await showTimePicker(
-    context: context,
-    initialTime: isStartTime
-        ? (_startTime ?? TimeOfDay(hour: 17, minute: 0))
-        : (_endTime ?? TimeOfDay(hour: 18, minute: 0)),
-    builder: (context, child) {
-      return Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(primary: Colors.orange),
-        ),
-        child: child!,
-      );
-    },
-    
-  );
-
-  if (picked != null) {
-    int roundedMinute = (picked.minute / 5).round() * 5;
-    if (roundedMinute == 60) roundedMinute = 0;
-    final roundedTime = TimeOfDay(hour: picked.hour, minute: roundedMinute);
-    setState(() {
-      if (isStartTime) {
-        _startTime = roundedTime;
-      } else {
-        _endTime = roundedTime;
-      }
-    });
-  }
-}
-
-
 
   void _createEvent() {
     if (_titleController.text.isEmpty ||

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:klayons/services/auth/signup_service.dart';
 import 'package:klayons/services/auth/login_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
@@ -126,10 +127,14 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.black87,
-                          size: 18,
+                        child: SvgPicture.asset(
+                          'assets/App_icons/iconBack.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.darkElements,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
@@ -159,9 +164,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   padding: EdgeInsets.only(top: 16),
                   child: Text(
                     'Verify Profile',
-                    style: AppTextStyles.titleLarge.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                    style: AppTextStyles.titleLarge(
+                      context,
+                    ).copyWith(color: AppColors.textSecondary),
                   ),
                 ),
               ),
@@ -179,7 +184,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     // Description Text
                     Text(
                       'We have sent you an OTP on ${_isEmail(widget.email) ? 'email' : 'WhatsApp'} at',
-                      style: AppTextStyles.titleMedium.copyWith(
+                      style: AppTextStyles.titleMedium(context).copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 16,
                         height: 1.4,
@@ -191,9 +196,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     // Email/Phone display
                     Text(
                       widget.email,
-                      style: AppTextStyles.titleLarge.copyWith(
-                        color: AppColors.primaryOrange,
-                      ),
+                      style: AppTextStyles.titleLarge(
+                        context,
+                      ).copyWith(color: AppColors.primaryOrange),
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 40),
@@ -222,9 +227,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                 padding: EdgeInsets.only(left: 4),
                                 child: Text(
                                   '00:${_resendCountdown.toString().padLeft(2, '0')}',
-                                  style: AppTextStyles.titleSmall.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: AppTextStyles.titleSmall(
+                                    context,
+                                  ).copyWith(color: AppColors.textSecondary),
                                 ),
                               ),
 
@@ -244,11 +249,12 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                 ),
                                 child: Text(
                                   _isResending ? 'Resending...' : 'Resend Code',
-                                  style: AppTextStyles.titleSmall.copyWith(
-                                    color: (_canResend && !_isResending)
-                                        ? AppColors.primaryOrange
-                                        : Colors.grey,
-                                  ),
+                                  style: AppTextStyles.titleSmall(context)
+                                      .copyWith(
+                                        color: (_canResend && !_isResending)
+                                            ? AppColors.primaryOrange
+                                            : Colors.grey,
+                                      ),
                                 ),
                               ),
                             ],
@@ -280,19 +286,21 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                 SizedBox(width: 10),
                                 Text(
                                   'Verifying...',
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                  style: AppTextStyles.titleMedium(context)
+                                      .copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
                                 ),
                               ],
                             )
                           : Text(
                               'Submit',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
+                              style: AppTextStyles.titleMedium(context)
+                                  .copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                             ),
                     ),
                     SizedBox(height: 30),
@@ -359,7 +367,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             controller: _otpControllers[index],
             focusNode: _focusNodes[index],
             textAlign: TextAlign.center,
-            style: AppTextStyles.titleLarge.copyWith(
+            style: AppTextStyles.titleLarge(context).copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: AppColors.textSecondary,

@@ -70,7 +70,7 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
                       Text(
                         'Fun and Engaging Activities for Kids',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.titleMedium.copyWith(
+                        style: AppTextStyles.titleMedium(context).copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w300,
                           letterSpacing: 0.2,
@@ -95,7 +95,7 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
                     const SizedBox(height: 16),
                     Text(
                       'Loading...',
-                      style: AppTextStyles.titleSmall.copyWith(
+                      style: AppTextStyles.titleSmall(context).copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w300,
                       ),

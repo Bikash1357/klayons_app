@@ -221,7 +221,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           SizedBox(height: 16),
           Text(
             'Loading activity details...',
-            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[600]),
+            style: AppTextStyles.titleMedium(
+              context,
+            ).copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -248,7 +250,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
             SizedBox(height: 8),
             Text(
               errorMessage!,
-              style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
+              style: AppTextStyles.titleSmall(
+                context,
+              ).copyWith(color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 16),
@@ -372,7 +376,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
 
                 Text(
                   'Recommended for ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All ages'}',
-                  style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
+                  style: AppTextStyles.titleSmall(
+                    context,
+                  ).copyWith(color: Colors.grey[600]),
                 ),
                 SizedBox(height: 16),
 
@@ -389,7 +395,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                     SizedBox(width: 8),
                     Text(
                       'for full course',
-                      style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
+                      style: AppTextStyles.titleSmall(
+                        context,
+                      ).copyWith(color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -587,7 +595,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                   Spacer(),
                   Text(
                     '${selectedChild!.gender}, Age: ${_calculateAge(selectedChild!.dob)}',
-                    style: AppTextStyles.bodySmall.copyWith(color: Colors.green[600]),
+                    style: AppTextStyles.bodySmall(
+                      context,
+                    ).copyWith(color: Colors.green[600]),
                   ),
                 ],
               ),
@@ -743,7 +753,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           batch.activity.description.isNotEmpty
               ? batch.activity.description
               : 'This ${batch.activity.categoryDisplay.toLowerCase()} activity is designed to provide students with hands-on learning experience. Join us for an engaging and educational journey that will help develop new skills and build confidence.',
-          style: AppTextStyles.titleSmall.copyWith(height: 1.6, color: Colors.grey[700]),
+          style: AppTextStyles.titleSmall(
+            context,
+          ).copyWith(height: 1.6, color: Colors.grey[700]),
         ),
       ],
     );
@@ -1313,7 +1325,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                 SizedBox(height: 16),
                 Text(
                   'Would you like to go to login?',
-                  style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[600]),
+                  style: AppTextStyles.titleSmall(
+                    context,
+                  ).copyWith(color: Colors.grey[600]),
                 ),
               ],
             ],

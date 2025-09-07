@@ -458,9 +458,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             SizedBox(width: 8),
             Text(
               'Loading children...',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Colors.grey.shade600,
-              ),
+              style: AppTextStyles.bodySmall(
+                context,
+              ).copyWith(color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -497,7 +497,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               child: Text(
                 'All Activities',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: AppTextStyles.bodySmall(context).copyWith(
                   fontWeight: _showAllActivities
                       ? FontWeight.w600
                       : FontWeight.w400,
@@ -536,7 +536,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 child: Text(
                   "${child.name}'s Activities",
-                  style: AppTextStyles.bodySmall.copyWith(
+                  style: AppTextStyles.bodySmall(context).copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isSelected ? Colors.orange.shade700 : Colors.black,
                   ),
@@ -556,10 +556,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         title: Text(
           'Activity Schedule',
-          style: AppTextStyles.headlineSmall.copyWith(
-            color: Colors.black,
-            fontSize: 20,
-          ),
+          style: AppTextStyles.headlineSmall(
+            context,
+          ).copyWith(color: Colors.black, fontSize: 20),
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -597,7 +596,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       Expanded(
                         child: Text(
                           DateFormat('MMMM yyyy').format(_focusedDay),
-                          style: AppTextStyles.titleLarge.copyWith(
+                          style: AppTextStyles.titleLarge(context).copyWith(
                             fontSize: 19,
                             fontWeight: FontWeight.bold,
                             color: Colors.orange,
@@ -648,25 +647,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                   calendarStyle: CalendarStyle(
                     outsideDaysVisible: false,
-                    weekendTextStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.black,
-                    ),
-                    defaultTextStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.black,
-                    ),
+                    weekendTextStyle: AppTextStyles.bodyMedium(
+                      context,
+                    ).copyWith(color: Colors.black),
+                    defaultTextStyle: AppTextStyles.bodyMedium(
+                      context,
+                    ).copyWith(color: Colors.black),
                     selectedDecoration: BoxDecoration(
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    selectedTextStyle: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    selectedTextStyle: AppTextStyles.bodyMedium(context)
+                        .copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                     todayDecoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    todayTextStyle: AppTextStyles.bodyMedium.copyWith(
+                    todayTextStyle: AppTextStyles.bodyMedium(context).copyWith(
                       color: Colors.orange,
                       fontWeight: FontWeight.bold,
                     ),
@@ -680,17 +680,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     leftChevronVisible: false,
                     rightChevronVisible: false,
                     headerPadding: EdgeInsets.zero,
-                    titleTextStyle: AppTextStyles.bodySmall.copyWith(
-                      fontSize: 0,
-                    ),
+                    titleTextStyle: AppTextStyles.bodySmall(
+                      context,
+                    ).copyWith(fontSize: 0),
                   ),
                   daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.grey.shade600,
-                    ),
-                    weekendStyle: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.grey.shade600,
-                    ),
+                    weekdayStyle: AppTextStyles.bodySmall(
+                      context,
+                    ).copyWith(color: Colors.grey.shade600),
+                    weekendStyle: AppTextStyles.bodySmall(
+                      context,
+                    ).copyWith(color: Colors.grey.shade600),
                   ),
                 ),
               ],
@@ -712,17 +712,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         children: [
                           Text(
                             'No activities for this day',
-                            style: AppTextStyles.bodyLargeEmphasized.copyWith(
-                              color: Colors.grey.shade600,
-                            ),
+                            style: AppTextStyles.bodyLargeEmphasized(
+                              context,
+                            ).copyWith(color: Colors.grey.shade600),
                           ),
                           SizedBox(height: 8),
                           Text(
                             'Select different activity filters above to see more events',
                             textAlign: TextAlign.center,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: Colors.grey.shade500,
-                            ),
+                            style: AppTextStyles.bodySmall(
+                              context,
+                            ).copyWith(color: Colors.grey.shade500),
                           ),
                         ],
                       ),
@@ -809,8 +809,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     Expanded(
                                       child: Text(
                                         title,
-                                        style: AppTextStyles.bodyLargeEmphasized
-                                            .copyWith(
+                                        style:
+                                            AppTextStyles.bodyLargeEmphasized(
+                                              context,
+                                            ).copyWith(
                                               fontWeight: FontWeight.w600,
                                               decoration: isCancelled
                                                   ? TextDecoration.lineThrough
@@ -835,8 +837,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                         ),
                                         child: Text(
                                           'CANCELLED',
-                                          style: AppTextStyles.bodySmall
-                                              .copyWith(
+                                          style:
+                                              AppTextStyles.bodySmall(
+                                                context,
+                                              ).copyWith(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w600,
                                                 color: Colors.red.shade700,
@@ -848,33 +852,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 SizedBox(height: 4),
                                 Text(
                                   timeText,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: isCancelled
-                                        ? Colors.grey.shade500
-                                        : Colors.grey.shade600,
-                                  ),
+                                  style: AppTextStyles.bodyMedium(context)
+                                      .copyWith(
+                                        color: isCancelled
+                                            ? Colors.grey.shade500
+                                            : Colors.grey.shade600,
+                                      ),
                                 ),
                                 if (venue != null && venue.isNotEmpty) ...[
                                   SizedBox(height: 2),
                                   Text(
                                     venue,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: isCancelled
-                                          ? Colors.grey.shade400
-                                          : Colors.grey.shade500,
-                                    ),
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                          color: isCancelled
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade500,
+                                        ),
                                   ),
                                 ],
                                 if (childInfo != null) ...[
                                   SizedBox(height: 2),
                                   Text(
                                     childInfo,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                      color: isCancelled
-                                          ? Colors.grey.shade400
-                                          : Colors.blue.shade600,
-                                    ),
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                          fontWeight: FontWeight.w500,
+                                          color: isCancelled
+                                              ? Colors.grey.shade400
+                                              : Colors.blue.shade600,
+                                        ),
                                   ),
                                 ],
                               ],
@@ -973,15 +980,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Activity', style: AppTextStyles.titleMedium),
+        title: Text(
+          'Delete Activity',
+          style: AppTextStyles.titleMedium(context),
+        ),
         content: Text(
           'Are you sure you want to delete "${event.title}"?',
-          style: AppTextStyles.bodyMedium,
+          style: AppTextStyles.bodyMedium(context),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: AppTextStyles.bodyMedium),
+            child: Text('Cancel', style: AppTextStyles.bodyMedium(context)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -995,7 +1005,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text(
               'Delete',
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
+              style: AppTextStyles.bodyMedium(
+                context,
+              ).copyWith(color: Colors.white),
             ),
           ),
         ],

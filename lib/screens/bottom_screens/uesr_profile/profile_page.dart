@@ -215,7 +215,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('YOUR PROFILE', style: AppTextStyles.titleMedium),
+        title: Text('YOUR PROFILE', style: AppTextStyles.titleMedium(context)),
         centerTitle: false,
         leading: IconButton(
           onPressed: () {
@@ -362,7 +362,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         const SizedBox(height: 12),
         Text(
           'Failed to load profile',
-          style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[700]),
+          style: AppTextStyles.titleMedium(context).copyWith(color: Colors.grey[700]),
         ),
         const SizedBox(height: 8),
         ElevatedButton(
@@ -409,15 +409,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
             children: [
               Text(
                 _getUserName(),
-                style: AppTextStyles.titleLarge.copyWith(
-                  fontSize: 18,
+                style: AppTextStyles.titleLarge(context).copyWith(
+
                   color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 _getDisplayEmail(),
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTextStyles.bodyMedium(context).copyWith(
                   color: _getEmailTextColor(),
                   fontStyle: _isEmailAvailable()
                       ? FontStyle.normal
@@ -427,7 +427,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               const SizedBox(height: 2),
               Text(
                 _getDisplayPhone(),
-                style: AppTextStyles.bodyMedium.copyWith(
+                style: AppTextStyles.bodyMedium(context).copyWith(
                   color: _getPhoneTextColor(),
                   fontStyle: _isPhoneAvailable()
                       ? FontStyle.normal
@@ -485,7 +485,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('CHILDREN PROFILES', style: AppTextStyles.titleMedium),
+             Text('CHILDREN PROFILES', style: AppTextStyles.titleMedium(context)),
             IconButton(
               icon: const Icon(Icons.add, color: Colors.black87, size: 24),
               onPressed: () {
@@ -653,7 +653,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 12),
           Text(
             'Failed to load children profiles',
-            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[700]),
+            style: AppTextStyles.titleMedium(context).copyWith(color: Colors.grey[700]),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -693,12 +693,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const SizedBox(height: 12),
           Text(
             'No children profiles found',
-            style: AppTextStyles.titleMedium.copyWith(color: Colors.grey[700]),
+            style: AppTextStyles.titleMedium(context).copyWith(color: Colors.grey[700]),
           ),
           const SizedBox(height: 8),
           Text(
             'Add your first child profile',
-            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
+            style: AppTextStyles.bodyMedium(context).copyWith(color: Colors.grey[600]),
           ),
         ],
       ),
@@ -806,7 +806,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Child ID (for debugging - you can remove this in production)
               Text(
                 'ID: ${child.id}',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: AppTextStyles.bodySmall(context).copyWith(
                   fontSize: 10,
                   color: Colors.grey[400],
                   fontStyle: FontStyle.italic,
@@ -817,14 +817,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Child Name
               Text(
                 child.name,
-                style: AppTextStyles.titleSmall.copyWith(color: Colors.black87),
+                style: AppTextStyles.titleSmall(context).copyWith(color: Colors.black87),
               ),
               const SizedBox(height: 4),
 
               // Birth Date
               Text(
                 'Birthdate: ${_formatDate(child.dob)}',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: AppTextStyles.bodySmall(context).copyWith(
                   color: Colors.grey[600],
                 ),
               ),
@@ -833,7 +833,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               // Gender
               Text(
                 'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: AppTextStyles.bodySmall(context).copyWith(
                   color: Colors.grey[600],
                 ),
               ),
@@ -843,8 +843,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 const SizedBox(height: 4),
                 Text(
                   'Interests: ${child.interests.take(2).map((i) => i.name).join(', ')}${child.interests.length > 2 ? '...' : ''}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 10,
+                  style: AppTextStyles.bodySmall(context).copyWith(
+
                     color: Colors.grey[500],
                     fontStyle: FontStyle.italic,
                   ),
@@ -855,8 +855,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 const SizedBox(height: 4),
                 Text(
                   'No interests added',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontSize: 10,
+                  style: AppTextStyles.bodySmall(context).copyWith(
                     color: Colors.grey[400],
                     fontStyle: FontStyle.italic,
                   ),

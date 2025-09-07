@@ -74,7 +74,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         ),
         title: Text(
           'Notifications',
-          style: AppTextStyles.titleMedium.copyWith(
+          style: AppTextStyles.titleMedium(context).copyWith(
             color: Colors.black87,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -137,7 +137,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             const SizedBox(height: 16),
             Text(
               'Failed to load notifications',
-              style: AppTextStyles.titleMedium.copyWith(
+              style: AppTextStyles.titleMedium(context).copyWith(
                 fontSize: 18,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
@@ -147,7 +147,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
             Text(
               errorMessage!,
               textAlign: TextAlign.center,
-              style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[500]),
+              style: AppTextStyles.titleSmall(
+                context,
+              ).copyWith(color: Colors.grey[500]),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -171,7 +173,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             const SizedBox(height: 16),
             Text(
               'No notifications found',
-              style: AppTextStyles.titleMedium.copyWith(
+              style: AppTextStyles.titleMedium(context).copyWith(
                 fontSize: 18,
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
@@ -180,7 +182,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
             const SizedBox(height: 8),
             Text(
               'Check back later for new announcements',
-              style: AppTextStyles.titleSmall.copyWith(color: Colors.grey[500]),
+              style: AppTextStyles.titleSmall(
+                context,
+              ).copyWith(color: Colors.grey[500]),
             ),
           ],
         ),
@@ -238,7 +242,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   Expanded(
                     child: Text(
                       announcement.title,
-                      style: AppTextStyles.titleMedium.copyWith(
+                      style: AppTextStyles.titleMedium(context).copyWith(
                         color: Colors.black87,
                         fontWeight: announcement.isUnread
                             ? FontWeight.w500
@@ -261,7 +265,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     ),
                     child: Text(
                       announcement.scope,
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: AppTextStyles.bodySmall(context).copyWith(
                         fontSize: 10,
                         color: _getScopeColor(announcement.scope),
                         fontWeight: FontWeight.w500,
@@ -274,7 +278,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   // Time ago
                   Text(
                     announcement.getTimeAgo(),
-                    style: AppTextStyles.titleSmall.copyWith(
+                    style: AppTextStyles.titleSmall(context).copyWith(
                       color: Colors.grey[600],
                       fontWeight: FontWeight.w400,
                     ),
@@ -289,10 +293,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   announcement.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.titleSmall.copyWith(
-                    color: Colors.grey[600],
-                    height: 1.3,
-                  ),
+                  style: AppTextStyles.titleSmall(
+                    context,
+                  ).copyWith(color: Colors.grey[600], height: 1.3),
                 ),
               ],
 
@@ -314,7 +317,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       announcement.activityName ??
                           announcement.societyName ??
                           '',
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: AppTextStyles.bodySmall(context).copyWith(
                         color: Colors.grey[500],
                         fontWeight: FontWeight.w400,
                       ),
@@ -365,7 +368,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               Expanded(
                 child: Text(
                   announcement.title,
-                  style: AppTextStyles.titleMedium,
+                  style: AppTextStyles.titleMedium(context),
                 ),
               ),
             ],
@@ -433,16 +436,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
           width: 80,
           child: Text(
             '$label:',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppTextStyles.bodySmall(
+              context,
+            ).copyWith(color: Colors.grey[600], fontWeight: FontWeight.w500),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: AppTextStyles.bodySmall.copyWith(color: Colors.black87),
+            style: AppTextStyles.bodySmall(
+              context,
+            ).copyWith(color: Colors.black87),
           ),
         ),
       ],

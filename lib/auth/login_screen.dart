@@ -118,9 +118,9 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                               Center(
                                 child: Text(
                                   'Log in to your account',
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: AppTextStyles.titleMedium(
+                                    context,
+                                  ).copyWith(color: AppColors.textSecondary),
                                 ),
                               ),
 
@@ -174,8 +174,10 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                         )
                                       : Text(
                                           "Send OTP",
-                                          style: AppTextStyles.formLarge
-                                              .copyWith(
+                                          style:
+                                              AppTextStyles.formLarge(
+                                                context,
+                                              ).copyWith(
                                                 color: AppColors.background,
                                               ),
                                         ),
@@ -222,9 +224,10 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                   children: [
                                     Text(
                                       "Don't have an account?",
-                                      style: AppTextStyles.titleMedium.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
+                                      style: AppTextStyles.titleMedium(context)
+                                          .copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
                                     ),
                                     //SizedBox(height: 5),
                                     CustomTextButton(
@@ -249,10 +252,11 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 child: RichText(
                                   textAlign: TextAlign.center,
                                   text: TextSpan(
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.textSecondary,
-                                      height: 1.4,
-                                    ),
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                          color: AppColors.textSecondary,
+                                          height: 1.4,
+                                        ),
                                     children: [
                                       TextSpan(
                                         text: "By continuing, I agree to the ",
@@ -265,8 +269,10 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                           onTap: _launchTermsUrl,
                                           child: Text(
                                             "Terms of Use",
-                                            style: AppTextStyles.bodySmall
-                                                .copyWith(
+                                            style:
+                                                AppTextStyles.bodySmall(
+                                                  context,
+                                                ).copyWith(
                                                   color:
                                                       AppColors.primaryOrange,
                                                 ),
@@ -282,8 +288,10 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                           onTap: _launchPrivacyPolicyUrl,
                                           child: Text(
                                             "Privacy Policy",
-                                            style: AppTextStyles.bodySmall
-                                                .copyWith(
+                                            style:
+                                                AppTextStyles.bodySmall(
+                                                  context,
+                                                ).copyWith(
                                                   color:
                                                       AppColors.primaryOrange,
                                                 ),

@@ -269,19 +269,22 @@ class _SettingsPageState extends State<SettingsPage> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirm Logout', style: AppTextStyles.titleLarge),
-          content: const Text(
+          title: Text(
+            'Confirm Logout',
+            style: AppTextStyles.titleLarge(context),
+          ),
+          content:  Text(
             'Are you sure you want to log out?',
-            style: AppTextStyles.bodyLargeEmphasized,
+            style: AppTextStyles.bodyLargeEmphasized(context),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
                 'Cancel',
-                style: AppTextStyles.bodyLargeEmphasized.copyWith(
-                  color: Colors.grey[600],
-                ),
+                style: AppTextStyles.bodyLargeEmphasized(
+                  context,
+                ).copyWith(color: Colors.grey[600]),
               ),
             ),
             TextButton(
@@ -291,10 +294,9 @@ class _SettingsPageState extends State<SettingsPage> {
               },
               child: Text(
                 'Yes',
-                style: AppTextStyles.bodyLargeEmphasized.copyWith(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.bodyLargeEmphasized(
+                  context,
+                ).copyWith(color: Colors.orange, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -479,7 +481,9 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.only(top: 4, left: 12),
             child: Text(
               errorText,
-              style: AppTextStyles.bodySmall.copyWith(color: Colors.red),
+              style: AppTextStyles.bodySmall(
+                context,
+              ).copyWith(color: Colors.red),
             ),
           ),
       ],
@@ -491,7 +495,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('SETTINGS', style: AppTextStyles.titleLarge),
+        title:  Text('SETTINGS', style: AppTextStyles.titleLarge(context)),
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
@@ -524,7 +528,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'BASIC INFORMATION',
-                          style: AppTextStyles.titleSmall.copyWith(
+                          style: AppTextStyles.titleSmall(context).copyWith(
                             color: Colors.grey[600],
                             letterSpacing: 0.5,
                           ),
@@ -607,7 +611,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           'ADDRESS INFORMATION',
-                          style: AppTextStyles.titleSmall.copyWith(
+                          style: AppTextStyles.titleSmall(context).copyWith(
                             color: Colors.grey[600],
                             letterSpacing: 0.5,
                           ),
@@ -689,11 +693,12 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _userProfile!.profileComplete
                                     ? 'Profile Complete'
                                     : 'Profile Incomplete',
-                                style: AppTextStyles.titleMedium.copyWith(
-                                  color: _userProfile!.profileComplete
-                                      ? Colors.green[700]
-                                      : Colors.orange[700],
-                                ),
+                                style: AppTextStyles.titleMedium(context)
+                                    .copyWith(
+                                      color: _userProfile!.profileComplete
+                                          ? Colors.green[700]
+                                          : Colors.orange[700],
+                                    ),
                               ),
                             ],
                           ),
@@ -726,8 +731,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                 )
                               : Text(
                                   'Save Details',
-                                  style: AppTextStyles.bodyLargeEmphasized
-                                      .copyWith(
+                                  style:
+                                      AppTextStyles.bodyLargeEmphasized(
+                                        context,
+                                      ).copyWith(
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,
                                       ),
@@ -758,16 +765,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Logging out...',
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                                  style: AppTextStyles.titleMedium(
+                                    context,
+                                  ).copyWith(color: Colors.grey[600]),
                                 ),
                               ] else ...[
                                 Text(
                                   'Log Out',
-                                  style: AppTextStyles.titleMedium.copyWith(
-                                    color: Colors.orange,
-                                  ),
+                                  style: AppTextStyles.titleMedium(
+                                    context,
+                                  ).copyWith(color: Colors.orange),
                                 ),
                               ],
                             ],

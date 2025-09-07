@@ -16,8 +16,22 @@ class OrangeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox( 
-      height: 60,
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Calculate responsive height based on screen height
+    //     // This ensures the button scales proportionally with screen size
+    double buttonHeight = screenHeight * 0.065; // 7.5% of screen height
+
+    // Set minimum and maximum height bounds for better UX
+    buttonHeight = buttonHeight.clamp(50.0, 70.0);
+
+    // Alternative approach: You can also use screen width for calculation
+    // double buttonHeight = screenWidth * 0.15; // 15% of screen width
+    // buttonHeight = buttonHeight.clamp(45.0, 65.0);
+
+    return SizedBox(
+      height: buttonHeight,
       width: double.infinity,
       child: ElevatedButton(
         onPressed: isDisabled ? null : onPressed,

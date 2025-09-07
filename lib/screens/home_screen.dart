@@ -756,6 +756,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
 // Updated CompactBatchCard widget that exactly matches your image
 // Updated CompactBatchCard widget that fixes overflow and image fitting
+
 class CompactBatchCard extends StatelessWidget {
   final BatchWithActivity batch;
   final VoidCallback onTap;
@@ -763,12 +764,56 @@ class CompactBatchCard extends StatelessWidget {
   const CompactBatchCard({Key? key, required this.batch, required this.onTap})
     : super(key: key);
 
+  // Responsive dimension helpers
+  double _getCardHeight(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    double baseHeight = screenHeight * 0.26;
+    if (screenWidth < 350)
+      baseHeight *= 0.9;
+    else if (screenWidth > 450)
+      baseHeight *= 1.1;
+    return baseHeight.clamp(200.0, 280.0);
+  }
+
+  double _getImageWidth(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double imageWidth = screenWidth * 0.28;
+    return imageWidth.clamp(100.0, 140.0);
+  }
+
+  double _getResponsiveFontSize(BuildContext context, double baseSize) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double scaleFactor;
+    if (screenWidth < 350)
+      scaleFactor = 0.9;
+    else if (screenWidth < 400)
+      scaleFactor = 1.0;
+    else if (screenWidth < 450)
+      scaleFactor = 1.1;
+    else
+      scaleFactor = 1.2;
+    return (baseSize * scaleFactor).clamp(baseSize * 0.8, baseSize * 1.3);
+  }
+
+  EdgeInsets _getResponsivePadding(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double basePadding = 16.0;
+    double scaleFactor = (screenWidth / 375.0).clamp(0.8, 1.2);
+    double responsivePadding = basePadding * scaleFactor;
+    return EdgeInsets.all(responsivePadding.clamp(12.0, 20.0));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cardHeight = _getCardHeight(context);
+    final imageWidth = _getImageWidth(context);
+    final responsivePadding = _getResponsivePadding(context);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 215, // Increased height to prevent overflow
+        height: cardHeight,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -780,219 +825,163 @@ class CompactBatchCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Activity Image - Left side (fills entire area)
-              Container(
-                width: 110, // Slightly increased width
-                height: 168, // Full height minus padding
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[100],
-                ),
+        padding: responsivePadding,
+        child: Row(
+          crossAxisAlignment:
+              CrossAxisAlignment.stretch, // Both sides stretch vertically
+          children: [
+            // Activity Image - stretches full height
+            Container(
+              width: imageWidth,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
                 child: batch.activity.bannerImageUrl.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          batch.activity.bannerImageUrl,
-                          width: 110,
-                          height: 168,
-                          fit: BoxFit
-                              .cover, // This ensures image fills the entire container
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildPlaceholderImage();
-                          },
-                        ),
+                    ? Image.network(
+                        batch.activity.bannerImageUrl,
+                        fit: BoxFit.cover,
+                        height: cardHeight,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholderImage(
+                            context,
+                            imageWidth,
+                            cardHeight,
+                          );
+                        },
                       )
-                    : _buildPlaceholderImage(),
+                    : _buildPlaceholderImage(context, imageWidth, cardHeight),
               ),
-
-              SizedBox(width: 16),
-
-              // Activity Details - Right side
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween, // Better spacing
-                  children: [
-                    // Top section - Title and subtitle
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Activity Name
-                        Text(
-                          batch.activity.name,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                            height: 1.2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        SizedBox(height: 4),
-
-                        // Batch Name or Category
-                        Text(
-                          batch.name != batch.activity.name
-                              ? batch.name
-                              : batch.activity.categoryDisplay,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                            fontStyle: FontStyle.italic,
-                            height: 1.2,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+            ),
+            SizedBox(width: responsivePadding.left * 0.5),
+            // Activity Details - Right side; button at bottom
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title & subtitle
+                  Text(
+                    batch.activity.name,
+                    style: TextStyle(
+                      fontSize: _getResponsiveFontSize(context, 18),
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                      height: 1.2,
                     ),
-
-                    SizedBox(height: 12),
-
-                    // Middle section - Details
-                    Column(
-                      children: [
-                        // Age Range
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.person,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            SizedBox(width: 6),
-                            Text(
-                              'Age: ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages'}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 8),
-
-                        // Location/Venue
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey[600],
-                            ),
-                            SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                batch.activity.societyName.isNotEmpty
-                                    ? batch.activity.societyName
-                                    : 'Venue name',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    batch.name != batch.activity.name
+                        ? batch.name
+                        : batch.activity.categoryDisplay,
+                    style: TextStyle(
+                      fontSize: _getResponsiveFontSize(context, 12),
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                      height: 1.1,
                     ),
-
-                    SizedBox(height: 12),
-
-                    // Bottom section - Price and button
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Price
-                        Text(
-                          '₹ ${_formatPrice(batch.priceDisplay)} / month',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFFF6B35),
-                          ),
-                        ),
-
-                        SizedBox(height: 12),
-
-                        // View Details Button
-                        SizedBox(
-                          width: double.infinity,
-
-                          child: OutlinedButton(
-                            onPressed: batch.isActive ? onTap : null,
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: batch.isActive
-                                    ? Color(0xFFFF6B35)
-                                    : Colors.grey,
-                                width: 1.5,
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              batch.isActive ? 'View Details' : 'Not Available',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: batch.isActive
-                                    ? Color(0xFFFF6B35)
-                                    : Colors.grey,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 8),
+                  _buildDetailRow(
+                    context,
+                    Icons.person,
+                    'Age: ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages'}',
+                  ),
+                  SizedBox(height: 4),
+                  _buildDetailRow(
+                    context,
+                    Icons.location_on,
+                    batch.activity.societyName.isNotEmpty
+                        ? batch.activity.societyName
+                        : 'Venue name',
+                  ),
+                  Spacer(), // Pushes price/button to bottom
+                  Text(
+                    '₹ ${_formatPrice(batch.priceDisplay)} / month',
+                    style: TextStyle(
+                      fontSize: _getResponsiveFontSize(context, 16),
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFFF6B35),
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: _getResponsiveFontSize(context, 36),
+                    child: OutlinedButton(
+                      onPressed: batch.isActive ? onTap : null,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: batch.isActive
+                              ? Color(0xFFFF6B35)
+                              : Colors.grey,
+                          width: 1.5,
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 0,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        batch.isActive ? 'View Details' : 'Not Available',
+                        style: TextStyle(
+                          fontSize: _getResponsiveFontSize(context, 12),
+                          color: batch.isActive
+                              ? Color(0xFFFF6B35)
+                              : Colors.grey,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // Helper method to format price (remove existing currency symbol if present)
-  String _formatPrice(String priceDisplay) {
-    // Remove ₹ symbol if it exists and any extra formatting
-    String cleanPrice = priceDisplay
-        .replaceAll('₹', '')
-        .replaceAll('Rs.', '')
-        .trim();
-
-    // Extract just the number part
-    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
-    if (numberMatch != null) {
-      return numberMatch.group(0) ?? priceDisplay;
-    }
-    return cleanPrice;
+  Widget _buildDetailRow(BuildContext context, IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: _getResponsiveFontSize(context, 16),
+          color: Colors.grey,
+        ),
+        SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: _getResponsiveFontSize(context, 13),
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildPlaceholderImage() {
+  // Responsive placeholder image
+  Widget _buildPlaceholderImage(
+    BuildContext context,
+    double width,
+    double height,
+  ) {
     return Container(
-      width: 110,
-      height: 168,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         gradient: LinearGradient(
@@ -1004,10 +993,12 @@ class CompactBatchCard extends StatelessWidget {
           ],
         ),
       ),
-      child: Icon(
-        _getActivityIcon(batch.activity.category),
-        size: 36,
-        color: Color(0xFFFF6B35).withOpacity(0.7),
+      child: Center(
+        child: Icon(
+          _getActivityIcon(batch.activity.category),
+          size: _getResponsiveFontSize(context, 32),
+          color: Color(0xFFFF6B35).withOpacity(0.7),
+        ),
       ),
     );
   }
@@ -1036,5 +1027,18 @@ class CompactBatchCard extends StatelessWidget {
       default:
         return Icons.extension;
     }
+  }
+
+  // Always returns a non-null String
+  String _formatPrice(String priceDisplay) {
+    String cleanPrice = priceDisplay
+        .replaceAll('₹', '')
+        .replaceAll('Rs.', '')
+        .trim();
+    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
+    if (numberMatch != null) {
+      return numberMatch.group(0)!;
+    }
+    return cleanPrice;
   }
 }

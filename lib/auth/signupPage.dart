@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
@@ -209,7 +210,9 @@ class _SignUnPageState extends State<SignUnPage> {
       builder: (context) => AlertDialog(
         title: Text(
           'Already Registered',
-          style: AppTextStyles.titleMedium.copyWith(color: Color(0xFFFF6B35)),
+          style: AppTextStyles.titleMedium(
+            context,
+          ).copyWith(color: Color(0xFFFF6B35)),
         ),
         content: Text(
           'You have already registered with this ${emailOrPhone.contains('@') ? 'email' : 'phone'}. Please login instead.',
@@ -274,10 +277,14 @@ class _SignUnPageState extends State<SignUnPage> {
                         ],
                       ),
                       child: IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.black,
-                          size: 20,
+                        icon: SvgPicture.asset(
+                          'assets/App_icons/iconBack.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.darkElements,
+                            BlendMode.srcIn,
+                          ),
                         ),
                         onPressed: () {
                           Navigator.pushReplacementNamed(context, '/login');
@@ -317,9 +324,9 @@ class _SignUnPageState extends State<SignUnPage> {
                     Center(
                       child: Text(
                         'Register your account',
-                        style: AppTextStyles.titleMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                        style: AppTextStyles.titleMedium(
+                          context,
+                        ).copyWith(color: AppColors.textSecondary),
                       ),
                     ),
 
@@ -346,9 +353,9 @@ class _SignUnPageState extends State<SignUnPage> {
                     // Residence Type
                     Text(
                       'Where do you reside?',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTextStyles.titleMedium(
+                        context,
+                      ).copyWith(color: AppColors.textSecondary),
                     ),
                     SizedBox(height: 12),
                     Row(
@@ -377,7 +384,7 @@ class _SignUnPageState extends State<SignUnPage> {
                     // Submit Button - SAME STYLING AS LOGIN PAGE
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+
                       child: OrangeButton(
                         onPressed: _isFormValid() && !_isSubmitting
                             ? _submitForm
@@ -447,9 +454,9 @@ class _SignUnPageState extends State<SignUnPage> {
                         children: [
                           Text(
                             "Already have an account?",
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            style: AppTextStyles.bodyMedium(
+                              context,
+                            ).copyWith(color: AppColors.textSecondary),
                           ),
                           SizedBox(height: 8),
                           CustomTextButton(
@@ -551,9 +558,9 @@ class _SignUnPageState extends State<SignUnPage> {
           controller: controller,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.grey[500],
-            ),
+            hintStyle: AppTextStyles.bodyMedium(
+              context,
+            ).copyWith(color: Colors.grey[500]),
             // Grey border when inactive
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -619,7 +626,7 @@ class _SignUnPageState extends State<SignUnPage> {
               Expanded(
                 child: Text(
                   title,
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  style: AppTextStyles.bodyMedium(context).copyWith(
                     color: isSelected ? Color(0xFFFF6B35) : Colors.grey,
                     fontWeight: isSelected
                         ? FontWeight.w600
@@ -711,9 +718,9 @@ class _SignUnPageState extends State<SignUnPage> {
                 SizedBox(width: 8),
                 Text(
                   _isLoadingLocation ? 'Getting Location...' : 'locality',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: Colors.white,
-                  ),
+                  style: AppTextStyles.titleMedium(
+                    context,
+                  ).copyWith(color: Colors.white),
                 ),
               ],
             ),
