@@ -113,11 +113,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-  // Add this helper method for refresh with cache clear
-  // Future<void> _loadChildrenWithCacheClear() async {
-  //   return _loadChildren(clearCache: true);
-  // }
-
   Future<void> _refreshAll() async {
     print('🔄 Refreshing all data - clearing caches...');
 
@@ -131,9 +126,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       // Clear the children cache before refreshing
       GetChildservices.clearAllCache();
-
-      // Clear user profile cache if your GetUserProfileService has cache
-      // GetUserProfileService.clearCache(); // Add this if your service has cache
 
       // Fetch fresh data from both services
       await Future.wait([_loadUserProfile(), _loadChildren(clearCache: true)]);
@@ -162,39 +154,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
   String _formatDate(String dateString) {
     try {
       DateTime date = DateTime.parse(dateString);
-      List<String> months = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'May',
-        'Jun',
-        'Jul',
-        'Aug',
-        'Sep',
-        'Oct',
-        'Nov',
-        'Dec',
-      ];
-      return '${date.day}${_getDaySuffix(date.day)} ${months[date.month - 1]} ${date.year}';
+      DateTime now = DateTime.now();
+      int age = now.year - date.year;
+      if (now.month < date.month ||
+          (now.month == date.month && now.day < date.day)) {
+        age--;
+      }
+      return '$age years';
     } catch (e) {
-      return dateString; // Return original if parsing fails
-    }
-  }
-
-  String _getDaySuffix(int day) {
-    if (day >= 11 && day <= 13) {
-      return 'th';
-    }
-    switch (day % 10) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
+      return 'Unknown age';
     }
   }
 
@@ -208,6 +176,28 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return gender.toLowerCase() == 'male' ? Icons.boy : Icons.girl;
   }
 
+  // Helper methods for email/phone handling
+  String _getDisplayEmail() {
+    if (userProfile?.userEmail == null ||
+        userProfile!.userEmail.trim().isEmpty) {
+      return 'Email not provided';
+    }
+    return userProfile!.userEmail;
+  }
+
+  String _getDisplayPhone() {
+    if (userProfile?.userPhone == null ||
+        userProfile!.userPhone.trim().isEmpty) {
+      return 'Add Phone';
+    }
+    return userProfile!.userPhone;
+  }
+
+  bool _isPhoneAvailable() {
+    return userProfile?.userPhone != null &&
+        userProfile!.userPhone.trim().isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -215,7 +205,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text('YOUR PROFILE', style: AppTextStyles.titleMedium(context)),
+        title: const Text(
+          'Your Profile',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF2D3748),
+          ),
+        ),
         centerTitle: false,
         leading: IconButton(
           onPressed: () {
@@ -224,26 +221,18 @@ class _UserProfilePageState extends State<UserProfilePage> {
               MaterialPageRoute(builder: (context) => KlayonsHomePage()),
             );
           },
-          icon: SvgPicture.asset(
-            'assets/App_icons/iconBack.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(
-              AppColors.darkElements,
-              BlendMode.srcIn,
-            ),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Color(0xFF2D3748),
+            size: 20,
           ),
         ),
         actions: [
           IconButton(
-            icon: SvgPicture.asset(
-              'assets/App_icons/iconSettings.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.darkElements,
-                BlendMode.srcIn,
-              ),
+            icon: const Icon(
+              Icons.settings,
+              color: Color(0xFF2D3748),
+              size: 24,
             ),
             onPressed: () {
               Navigator.push(
@@ -258,19 +247,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
         onRefresh: _refreshAll,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // User Profile Section
-                _buildUserProfileSection(context),
-                const SizedBox(height: 24),
+          child: Column(
+            children: [
+              // User Profile Section
+              _buildUserProfileSection(context),
 
-                // Children Profiles Section
-                _buildChildrenProfilesSection(context),
-              ],
-            ),
+              // Children Profiles Section
+              _buildChildrenProfilesSection(context),
+
+              // Menu Items Section
+              _buildMenuSection(context),
+            ],
           ),
         ),
       ),
@@ -279,15 +266,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildUserProfileSection(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -302,10 +290,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildLoadingProfile() {
     return Row(
       children: [
-        // Loading Profile Image
         Container(
-          width: 60,
-          height: 60,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey[300],
@@ -316,8 +303,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         const SizedBox(width: 16),
-
-        // Loading User Details
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,16 +315,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Container(
-                width: 180,
+                width: 100,
                 height: 16,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Container(
                 width: 140,
                 height: 16,
@@ -360,9 +345,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
       children: [
         const Icon(Icons.error_outline, color: Colors.red, size: 48),
         const SizedBox(height: 12),
-        Text(
+        const Text(
           'Failed to load profile',
-          style: AppTextStyles.titleMedium(context).copyWith(color: Colors.grey[700]),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF4A5568),
+          ),
         ),
         const SizedBox(height: 8),
         ElevatedButton(
@@ -384,19 +373,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildUserProfileContent() {
     return Row(
       children: [
-        // Profile Image
+        // Profile Image with background image
         Container(
-          width: 60,
-          height: 60,
+          width: 64,
+          height: 64,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.grey.shade300, width: 1),
+            border: Border.all(color: Colors.grey.shade200, width: 2),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(32),
             child: Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.person, color: Colors.white, size: 30),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(
+                    'assets/images/profile_bg.png',
+                  ), // Add this asset
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(color: Colors.black.withOpacity(0.1)),
+                child: const Icon(Icons.person, color: Colors.white, size: 32),
+              ),
             ),
           ),
         ),
@@ -409,30 +408,45 @@ class _UserProfilePageState extends State<UserProfilePage> {
             children: [
               Text(
                 _getUserName(),
-                style: AppTextStyles.titleLarge(context).copyWith(
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+              const SizedBox(height: 8),
 
-                  color: Colors.black87,
-                ),
+              // Phone Row
+              Row(
+                children: [
+                  const Icon(Icons.phone, size: 16, color: Color(0xFF718096)),
+                  const SizedBox(width: 6),
+                  Text(
+                    _getDisplayPhone(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _isPhoneAvailable()
+                          ? const Color(0xFF4A5568)
+                          : const Color(0xFF718096),
+                      fontStyle: _isPhoneAvailable()
+                          ? FontStyle.normal
+                          : FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                _getDisplayEmail(),
-                style: AppTextStyles.bodyMedium(context).copyWith(
-                  color: _getEmailTextColor(),
-                  fontStyle: _isEmailAvailable()
-                      ? FontStyle.normal
-                      : FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _getDisplayPhone(),
-                style: AppTextStyles.bodyMedium(context).copyWith(
-                  color: _getPhoneTextColor(),
-                  fontStyle: _isPhoneAvailable()
-                      ? FontStyle.normal
-                      : FontStyle.italic,
-                ),
+              const SizedBox(height: 6),
+
+              // Location Row
+              const Row(
+                children: [
+                  Icon(Icons.location_on, size: 16, color: Color(0xFF718096)),
+                  SizedBox(width: 6),
+                  Text(
+                    'Tata Primanti',
+                    style: TextStyle(fontSize: 14, color: Color(0xFF4A5568)),
+                  ),
+                ],
               ),
             ],
           ),
@@ -441,67 +455,64 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  // Helper methods for email handling
-  String _getDisplayEmail() {
-    if (userProfile?.userEmail == null ||
-        userProfile!.userEmail.trim().isEmpty) {
-      return 'Email not provided';
-    }
-    return userProfile!.userEmail;
-  }
-
-  Color _getEmailTextColor() {
-    return _isEmailAvailable() ? Colors.grey[600]! : Colors.grey[400]!;
-  }
-
-  bool _isEmailAvailable() {
-    return userProfile?.userEmail != null &&
-        userProfile!.userEmail.trim().isNotEmpty;
-  }
-
-  // Helper methods for phone handling
-  String _getDisplayPhone() {
-    if (userProfile?.userPhone == null ||
-        userProfile!.userPhone.trim().isEmpty) {
-      return 'Phone not provided';
-    }
-    return userProfile!.userPhone;
-  }
-
-  Color _getPhoneTextColor() {
-    return _isPhoneAvailable() ? Colors.grey[600]! : Colors.grey[400]!;
-  }
-
-  bool _isPhoneAvailable() {
-    return userProfile?.userPhone != null &&
-        userProfile!.userPhone.trim().isNotEmpty;
-  }
-
   Widget _buildChildrenProfilesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Section Header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-             Text('CHILDREN PROFILES', style: AppTextStyles.titleMedium(context)),
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.black87, size: 24),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AddChildPage()),
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Children Profiles',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AddChildPage()),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4A90E2).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    color: Color(0xFF4A90E2),
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
 
-        // Children Cards - Dynamic from API
-        _buildChildrenCards(),
-      ],
+          // Children Cards
+          _buildChildrenCards(),
+        ],
+      ),
     );
   }
 
@@ -518,7 +529,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       return _buildNoChildrenFound();
     }
 
-    // Display children in a grid layout (2 columns max)
+    // Display children in a grid layout (2 columns)
     List<Widget> childCards = [];
     for (int i = 0; i < children!.length; i += 2) {
       List<Widget> rowChildren = [];
@@ -528,13 +539,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       // Add second child in the row if exists
       if (i + 1 < children!.length) {
-        rowChildren.add(const SizedBox(width: 12));
+        rowChildren.add(const SizedBox(width: 16));
         rowChildren.add(
           Expanded(child: _buildChildCard(child: children![i + 1])),
         );
       } else {
         // Add empty expanded widget to maintain layout
-        rowChildren.add(const SizedBox(width: 12));
+        rowChildren.add(const SizedBox(width: 16));
         rowChildren.add(const Expanded(child: SizedBox()));
       }
 
@@ -542,7 +553,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       // Add spacing between rows
       if (i + 2 < children!.length) {
-        childCards.add(const SizedBox(height: 12));
+        childCards.add(const SizedBox(height: 16));
       }
     }
 
@@ -553,7 +564,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Row(
       children: [
         Expanded(child: _buildLoadingChildCard()),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(child: _buildLoadingChildCard()),
       ],
     );
@@ -563,15 +574,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF7FAFC),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
@@ -579,8 +584,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
                   shape: BoxShape.circle,
@@ -608,16 +613,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Container(
-                width: 100,
+                width: 60,
                 height: 12,
                 decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Container(
                 width: 70,
                 height: 12,
@@ -636,24 +641,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildChildrenError() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 12),
-          Text(
+          const Text(
             'Failed to load children profiles',
-            style: AppTextStyles.titleMedium(context).copyWith(color: Colors.grey[700]),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF4A5568),
+            ),
           ),
           const SizedBox(height: 8),
           ElevatedButton(
@@ -676,52 +674,35 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildNoChildrenFound() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
+      child: const Column(
         children: [
-          const Icon(Icons.child_care, size: 48, color: Colors.grey),
-          const SizedBox(height: 12),
+          Icon(Icons.child_care, size: 48, color: Color(0xFF718096)),
+          SizedBox(height: 12),
           Text(
             'No children profiles found',
-            style: AppTextStyles.titleMedium(context).copyWith(color: Colors.grey[700]),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF4A5568),
+            ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Add your first child profile',
-            style: AppTextStyles.bodyMedium(context).copyWith(color: Colors.grey[600]),
+            style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
           ),
         ],
       ),
     );
   }
 
-  // Replace your existing _buildChildCard method with this updated version
-  // Updated _buildChildCard method for your UserProfilePage
-  // Replace your existing _buildChildCard method with this one
-
   Widget _buildChildCard({required Child child}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF7FAFC),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
@@ -730,8 +711,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: _getAvatarColor(child.gender),
                   shape: BoxShape.circle,
@@ -739,15 +720,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 child: Icon(
                   _getGenderIcon(child.gender),
                   color: Colors.white,
-                  size: 20,
+                  size: 18,
                 ),
               ),
-
-              // Replace your existing edit button onPressed in _buildChildCard method with this:
-              // In your _buildChildCard method, update the edit button onPressed:
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.grey, size: 16),
-                onPressed: () async {
+              InkWell(
+                onTap: () async {
                   print('Editing child with ID: ${child.id}');
 
                   try {
@@ -792,8 +769,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     }
                   }
                 },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                child: const Icon(
+                  Icons.edit,
+                  color: Color(0xFF718096),
+                  size: 16,
+                ),
               ),
             ],
           ),
@@ -803,64 +783,29 @@ class _UserProfilePageState extends State<UserProfilePage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Child ID (for debugging - you can remove this in production)
-              Text(
-                'ID: ${child.id}',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  fontSize: 10,
-                  color: Colors.grey[400],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 2),
-
               // Child Name
               Text(
                 child.name,
-                style: AppTextStyles.titleSmall(context).copyWith(color: Colors.black87),
-              ),
-              const SizedBox(height: 4),
-
-              // Birth Date
-              Text(
-                'Birthdate: ${_formatDate(child.dob)}',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: Colors.grey[600],
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2D3748),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 6),
+
+              // Age
+              Text(
+                'Age: ${_formatDate(child.dob)}',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF718096)),
+              ),
+              const SizedBox(height: 4),
 
               // Gender
               Text(
                 'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: Colors.grey[600],
-                ),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF718096)),
               ),
-
-              // Show interests if available
-              if (child.interests.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Interests: ${child.interests.take(2).map((i) => i.name).join(', ')}${child.interests.length > 2 ? '...' : ''}',
-                  style: AppTextStyles.bodySmall(context).copyWith(
-
-                    color: Colors.grey[500],
-                    fontStyle: FontStyle.italic,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ] else ...[
-                const SizedBox(height: 4),
-                Text(
-                  'No interests added',
-                  style: AppTextStyles.bodySmall(context).copyWith(
-                    color: Colors.grey[400],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
             ],
           ),
         ],
@@ -868,19 +813,84 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  // Also, make sure your EditChildPage import is correct at the top of your UserProfilePage:
-  // import 'Childs/editChild.dart'; // Update this path to match your new EditChildPage
-
-  // You might also want to add this debug method to help troubleshoot:
-  void _debugChildData(Child child) {
-    print('=== Child Debug Info ===');
-    print('ID: ${child.id}');
-    print('Name: ${child.name}');
-    print('DOB: ${child.dob}');
-    print('Gender: ${child.gender}');
-    print(
-      'Interests: ${child.interests.map((i) => '${i.id}: ${i.name}').join(', ')}',
+  Widget _buildMenuSection(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuItem('About Klayons', Icons.info_outline, () {}),
+          const Divider(color: Color(0xFFE2E8F0)),
+          _buildMenuItem(
+            'Child Protection Policy',
+            Icons.shield_outlined,
+            () {},
+          ),
+          const Divider(color: Color(0xFFE2E8F0)),
+          _buildMenuItem(
+            'Payments & Refund Policy',
+            Icons.payment_outlined,
+            () {},
+          ),
+          const Divider(color: Color(0xFFE2E8F0)),
+          _buildMenuItem('Terms of Service', Icons.description_outlined, () {}),
+          const Divider(color: Color(0xFFE2E8F0)),
+          _buildMenuItem('Privacy Policy', Icons.privacy_tip_outlined, () {}),
+          const Divider(color: Color(0xFFE2E8F0)),
+          _buildMenuItem('Log Out', Icons.logout, () {}, isLogout: true),
+        ],
+      ),
     );
-    print('========================');
+  }
+
+  Widget _buildMenuItem(
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    bool isLogout = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isLogout ? Colors.red : const Color(0xFF718096),
+              size: 20,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isLogout ? Colors.red : const Color(0xFF4A5568),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            if (!isLogout)
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF718096),
+                size: 16,
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

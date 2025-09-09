@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:klayons/screens/InstructorDetailsPage.dart';
 import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import '../services/activity/activities_batchServices/enrollment_service.dart';
@@ -184,16 +186,16 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          batchData?.activity.name ?? 'Activity Details',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
           ),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
@@ -202,6 +204,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           ),
         ],
       ),
+
       body: isLoading
           ? _buildLoadingWidget()
           : errorMessage != null
@@ -362,18 +365,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                 ),
                 SizedBox(height: 8),
 
-                if (batch.name != batch.activity.name) ...[
-                  Text(
-                    batch.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                ],
-
                 Text(
                   'Recommended for ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All ages'}',
                   style: AppTextStyles.titleSmall(
@@ -394,20 +385,85 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                     ),
                     SizedBox(width: 8),
                     Text(
-                      'for full course',
-                      style: AppTextStyles.titleSmall(
-                        context,
-                      ).copyWith(color: Colors.grey[600]),
+                      '/month',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 8),
 
-                _buildDetailCard(),
-                SizedBox(height: 20),
+                // Sessions and timing info
+                Text(
+                  '8 sessions, 60mins each',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+                SizedBox(height: 8),
 
-                // Children Selection Section
-                _buildChildrenSelectionSection(),
+                // Schedule info
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: Colors.grey[600],
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Every Wednesday & Saturday',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+
+                // Location info
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                    SizedBox(width: 8),
+                    Text(
+                      batch.activity.societyName.isNotEmpty
+                          ? batch.activity.societyName
+                          : 'Society Clubhouse',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+
+                // Batch starting soon (instead of capacity)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule, size: 16, color: Colors.green[600]),
+                      SizedBox(width: 6),
+                      Text(
+                        'Batch starts soon!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 SizedBox(height: 20),
 
                 // Capacity Info
@@ -422,66 +478,99 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
                 SizedBox(height: 20),
 
                 // UPDATED: Enroll Button with enrollment functionality
+                if (children.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      Text(
+                        'Book for: ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: children.map((child) {
+                            final isSelected =
+                                selectedChildId == child.id.toString();
+                            return GestureDetector(
+                              onTap: () => _selectChild(child),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Colors.deepOrange
+                                      : Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Colors.deepOrange
+                                        : Colors.grey[300]!,
+                                  ),
+                                ),
+                                child: Text(
+                                  child.name.split(' ').first,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                SizedBox(height: 16),
+
+                // Spots remaining
+                Text(
+                  '7 spots remaining',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.orange[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Enroll button (keep existing button code)
                 Container(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed:
-                        (batch.isActive &&
-                            selectedChild != null &&
-                            !isEnrolling)
-                        ? _handleEnrollment
-                        : null,
+                    onPressed: batch.isActive ? _handleEnrollment : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: (batch.isActive && selectedChild != null)
+                      backgroundColor: batch.isActive
                           ? Colors.deepOrange
                           : Colors.grey,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(25), // More rounded
                       ),
                     ),
-                    child: isEnrolling
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                'Enrolling...',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            batch.isActive
-                                ? (selectedChild != null
-                                      ? 'Enroll Now'
-                                      : 'Select Child to Enroll')
-                                : 'Not Available',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                    child: Text(
+                      'Enroll Now',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-                SizedBox(height: 30),
 
-                _buildDescriptionSection(),
                 SizedBox(height: 30),
                 _buildInstructorSection(),
                 SizedBox(height: 20),
@@ -490,121 +579,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildChildrenSelectionSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Select Child',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-        SizedBox(height: 12),
-
-        if (isLoadingChildren) ...[
-          Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: CircularProgressIndicator(
-                color: Colors.deepOrange,
-                strokeWidth: 2,
-              ),
-            ),
-          ),
-        ] else if (children.isEmpty) ...[
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.orange[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.orange[600]),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'No Children Found',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.orange[800],
-                        ),
-                      ),
-                      Text(
-                        'Please add a child profile to continue with enrollment.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 12),
-          TextButton.icon(
-            onPressed: _loadChildren,
-            icon: Icon(Icons.refresh, color: Colors.deepOrange),
-            label: Text(
-              'Refresh Children List',
-              style: TextStyle(color: Colors.deepOrange),
-            ),
-          ),
-        ] else ...[
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: children.map((child) {
-              final isSelected = selectedChildId == child.id.toString();
-              return _buildChildSelectionButton(child, isSelected);
-            }).toList(),
-          ),
-
-          if (selectedChild != null) ...[
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.child_care, color: Colors.green[600], size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Enrolling: ${selectedChild!.name}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      color: Colors.green[800],
-                    ),
-                  ),
-                  Spacer(),
-                  Text(
-                    '${selectedChild!.gender}, Age: ${_calculateAge(selectedChild!.dob)}',
-                    style: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(color: Colors.green[600]),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ],
     );
   }
 
@@ -733,34 +707,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
     );
   }
 
-  Widget _buildDescriptionSection() {
-    final batch = batchData!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'DESCRIPTION',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-            letterSpacing: 1.2,
-          ),
-        ),
-        SizedBox(height: 12),
-        Text(
-          batch.activity.description.isNotEmpty
-              ? batch.activity.description
-              : 'This ${batch.activity.categoryDisplay.toLowerCase()} activity is designed to provide students with hands-on learning experience. Join us for an engaging and educational journey that will help develop new skills and build confidence.',
-          style: AppTextStyles.titleSmall(
-            context,
-          ).copyWith(height: 1.6, color: Colors.grey[700]),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInstructorSection() {
     final batch = batchData!;
 
@@ -768,61 +714,68 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'MEET THE INSTRUCTOR',
+          'Meet the instructor',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
-            letterSpacing: 1.2,
           ),
         ),
         SizedBox(height: 16),
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.deepOrange.withOpacity(0.1),
-              child: Text(
-                batch.activity.instructorName.isNotEmpty
-                    ? batch.activity.instructorName
-                          .substring(0, 1)
-                          .toUpperCase()
-                    : 'I',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange,
-                ),
-              ),
+
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => InstructorDetailsPage()),
+            );
+          },
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
             ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 25,
+                  backgroundColor: Colors.deepOrange.withOpacity(0.1),
+                  child: Text(
                     batch.activity.instructorName.isNotEmpty
                         ? batch.activity.instructorName
-                        : 'Expert Instructor',
+                              .substring(0, 1)
+                              .toUpperCase()
+                        : 'I',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Colors.deepOrange,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    batch.activity.instructorName.isNotEmpty
+                        ? batch.activity.instructorName
+                        : 'Name Surname',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Experienced ${batch.activity.categoryDisplay.toLowerCase()} instructor with years of teaching experience. Passionate about helping students learn and grow in a supportive environment.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.grey[400],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );

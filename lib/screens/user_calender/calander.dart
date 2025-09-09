@@ -476,6 +476,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
+                if (!_showAllActivities) {
+                  // If turning ON All Activities, clear child selections
+                  _selectedChildIds.clear();
+                }
                 _showAllActivities = !_showAllActivities;
                 _selectedEvents.value = _getEventsForDay(_selectedDay!);
               });
@@ -519,6 +523,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     _selectedChildIds.remove(child.id);
                   } else {
                     _selectedChildIds.add(child.id);
+                    // If selecting any child, deselect "All Activities"
+                    _showAllActivities = false;
                   }
                 });
                 _loadChildrenCalendar();
@@ -535,7 +541,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
                 child: Text(
-                  "${child.name}'s Activities",
+                  // Show only first name of child here
+                  "${child.name.split(' ').first}'s Activities",
                   style: AppTextStyles.bodySmall(context).copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isSelected ? Colors.orange.shade700 : Colors.black,
@@ -749,7 +756,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
                       venue = event.venue;
                       iconColor = event.color;
-                      childInfo = 'for ${event.childName}';
+                      // Show only first name of child here
+                      childInfo =
+                          event.childName != null && event.childName!.isNotEmpty
+                          ? 'for ${event.childName!.split(' ').first}'
+                          : null;
                       isCancelled = event.isCancelled;
                     } else if (event is BatchCalendarEvent) {
                       title = event.title;
@@ -766,7 +777,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       iconColor = Colors.orange;
                       if (event.childName != null &&
                           event.childName!.isNotEmpty) {
-                        childInfo = 'for ${event.childName}';
+                        childInfo = 'for ${event.childName!.split(' ').first}';
                       }
                     } else {
                       return SizedBox.shrink();

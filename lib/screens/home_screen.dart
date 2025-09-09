@@ -27,29 +27,24 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   int selectedIndex = 0;
   late AnimationController _slideController;
   late Animation<double> _slideAnimation;
-
   final List<Widget> _pages = [
     Container(), // Home content handled separately
     CalendarScreen(),
     EnrolledPage(),
     UserProfilePage(),
   ];
-
   List<BatchWithActivity> batchData = [];
   bool isLoading = false;
   String? errorMessage;
-
   // Notification badge state
   int unreadNotificationCount = 0;
   bool isLoadingNotifications = false;
-
   // User profile data
   UserProfile? userProfile;
   bool isLoadingUserProfile = false;
   String userName = 'User'; // Default name
   String userAddress = ''; // Default address
   String? userProfileImage; // URL for user profile image
-
   @override
   void initState() {
     super.initState();
@@ -63,7 +58,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Future<void> _requestNotificationPermission() async {
     final bool hasPermission =
         await LocalNotificationService.areNotificationsEnabled();
-
     if (!hasPermission) {
       _showPermissionDialog();
     }
@@ -109,7 +103,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       isLoading = true;
       errorMessage = null;
     });
-
     try {
       final batches = await BatchService.getAllBatches(page: 1, pageSize: 20);
       setState(() {
@@ -130,13 +123,14 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     setState(() {
       isLoadingUserProfile = true;
     });
-
     try {
       final profile = await GetUserProfileService.getUserProfile();
       if (profile != null) {
         setState(() {
           userProfile = profile;
-          userName = profile.name.isNotEmpty ? profile.name : 'User';
+          userName = profile.name.isNotEmpty
+              ? profile.name.split(' ').first
+              : 'User';
           // Create address from available location data
           userAddress = _buildUserAddress(profile);
           isLoadingUserProfile = false;
@@ -161,11 +155,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   // Build user address from profile data
   String _buildUserAddress(UserProfile profile) {
     List<String> addressParts = [];
-
     if (profile.societyName.isNotEmpty) {
       addressParts.add(profile.societyName);
     }
-
     if (profile.tower.isNotEmpty && profile.flatNo.isNotEmpty) {
       addressParts.add('${profile.tower}-${profile.flatNo}');
     } else if (profile.tower.isNotEmpty) {
@@ -173,28 +165,23 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     } else if (profile.flatNo.isNotEmpty) {
       addressParts.add(profile.flatNo);
     }
-
     if (profile.address.isNotEmpty && addressParts.isEmpty) {
       addressParts.add(profile.address);
     }
-
     return addressParts.join(', ');
   }
 
   // Load notification count
   Future<void> _loadNotificationCount() async {
     if (isLoadingNotifications) return;
-
     setState(() {
       isLoadingNotifications = true;
     });
-
     try {
       final announcements = await NotificationService.getAnnouncements();
       final unreadCount = announcements
           .where((announcement) => announcement.isUnread)
           .length;
-
       setState(() {
         unreadNotificationCount = unreadCount;
         isLoadingNotifications = false;
@@ -232,7 +219,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   void _onBottomNavTapped(int index) {
     if (selectedIndex == index) return;
-
     _slideAnimation =
         Tween<double>(
           begin: selectedIndex.toDouble(),
@@ -240,10 +226,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         ).animate(
           CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
         );
-
     _slideController.reset();
     _slideController.forward();
-
     setState(() {
       selectedIndex = index;
     });
@@ -251,7 +235,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   List<BatchWithActivity> get filteredBatches {
     if (searchQuery.isEmpty) return batchData;
-
     final query = searchQuery.toLowerCase();
     return batchData.where((batch) {
       return batch.ageRange.toLowerCase().contains(query) ||
@@ -312,7 +295,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Widget _buildNavIcon(String assetPath, int index, {IconData? fallbackIcon}) {
     bool isSelected = selectedIndex == index;
     Color iconColor = isSelected ? Color(0xFFFF6B35) : Colors.grey;
-
     if (assetPath.isNotEmpty) {
       return SvgPicture.asset(
         assetPath,
@@ -396,11 +378,11 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                           style: GoogleFonts.poetsenOne(
                             textStyle: const TextStyle(
                               fontSize: 24,
-                              //fontWeight: FontWeight.bold,
                               color: AppColors.primaryOrange,
                             ),
                           ),
                         ),
+
                   SizedBox(height: 2),
                   // User address
                   //if (userAddress.isNotEmpty || isLoadingUserProfile)
@@ -569,7 +551,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     if (isLoading) return _buildLoadingWidget();
     if (errorMessage != null) return _buildErrorWidget();
     if (filteredBatches.isEmpty) return _buildEmptyWidget();
-
     return Column(
       children: filteredBatches
           .map(
@@ -726,7 +707,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
               double tabWidth = screenWidth / 4;
               double lineWidth = 40;
               double currentPosition = _slideAnimation.value;
-
               return Positioned(
                 bottom: 0,
                 left: (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
@@ -756,7 +736,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
 // Updated CompactBatchCard widget that exactly matches your image
 // Updated CompactBatchCard widget that fixes overflow and image fitting
-
 class CompactBatchCard extends StatelessWidget {
   final BatchWithActivity batch;
   final VoidCallback onTap;
@@ -764,56 +743,12 @@ class CompactBatchCard extends StatelessWidget {
   const CompactBatchCard({Key? key, required this.batch, required this.onTap})
     : super(key: key);
 
-  // Responsive dimension helpers
-  double _getCardHeight(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    double baseHeight = screenHeight * 0.26;
-    if (screenWidth < 350)
-      baseHeight *= 0.9;
-    else if (screenWidth > 450)
-      baseHeight *= 1.1;
-    return baseHeight.clamp(200.0, 280.0);
-  }
-
-  double _getImageWidth(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double imageWidth = screenWidth * 0.28;
-    return imageWidth.clamp(100.0, 140.0);
-  }
-
-  double _getResponsiveFontSize(BuildContext context, double baseSize) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double scaleFactor;
-    if (screenWidth < 350)
-      scaleFactor = 0.9;
-    else if (screenWidth < 400)
-      scaleFactor = 1.0;
-    else if (screenWidth < 450)
-      scaleFactor = 1.1;
-    else
-      scaleFactor = 1.2;
-    return (baseSize * scaleFactor).clamp(baseSize * 0.8, baseSize * 1.3);
-  }
-
-  EdgeInsets _getResponsivePadding(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    double basePadding = 16.0;
-    double scaleFactor = (screenWidth / 375.0).clamp(0.8, 1.2);
-    double responsivePadding = basePadding * scaleFactor;
-    return EdgeInsets.all(responsivePadding.clamp(12.0, 20.0));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final cardHeight = _getCardHeight(context);
-    final imageWidth = _getImageWidth(context);
-    final responsivePadding = _getResponsivePadding(context);
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: cardHeight,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -825,163 +760,169 @@ class CompactBatchCard extends StatelessWidget {
             ),
           ],
         ),
-        padding: responsivePadding,
-        child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.stretch, // Both sides stretch vertically
-          children: [
-            // Activity Image - stretches full height
-            Container(
-              width: imageWidth,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: batch.activity.bannerImageUrl.isNotEmpty
-                    ? Image.network(
-                        batch.activity.bannerImageUrl,
-                        fit: BoxFit.cover,
-                        height: cardHeight,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildPlaceholderImage(
-                            context,
-                            imageWidth,
-                            cardHeight,
-                          );
-                        },
-                      )
-                    : _buildPlaceholderImage(context, imageWidth, cardHeight),
+        padding: EdgeInsets.all(16),
+        child: IntrinsicHeight(
+          // This ensures both sides have equal height
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Image container with fixed width
+              Container(
+                width: 110,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: batch.activity.bannerImageUrl.isNotEmpty
+                      ? Image.network(
+                          batch.activity.bannerImageUrl,
+                          fit: BoxFit.cover,
+                          width: 110,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildPlaceholderImage(),
+                        )
+                      : _buildPlaceholderImage(),
+                ),
               ),
-            ),
-            SizedBox(width: responsivePadding.left * 0.5),
-            // Activity Details - Right side; button at bottom
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title & subtitle
-                  Text(
-                    batch.activity.name,
-                    style: TextStyle(
-                      fontSize: _getResponsiveFontSize(context, 18),
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                      height: 1.2,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    batch.name != batch.activity.name
-                        ? batch.name
-                        : batch.activity.categoryDisplay,
-                    style: TextStyle(
-                      fontSize: _getResponsiveFontSize(context, 12),
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                      height: 1.1,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 8),
-                  _buildDetailRow(
-                    context,
-                    Icons.person,
-                    'Age: ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages'}',
-                  ),
-                  SizedBox(height: 4),
-                  _buildDetailRow(
-                    context,
-                    Icons.location_on,
-                    batch.activity.societyName.isNotEmpty
-                        ? batch.activity.societyName
-                        : 'Venue name',
-                  ),
-                  Spacer(), // Pushes price/button to bottom
-                  Text(
-                    '₹ ${_formatPrice(batch.priceDisplay)} / month',
-                    style: TextStyle(
-                      fontSize: _getResponsiveFontSize(context, 16),
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFFF6B35),
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    height: _getResponsiveFontSize(context, 36),
-                    child: OutlinedButton(
-                      onPressed: batch.isActive ? onTap : null,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: batch.isActive
-                              ? Color(0xFFFF6B35)
-                              : Colors.grey,
-                          width: 1.5,
+              SizedBox(width: 16),
+              // Details column with proper spacing
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Top content group
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          batch.activity.name,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 0,
+                        SizedBox(height: 2),
+                        Text(
+                          batch.name != batch.activity.name
+                              ? batch.name
+                              : batch.activity.categoryDisplay,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.person, size: 16, color: Colors.grey),
+                            SizedBox(width: 4),
+                            Text(
+                              'Age: ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages'}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                batch.activity.societyName.isNotEmpty
+                                    ? batch.activity.societyName
+                                    : 'Venue name',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '₹ ${_formatPrice(batch.priceDisplay)} / month',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFFF6B35),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Bottom content - View Details button
+                    Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: OutlinedButton(
+                          onPressed: batch.isActive ? onTap : null,
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: batch.isActive
+                                  ? Color(0xFFFF6B35)
+                                  : Colors.grey,
+                              width: 1.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                          ),
+                          child: Text(
+                            batch.isActive ? 'View Details' : 'Not Available',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: batch.isActive
+                                  ? Color(0xFFFF6B35)
+                                  : Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        batch.isActive ? 'View Details' : 'Not Available',
-                        style: TextStyle(
-                          fontSize: _getResponsiveFontSize(context, 12),
-                          color: batch.isActive
-                              ? Color(0xFFFF6B35)
-                              : Colors.grey,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(BuildContext context, IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: _getResponsiveFontSize(context, 16),
-          color: Colors.grey,
-        ),
-        SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: _getResponsiveFontSize(context, 13),
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
+  String _formatPrice(String priceDisplay) {
+    // Remove ₹ symbol if it exists and any extra formatting
+    String cleanPrice = priceDisplay
+        .replaceAll('₹', '')
+        .replaceAll('Rs.', '')
+        .trim();
+    // Extract just the number part
+    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
+    if (numberMatch != null) {
+      return numberMatch.group(0) ?? priceDisplay;
+    }
+    return cleanPrice;
   }
 
-  // Responsive placeholder image
-  Widget _buildPlaceholderImage(
-    BuildContext context,
-    double width,
-    double height,
-  ) {
+  Widget _buildPlaceholderImage() {
     return Container(
-      width: width,
-      height: height,
+      width: 110,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         gradient: LinearGradient(
@@ -996,7 +937,7 @@ class CompactBatchCard extends StatelessWidget {
       child: Center(
         child: Icon(
           _getActivityIcon(batch.activity.category),
-          size: _getResponsiveFontSize(context, 32),
+          size: 36,
           color: Color(0xFFFF6B35).withOpacity(0.7),
         ),
       ),
@@ -1027,18 +968,5 @@ class CompactBatchCard extends StatelessWidget {
       default:
         return Icons.extension;
     }
-  }
-
-  // Always returns a non-null String
-  String _formatPrice(String priceDisplay) {
-    String cleanPrice = priceDisplay
-        .replaceAll('₹', '')
-        .replaceAll('Rs.', '')
-        .trim();
-    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
-    if (numberMatch != null) {
-      return numberMatch.group(0)!;
-    }
-    return cleanPrice;
   }
 }
