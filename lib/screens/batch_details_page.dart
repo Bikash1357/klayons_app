@@ -466,6 +466,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
 
                 SizedBox(height: 20),
 
+                _buildDescriptionSection(),
+                SizedBox(height: 20),
+
                 // Capacity Info
                 Text(
                   '${batch.capacity - (batch.capacity ~/ 3)} spots left (Total: ${batch.capacity})',
@@ -582,128 +585,31 @@ class _ActivityBookingPageState extends State<ActivityBookingPage> {
     );
   }
 
-  Widget _buildChildSelectionButton(Child child, bool isSelected) {
-    return GestureDetector(
-      onTap: () => _selectChild(child),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.deepOrange : Colors.grey[200],
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? Colors.deepOrange : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              child.gender.toLowerCase() == 'male' ? Icons.boy : Icons.girl,
-              color: isSelected ? Colors.white : Colors.grey[600],
-              size: 18,
-            ),
-            SizedBox(width: 6),
-            Text(
-              child.name,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[700],
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Keep existing methods for detail card, description, instructor sections...
-  Widget _buildDetailCard() {
+  Widget _buildDescriptionSection() {
     final batch = batchData!;
 
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'DESCRIPTION',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+            letterSpacing: 1.2,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (batch.activity.societyName.isNotEmpty)
-            _buildDetailRow(
-              Icons.location_on,
-              'Location',
-              batch.activity.societyName,
-            ),
-          if (batch.activity.categoryDisplay.isNotEmpty)
-            _buildDetailRow(
-              Icons.category,
-              'Category',
-              batch.activity.categoryDisplay,
-            ),
-          _buildDetailRow(
-            Icons.date_range,
-            'Duration',
-            '${batch.startDate} to ${batch.endDate}',
-          ),
-          _buildDetailRow(
-            Icons.people,
-            'Capacity',
-            '${batch.capacity} students',
-          ),
-          _buildDetailRow(
-            Icons.circle,
-            'Status',
-            batch.isActive ? 'Active' : 'Inactive',
-            statusColor: batch.isActive ? Colors.green : Colors.red,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(
-    IconData icon,
-    String label,
-    String value, {
-    Color? statusColor,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.grey[600], size: 20),
-          SizedBox(width: 12),
-          Text(
-            '$label: ',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                color: statusColor ?? Colors.black87,
-                fontWeight: statusColor != null
-                    ? FontWeight.w600
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+        SizedBox(height: 12),
+        Text(
+          batch.activity.description.isNotEmpty
+              ? batch.activity.description
+              : 'This ${batch.activity.categoryDisplay.toLowerCase()} activity is designed to provide students with hands-on learning experience. Join us for an engaging and educational journey that will help develop new skills and build confidence.',
+          style: AppTextStyles.titleSmall(
+            context,
+          ).copyWith(height: 1.6, color: Colors.grey[700]),
+        ),
+      ],
     );
   }
 

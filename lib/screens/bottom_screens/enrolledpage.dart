@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:klayons/screens/home_screen.dart';
 
 import '../../services/activity/activities_batchServices/get_delete_enrolled_service.dart';
 import '../../utils/styles/fonts.dart';
@@ -235,6 +236,21 @@ class _EnrolledPageState extends State<EnrolledPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+          ),
+        ),
         title: const Text(
           "Enrolled Batches",
           style: TextStyle(

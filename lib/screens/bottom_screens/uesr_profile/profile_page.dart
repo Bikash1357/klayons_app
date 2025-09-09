@@ -203,6 +203,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        leading: IconButton(
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+          ),
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         title: const Text(
@@ -214,19 +229,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         centerTitle: false,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => KlayonsHomePage()),
-            );
-          },
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Color(0xFF2D3748),
-            size: 20,
-          ),
-        ),
+
         actions: [
           IconButton(
             icon: const Icon(

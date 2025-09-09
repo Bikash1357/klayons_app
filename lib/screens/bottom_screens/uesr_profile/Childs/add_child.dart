@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/child_intrest.dart';
 import 'package:http/http.dart' as http;
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../services/auth/login_service.dart';
 import '../../../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
+import 'package:flutter_svg/svg.dart';
+
+import '../profile_page.dart';
 
 class ChildData {
   final String firstName;
@@ -125,7 +129,7 @@ class _AddChildPageState extends State<AddChildPage> {
 
       final response = await http.delete(
         Uri.parse(
-          'https://dev-klayonsapi.vercel.app//api/profiles/children/$childId/',
+          'https://dev-klayonsapi.vercel.app/api/profiles/children/$childId/',
         ),
         headers: {
           'Content-Type': 'application/json',
@@ -449,10 +453,23 @@ class _AddChildPageState extends State<AddChildPage> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
-          onPressed: () => Navigator.pop(context),
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => UserProfilePage()),
+          ),
         ),
+
         title: Text(
           widget.isEditMode ? 'EDIT CHILD' : 'ADD CHILD',
           style: const TextStyle(
@@ -466,7 +483,12 @@ class _AddChildPageState extends State<AddChildPage> {
         actions: widget.isEditMode
             ? [
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 24),
+                  icon: SvgPicture.asset(
+                    'assets/App_icons/iconDelete.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(Colors.red, BlendMode.srcIn),
+                  ),
                   onPressed: _isDeletingChild
                       ? null
                       : _showDeleteConfirmationDialog,
@@ -598,39 +620,7 @@ class _AddChildPageState extends State<AddChildPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
 
-                // Last Name Field
-                TextField(
-                  controller: _lastNameController,
-                  enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: 'Last Name',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.orange),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[200]!),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
 
                 // Birthday Field
@@ -653,11 +643,7 @@ class _AddChildPageState extends State<AddChildPage> {
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     filled: true,
                     fillColor: Colors.white,
-                    suffixIcon: const Icon(
-                      Icons.calendar_today,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
+                    suffixIcon: Icon(Icons.calendar_month),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey[300]!),

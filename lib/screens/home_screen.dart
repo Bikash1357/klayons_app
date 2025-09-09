@@ -268,45 +268,30 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     _refreshNotificationCount();
   }
 
-  // Navigate to profile page and refresh user data on return
-  void _navigateToProfile() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => SettingsPage()),
-    );
-    // Refresh user profile data when returning from profile page
-    _loadUserProfile();
-  }
-
-  // Build default avatar widget
-  Widget _buildDefaultAvatar() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.primaryOrange.withOpacity(0.1),
-      ),
-      child: Icon(Icons.person, color: AppColors.primaryOrange, size: 22),
-    );
-  }
-
   // Helper method to build custom navigation icons
   Widget _buildNavIcon(String assetPath, int index, {IconData? fallbackIcon}) {
     bool isSelected = selectedIndex == index;
-    Color iconColor = isSelected ? Color(0xFFFF6B35) : Colors.grey;
+    Color iconColor = isSelected
+        ? AppColors.primaryOrange
+        : AppColors.darkElements;
+    Widget iconWidget;
     if (assetPath.isNotEmpty) {
-      return SvgPicture.asset(
+      iconWidget = SvgPicture.asset(
         assetPath,
-        width: 24,
-        height: 24,
+        width: 32, // Increased icon size
+        height: 32,
         colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
       );
     } else if (fallbackIcon != null) {
-      return Icon(fallbackIcon, color: iconColor);
+      iconWidget = Icon(fallbackIcon, color: iconColor, size: 32);
     } else {
-      return Icon(Icons.help_outline, color: iconColor);
+      iconWidget = Icon(Icons.help_outline, color: iconColor, size: 32);
     }
+    // Only vertical padding to keep icon centered horizontally
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: iconWidget,
+    );
   }
 
   @override
@@ -327,37 +312,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         elevation: 0,
         title: Row(
           children: [
-            // Profile Image
-            // GestureDetector(
-            //   onTap: _navigateToProfile,
-            //   child: Container(
-            //     width: 40,
-            //     height: 40,
-            //     decoration: BoxDecoration(
-            //       shape: BoxShape.circle,
-            //       color: AppColors.primaryOrange.withOpacity(0.1),
-            //       border: Border.all(
-            //         color: AppColors.primaryOrange.withOpacity(0.3),
-            //         width: 1,
-            //       ),
-            //     ),
-            //     child: userProfileImage != null && userProfileImage!.isNotEmpty
-            //         ? ClipOval(
-            //             child: Image.network(
-            //               userProfileImage!,
-            //               width: 40,
-            //               height: 40,
-            //               fit: BoxFit.cover,
-            //               errorBuilder: (context, error, stackTrace) {
-            //                 return _buildDefaultAvatar();
-            //               },
-            //             ),
-            //           )
-            //         : _buildDefaultAvatar(),
-            //   ),
-            // ),
-            // SizedBox(width: 12),
-            // User Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,39 +336,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                             ),
                           ),
                         ),
-
-                  SizedBox(height: 2),
-                  // User address
-                  //if (userAddress.isNotEmpty || isLoadingUserProfile)
-                  // Row(
-                  //   children: [
-                  //     Icon(
-                  //       Icons.location_on,
-                  //       size: 14,
-                  //       color: Colors.grey[600],
-                  //     ),
-                  //     SizedBox(width: 4),
-                  //     Flexible(
-                  //       child: isLoadingUserProfile
-                  //           ? Container(
-                  //               width: 100,
-                  //               height: 12,
-                  //               decoration: BoxDecoration(
-                  //                 color: Colors.grey[300],
-                  //                 borderRadius: BorderRadius.circular(6),
-                  //               ),
-                  //             )
-                  //           : Text(
-                  //               userAddress,
-                  //               style: TextStyle(
-                  //                 fontSize: 12,
-                  //                 color: Colors.grey[600],
-                  //               ),
-                  //               overflow: TextOverflow.ellipsis,
-                  //             ),
-                  //     ),
-                  //   ],
-                  // ),
                 ],
               ),
             ),
@@ -673,7 +594,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.transparent,
             elevation: 0,
-            selectedItemColor: Color(0xFFFF6B35),
+            selectedItemColor: AppColors.primaryOrange,
             unselectedItemColor: Colors.grey,
             currentIndex: selectedIndex,
             onTap: _onBottomNavTapped,
@@ -705,7 +626,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             builder: (context, child) {
               double screenWidth = MediaQuery.of(context).size.width;
               double tabWidth = screenWidth / 4;
-              double lineWidth = 40;
+              double lineWidth = 32; // Match icon width
               double currentPosition = _slideAnimation.value;
               return Positioned(
                 bottom: 0,

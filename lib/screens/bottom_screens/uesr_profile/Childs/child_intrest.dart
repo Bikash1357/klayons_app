@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_svg/svg.dart';
 import 'package:klayons/utils/colour.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -429,8 +430,19 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
-          onPressed: () => Navigator.pop(context),
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddChildPage()),
+          ),
         ),
         title: Text(
           widget.isEditMode ? 'EDIT CHILD' : 'ADD CHILD',

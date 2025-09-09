@@ -9,6 +9,7 @@ class AppColors {
   static const Color primaryOrange = Color(0xFFF15722);
   static const Color highlight = Color(0xFFCF4307);
   static const Color errorState = Color(0xFFE03B38);
+  static const Color highlight2 = Color(0xFFFFE9E0);
 
   //used in when something sucessfully done
   static const Color acceptState = Color(0xFF1DB812);

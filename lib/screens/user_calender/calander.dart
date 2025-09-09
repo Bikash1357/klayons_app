@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:klayons/screens/home_screen.dart';
+import 'package:klayons/screens/notification.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +11,7 @@ import '../../services/calander/children_calendar_service.dart';
 import '../../services/calander/society_batch_calander.dart';
 import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
+import '../bottom_screens/uesr_profile/profile_page.dart';
 import 'create_event_dialog.dart';
 import 'event_model.dart';
 import 'package:klayons/utils/colour.dart';
@@ -183,11 +187,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         );
   }
 
-  Future<void> _refreshData() async {
-    await Future.wait([
-      _loadSocietyBatches(),
-      if (_selectedChildIds.isNotEmpty) _loadChildrenCalendar(),
-    ]);
+  Future<void> _notification() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NotificationsPage()),
+    );
   }
 
   Future<void> _loadEvents() async {
@@ -374,7 +378,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: events.take(2).map((event) {
-            Color dotColor = Colors.orange;
+            Color dotColor = AppColors.primaryOrange;
             if (event is BatchCalendarEvent) {
               dotColor = event.color;
             } else if (event is ChildCalendarEvent) {
@@ -406,7 +410,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               height: 6,
               margin: EdgeInsets.only(right: 2),
               decoration: BoxDecoration(
-                color: Colors.orange,
+                color: AppColors.primaryOrange,
                 shape: BoxShape.circle,
               ),
             ),
@@ -416,7 +420,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               height: 6,
               margin: EdgeInsets.only(right: 2),
               decoration: BoxDecoration(
-                color: Colors.orange,
+                color: AppColors.primaryOrange,
                 shape: BoxShape.circle,
               ),
             ),
@@ -428,7 +432,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: Text(
                   '+',
                   style: TextStyle(
-                    color: Colors.orange,
+                    color: AppColors.primaryOrange,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -452,7 +456,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryOrange,
+                ),
               ),
             ),
             SizedBox(width: 8),
@@ -488,13 +494,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               margin: EdgeInsets.only(right: 8),
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: _showAllActivities
-                    ? Colors.orange.shade50
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                color: _showAllActivities ? AppColors.highlight2 : Colors.white,
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: _showAllActivities
-                      ? Colors.orange
+                      ? AppColors.primaryOrange
                       : Colors.grey.shade300,
                   width: _showAllActivities ? 2 : 1,
                 ),
@@ -506,7 +510,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       ? FontWeight.w600
                       : FontWeight.w400,
                   color: _showAllActivities
-                      ? Colors.orange.shade700
+                      ? AppColors.primaryOrange
                       : Colors.black,
                 ),
               ),
@@ -533,10 +537,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 margin: EdgeInsets.only(right: 8),
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.orange.shade50 : Colors.white,
-                  borderRadius: BorderRadius.circular(18),
+                  color: isSelected ? AppColors.highlight2 : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? Colors.orange : Colors.grey.shade300,
+                    color: isSelected
+                        ? AppColors.primaryOrange
+                        : Colors.grey.shade300,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -545,7 +551,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   "${child.name.split(' ').first}'s Activities",
                   style: AppTextStyles.bodySmall(context).copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? Colors.orange.shade700 : Colors.black,
+                    color: isSelected ? AppColors.primaryOrange : Colors.black,
                   ),
                 ),
               ),
@@ -561,6 +567,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+          ),
+        ),
         title: Text(
           'Activity Schedule',
           style: AppTextStyles.headlineSmall(
@@ -571,141 +593,145 @@ class _CalendarScreenState extends State<CalendarScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
         actions: [
-          IconButton(
-            onPressed: _refreshData,
-            icon: Icon(
-              (_isLoadingBatches || _isLoadingChildrenCalendar)
-                  ? Icons.hourglass_empty
-                  : Icons.refresh,
-              color: Colors.orange,
-            ),
-            tooltip: 'Refresh activities',
-          ),
+          IconButton(onPressed: _notification, icon: Icon(Icons.notifications)),
         ],
       ),
       body: Column(
         children: [
-          Container(
-            color: Colors.white,
-            child: Column(
+          // MMYYYY and filter chips OUTSIDE card container
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
               children: [
-                // Filter chips section
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: _buildFilterChips(),
-                ),
-
-                // Month Row
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          DateFormat('MMMM yyyy').format(_focusedDay),
-                          style: AppTextStyles.titleLarge(context).copyWith(
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ),
-                      if (_isLoadingBatches || _isLoadingChildrenCalendar)
-                        Container(
-                          margin: EdgeInsets.only(left: 8),
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.orange,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                // Calendar with custom markers
-                TableCalendar<dynamic>(
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 12, 31),
-                  focusedDay: _focusedDay,
-                  calendarFormat: _calendarFormat,
-                  eventLoader: _getEventsForDay,
-                  startingDayOfWeek: StartingDayOfWeek.monday,
-                  selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                  onDaySelected: _onDaySelected,
-                  onFormatChanged: (format) {
-                    if (_calendarFormat != format) {
-                      setState(() {
-                        _calendarFormat = format;
-                      });
-                    }
-                  },
-                  onPageChanged: (focusedDay) {
-                    setState(() {
-                      _focusedDay = focusedDay;
-                    });
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    // Custom marker builder
-                    markerBuilder: _eventMarkerBuilder,
-                  ),
-                  calendarStyle: CalendarStyle(
-                    outsideDaysVisible: false,
-                    weekendTextStyle: AppTextStyles.bodyMedium(
-                      context,
-                    ).copyWith(color: Colors.black),
-                    defaultTextStyle: AppTextStyles.bodyMedium(
-                      context,
-                    ).copyWith(color: Colors.black),
-                    selectedDecoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    selectedTextStyle: AppTextStyles.bodyMedium(context)
-                        .copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                    todayDecoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    todayTextStyle: AppTextStyles.bodyMedium(context).copyWith(
-                      color: Colors.orange,
+                Expanded(
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(_focusedDay),
+                    style: AppTextStyles.titleLarge(context).copyWith(
+                      fontSize: 19,
                       fontWeight: FontWeight.bold,
+                      color: AppColors.primaryOrange,
                     ),
-                    // Disable default markers since we're using custom ones
-                    markersMaxCount: 0,
-                    canMarkersOverflow: false,
-                  ),
-                  headerStyle: HeaderStyle(
-                    formatButtonVisible: false,
-                    titleCentered: false,
-                    leftChevronVisible: false,
-                    rightChevronVisible: false,
-                    headerPadding: EdgeInsets.zero,
-                    titleTextStyle: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(fontSize: 0),
-                  ),
-                  daysOfWeekStyle: DaysOfWeekStyle(
-                    weekdayStyle: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(color: Colors.grey.shade600),
-                    weekendStyle: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(color: Colors.grey.shade600),
                   ),
                 ),
+                if (_isLoadingBatches || _isLoadingChildrenCalendar)
+                  Container(
+                    margin: EdgeInsets.only(left: 8),
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryOrange,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: _buildFilterChips(),
+          ),
+
+          // Card container with shadow wrapping calendar ONLY
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: Offset(4, 0), // Side shadow on the right
+                    blurRadius: 16,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  SizedBox(height: 15),
+                  TableCalendar<dynamic>(
+                    firstDay: DateTime.utc(2020, 1, 1),
+                    lastDay: DateTime.utc(2030, 12, 31),
+                    focusedDay: _focusedDay,
+                    calendarFormat: _calendarFormat,
+                    eventLoader: _getEventsForDay,
+                    startingDayOfWeek: StartingDayOfWeek.monday,
+                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                    onDaySelected: _onDaySelected,
+                    onFormatChanged: (format) {
+                      if (_calendarFormat != format) {
+                        setState(() {
+                          _calendarFormat = format;
+                        });
+                      }
+                    },
+                    onPageChanged: (focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                    },
+                    calendarBuilders: CalendarBuilders(
+                      markerBuilder: _eventMarkerBuilder,
+                    ),
+                    calendarStyle: CalendarStyle(
+                      outsideDaysVisible: false,
+                      weekendTextStyle: AppTextStyles.bodyMedium(
+                        context,
+                      ).copyWith(color: Colors.black),
+                      defaultTextStyle: AppTextStyles.bodyMedium(
+                        context,
+                      ).copyWith(color: Colors.black),
+                      selectedDecoration: BoxDecoration(
+                        color: AppColors.primaryOrange,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      selectedTextStyle: AppTextStyles.bodyMedium(context)
+                          .copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      todayDecoration: BoxDecoration(
+                        color: AppColors.highlight2,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      todayTextStyle: AppTextStyles.bodyMedium(context)
+                          .copyWith(
+                            color: AppColors.primaryOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      markersMaxCount: 0,
+                      canMarkersOverflow: false,
+                    ),
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: false,
+                      leftChevronVisible: false,
+                      rightChevronVisible: false,
+                      headerPadding: EdgeInsets.zero,
+                      titleTextStyle: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(fontSize: 0),
+                    ),
+                    daysOfWeekStyle: DaysOfWeekStyle(
+                      weekdayStyle: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(color: Colors.grey.shade600),
+                      weekendStyle: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(color: Colors.grey.shade600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 8.0),
 
-          // Event List
+          // Event List unchanged from before...
           Expanded(
             child: ValueListenableBuilder<List<dynamic>>(
               valueListenable: _selectedEvents,
@@ -741,6 +767,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   padding: EdgeInsets.all(16),
                   itemCount: value.length,
                   itemBuilder: (context, index) {
+                    // Event item build logic unchanged
                     final event = value[index];
 
                     String title;
@@ -756,7 +783,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
                       venue = event.venue;
                       iconColor = event.color;
-                      // Show only first name of child here
                       childInfo =
                           event.childName != null && event.childName!.isNotEmpty
                           ? 'for ${event.childName!.split(' ').first}'
@@ -952,7 +978,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEventDialog(context),
-        backgroundColor: Colors.orange,
+        backgroundColor: AppColors.primaryOrange,
         child: Icon(Icons.add, color: Colors.white),
       ),
     );
