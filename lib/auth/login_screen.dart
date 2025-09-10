@@ -59,6 +59,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false, // <-- Add this line
       body: SafeArea(
         child: Stack(
           children: [
@@ -68,6 +69,9 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollController,
+                    padding: EdgeInsets.only(
+                      bottom: 100,
+                    ), // <-- Add enough padding for bottom bar
                     child: Column(
                       children: [
                         Stack(
@@ -244,64 +248,6 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                   ],
                                 ),
                               ),
-
-                              SizedBox(height: 100),
-
-                              // Terms and Privacy Policy moved to bottom
-                              Center(
-                                child: RichText(
-                                  textAlign: TextAlign.center,
-                                  text: TextSpan(
-                                    style: AppTextStyles.bodyMedium(context)
-                                        .copyWith(
-                                          color: AppColors.textSecondary,
-                                          height: 1.4,
-                                        ),
-                                    children: [
-                                      TextSpan(
-                                        text: "By continuing, I agree to the ",
-                                      ),
-                                      WidgetSpan(
-                                        alignment:
-                                            PlaceholderAlignment.baseline,
-                                        baseline: TextBaseline.alphabetic,
-                                        child: GestureDetector(
-                                          onTap: _launchTermsUrl,
-                                          child: Text(
-                                            "Terms of Use",
-                                            style:
-                                                AppTextStyles.bodyMedium(
-                                                  context,
-                                                ).copyWith(
-                                                  color:
-                                                      AppColors.primaryOrange,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                      TextSpan(text: " & "),
-                                      WidgetSpan(
-                                        alignment:
-                                            PlaceholderAlignment.baseline,
-                                        baseline: TextBaseline.alphabetic,
-                                        child: GestureDetector(
-                                          onTap: _launchPrivacyPolicyUrl,
-                                          child: Text(
-                                            "Privacy Policy",
-                                            style:
-                                                AppTextStyles.bodyMedium(
-                                                  context,
-                                                ).copyWith(
-                                                  color:
-                                                      AppColors.primaryOrange,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                         ),
@@ -314,6 +260,56 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
 
             // Bottom error message overlay
             buildBottomErrorMessage(),
+
+            // Fixed bottom Terms & Privacy
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 30, // <-- Fixed distance from bottom (adjust as needed)
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Center(
+                  child: RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: AppTextStyles.bodyMedium(
+                        context,
+                      ).copyWith(color: AppColors.textSecondary, height: 1.4),
+                      children: [
+                        TextSpan(text: "By continuing, I agree to the "),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.baseline,
+                          baseline: TextBaseline.alphabetic,
+                          child: GestureDetector(
+                            onTap: _launchTermsUrl,
+                            child: Text(
+                              "Terms of Use",
+                              style: AppTextStyles.bodyMedium(
+                                context,
+                              ).copyWith(color: AppColors.primaryOrange),
+                            ),
+                          ),
+                        ),
+                        TextSpan(text: " & "),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.baseline,
+                          baseline: TextBaseline.alphabetic,
+                          child: GestureDetector(
+                            onTap: _launchPrivacyPolicyUrl,
+                            child: Text(
+                              "Privacy Policy",
+                              style: AppTextStyles.bodyMedium(
+                                context,
+                              ).copyWith(color: AppColors.primaryOrange),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

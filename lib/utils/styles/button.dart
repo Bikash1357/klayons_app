@@ -21,7 +21,7 @@ class OrangeButton extends StatelessWidget {
 
     // Calculate responsive height based on screen height
     //     // This ensures the button scales proportionally with screen size
-    double buttonHeight = screenHeight * 0.065; // 7.5% of screen height
+    double buttonHeight = screenHeight * 0.045; // 4.5% of screen height
 
     // Set minimum and maximum height bounds for better UX
     buttonHeight = buttonHeight.clamp(50.0, 70.0);
