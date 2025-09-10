@@ -60,258 +60,252 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false, // <-- Add this line
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Main content
-            Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    padding: EdgeInsets.only(
-                      bottom: 100,
-                    ), // <-- Add enough padding for bottom bar
-                    child: Column(
-                      children: [
-                        Stack(
-                          children: [
-                            Container(
-                              height: MediaQuery.of(context).size.height * 0.35,
-                              width: double.infinity,
+      body: Stack(
+        children: [
+          // Main content
+          Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: EdgeInsets.only(
+                    bottom: 100,
+                  ), // <-- Add enough padding for bottom bar
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            height: MediaQuery.of(context).size.height * 0.35,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: AssetImage(
+                                  'assets/images/Auth_Header_img.png',
+                                ),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          // Rounded overlay to blend with form section
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              height: 15,
                               decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: AssetImage(
-                                    'assets/images/Auth_Header_img.png',
-                                  ),
-                                  fit: BoxFit.cover,
+                                color: Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
                                 ),
                               ),
                             ),
-                            // Rounded overlay to blend with form section
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                height: 15,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
+                          ),
+                        ],
+                      ),
+
+                      // Form section
+                      Container(
+                        width: double.infinity,
+                        color: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 24.0,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Login form header
+                            Center(
+                              child: Text(
+                                'Log in to your account',
+                                style: AppTextStyles.titleMedium(
+                                  context,
+                                ).copyWith(color: AppColors.textSecondary),
+                              ),
+                            ),
+
+                            SizedBox(height: 16),
+
+                            // Email/Phone input field with input formatter
+                            CustomTextField(
+                              hintText: "Email or Phone",
+                              controller: _emailController,
+                              focusNode: _emailFocusNode,
+                              keyboardType: TextInputType.text,
+                              inputFormatters: [PhoneNumberInputFormatter()],
+                            ),
+
+                            SizedBox(height: 30),
+
+                            // Send OTP Button - now activates when user starts typing
+                            SizedBox(
+                              width: double.infinity,
+                              child: OrangeButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : (_emailController.text.trim().isNotEmpty
+                                          ? _sendLoginOTP
+                                          : null),
+                                child: _isLoading
+                                    ? Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    Colors.white,
+                                                  ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            "Sending OTP...",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        "Send OTP",
+                                        style: AppTextStyles.formLarge(
+                                          context,
+                                        ).copyWith(color: AppColors.background),
+                                      ),
+                              ),
+                            ),
+
+                            SizedBox(height: 24),
+
+                            // Divider with "or"
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.grey[300],
+                                    thickness: 1,
                                   ),
                                 ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text(
+                                    'or',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    color: Colors.grey[300],
+                                    thickness: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: 24),
+
+                            // Register link
+                            Center(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    "Don't have an account?",
+                                    style: AppTextStyles.titleMedium(
+                                      context,
+                                    ).copyWith(color: AppColors.textSecondary),
+                                  ),
+                                  //SizedBox(height: 5),
+                                  CustomTextButton(
+                                    text: "Register here!",
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => SignUnPage(),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-
-                        // Form section
-                        Container(
-                          width: double.infinity,
-                          color: Colors.white,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24.0,
-                            vertical: 24.0,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Login form header
-                              Center(
-                                child: Text(
-                                  'Log in to your account',
-                                  style: AppTextStyles.titleMedium(
-                                    context,
-                                  ).copyWith(color: AppColors.textSecondary),
-                                ),
-                              ),
-
-                              SizedBox(height: 16),
-
-                              // Email/Phone input field with input formatter
-                              CustomTextField(
-                                hintText: "Email or Phone",
-                                controller: _emailController,
-                                focusNode: _emailFocusNode,
-                                keyboardType: TextInputType.text,
-                                inputFormatters: [PhoneNumberInputFormatter()],
-                              ),
-
-                              SizedBox(height: 30),
-
-                              // Send OTP Button - now activates when user starts typing
-                              SizedBox(
-                                width: double.infinity,
-                                child: OrangeButton(
-                                  onPressed: _isLoading
-                                      ? null
-                                      : (_emailController.text.trim().isNotEmpty
-                                            ? _sendLoginOTP
-                                            : null),
-                                  child: _isLoading
-                                      ? Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(Colors.white),
-                                              ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              "Sending OTP...",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : Text(
-                                          "Send OTP",
-                                          style:
-                                              AppTextStyles.formLarge(
-                                                context,
-                                              ).copyWith(
-                                                color: AppColors.background,
-                                              ),
-                                        ),
-                                ),
-                              ),
-
-                              SizedBox(height: 24),
-
-                              // Divider with "or"
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Divider(
-                                      color: Colors.grey[300],
-                                      thickness: 1,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    child: Text(
-                                      'or',
-                                      style: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Divider(
-                                      color: Colors.grey[300],
-                                      thickness: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              SizedBox(height: 24),
-
-                              // Register link
-                              Center(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      "Don't have an account?",
-                                      style: AppTextStyles.titleMedium(context)
-                                          .copyWith(
-                                            color: AppColors.textSecondary,
-                                          ),
-                                    ),
-                                    //SizedBox(height: 5),
-                                    CustomTextButton(
-                                      text: "Register here!",
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => SignUnPage(),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
 
-            // Bottom error message overlay
-            buildBottomErrorMessage(),
+          // Bottom error message overlay
+          buildBottomErrorMessage(),
 
-            // Fixed bottom Terms & Privacy
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 30, // <-- Fixed distance from bottom (adjust as needed)
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Center(
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: AppTextStyles.bodyMedium(
-                        context,
-                      ).copyWith(color: AppColors.textSecondary, height: 1.4),
-                      children: [
-                        TextSpan(text: "By continuing, I agree to the "),
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.baseline,
-                          baseline: TextBaseline.alphabetic,
-                          child: GestureDetector(
-                            onTap: _launchTermsUrl,
-                            child: Text(
-                              "Terms of Use",
-                              style: AppTextStyles.bodyMedium(
-                                context,
-                              ).copyWith(color: AppColors.primaryOrange),
-                            ),
+          // Fixed bottom Terms & Privacy
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom:
+                MediaQuery.of(context).size.height *
+                0.04, // 30% of screen height
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Center(
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: AppTextStyles.bodyMedium(
+                      context,
+                    ).copyWith(color: AppColors.textSecondary),
+                    children: [
+                      TextSpan(text: "By continuing, I agree to the "),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: _launchTermsUrl,
+                          child: Text(
+                            "Terms of Use",
+                            style: AppTextStyles.bodyMedium(
+                              context,
+                            ).copyWith(color: AppColors.primaryOrange),
                           ),
                         ),
-                        TextSpan(text: " & "),
-                        WidgetSpan(
-                          alignment: PlaceholderAlignment.baseline,
-                          baseline: TextBaseline.alphabetic,
-                          child: GestureDetector(
-                            onTap: _launchPrivacyPolicyUrl,
-                            child: Text(
-                              "Privacy Policy",
-                              style: AppTextStyles.bodyMedium(
-                                context,
-                              ).copyWith(color: AppColors.primaryOrange),
-                            ),
+                      ),
+                      TextSpan(text: " & "),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: GestureDetector(
+                          onTap: _launchPrivacyPolicyUrl,
+                          child: Text(
+                            "Privacy Policy",
+                            style: AppTextStyles.bodyMedium(
+                              context,
+                            ).copyWith(color: AppColors.primaryOrange),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

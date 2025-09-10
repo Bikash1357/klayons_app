@@ -164,7 +164,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   padding: EdgeInsets.only(top: 16),
                   child: Text(
                     'Verify Profile',
-                    style: AppTextStyles.titleLarge(
+                    style: AppTextStyles.titleMedium(
                       context,
                     ).copyWith(color: AppColors.textSecondary),
                   ),
