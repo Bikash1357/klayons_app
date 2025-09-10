@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                       Stack(
                         children: [
                           Container(
-                            height: MediaQuery.of(context).size.height * 0.35,
+                            height: MediaQuery.of(context).size.height * 0.40,
                             width: double.infinity,
                             decoration: BoxDecoration(
                               image: DecorationImage(
@@ -93,7 +93,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                             left: 0,
                             right: 0,
                             child: Container(
-                              height: 15,
+                              height: 25,
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.only(
@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                         color: Colors.white,
                         padding: EdgeInsets.symmetric(
                           horizontal: 24.0,
-                          vertical: 24.0,
+                          vertical: 10.0,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

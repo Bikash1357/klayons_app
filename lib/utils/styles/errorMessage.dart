@@ -1,5 +1,6 @@
 // File: lib/widgets/bottom_error_message.dart
 import 'package:flutter/material.dart';
+import 'package:klayons/utils/colour.dart';
 
 class BottomErrorMessage extends StatefulWidget {
   final String message;
@@ -44,7 +45,7 @@ class _BottomErrorMessageState extends State<BottomErrorMessage> {
       right: 16,
       child: Container(
         decoration: BoxDecoration(
-          color: Color(0xFFFFEBEE), // Light red background
+          color: AppColors.errorState, // Light red background
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Color(0xFFE57373), width: 1),
         ),

@@ -24,13 +24,13 @@ class CustomTextButton extends StatelessWidget {
 
     double scaleFactor;
     if (screenWidth < 350) {
-      scaleFactor = 0.9; // Small phones
+      scaleFactor = 1.1; // Small phones
     } else if (screenWidth < 400) {
-      scaleFactor = 1.0; // Medium phones
+      scaleFactor = 1.2; // Medium phones
     } else if (screenWidth < 450) {
-      scaleFactor = 1.1; // Large phones
+      scaleFactor = 1.3; // Large phones
     } else {
-      scaleFactor = 1.2; // Very large phones/tablets
+      scaleFactor = 1.3; // Very large phones/tablets
     }
 
     return (baseFontSize * scaleFactor).clamp(
