@@ -316,7 +316,7 @@ class _SignUnPageState extends State<SignUnPage> {
               Container(
                 width: double.infinity,
                 color: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -330,7 +330,7 @@ class _SignUnPageState extends State<SignUnPage> {
                       ),
                     ),
 
-                    SizedBox(height: 32),
+                    SizedBox(height: 16),
 
                     // Name
                     CustomTextField(
@@ -479,11 +479,9 @@ class _SignUnPageState extends State<SignUnPage> {
                       child: RichText(
                         textAlign: TextAlign.center,
                         text: TextSpan(
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                            height: 1.4,
-                          ),
+                          style: AppTextStyles.bodyMedium(
+                            context,
+                          ).copyWith(color: AppColors.textSecondary),
                           children: [
                             TextSpan(text: "By continuing, I agree to the "),
                             WidgetSpan(
@@ -503,10 +501,9 @@ class _SignUnPageState extends State<SignUnPage> {
                                 },
                                 child: Text(
                                   "Terms of Use",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFFF6B35),
-                                  ),
+                                  style: AppTextStyles.bodyMedium(
+                                    context,
+                                  ).copyWith(color: AppColors.primaryOrange),
                                 ),
                               ),
                             ),
@@ -528,10 +525,9 @@ class _SignUnPageState extends State<SignUnPage> {
                                 },
                                 child: Text(
                                   "Privacy Policy",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFFFF6B35),
-                                  ),
+                                  style: AppTextStyles.bodyMedium(
+                                    context,
+                                  ).copyWith(color: AppColors.primaryOrange),
                                 ),
                               ),
                             ),

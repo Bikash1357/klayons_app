@@ -55,16 +55,16 @@ class _CustomTextFieldState extends State<CustomTextField> {
 
     double scaleFactor;
     if (screenWidth < 350) {
-      scaleFactor = 0.8; // Small phones
+      scaleFactor = 0.6; // Small phones
     } else if (screenWidth < 400) {
-      scaleFactor = 0.9; // Medium phones
+      scaleFactor = 0.8; // Medium phones
     } else if (screenWidth < 450) {
-      scaleFactor = 1.0; // Large phones
+      scaleFactor = 0.9; // Large phones
     } else {
       scaleFactor = 1.2; // Very large phones/tablets
     }
 
-    return (baseSize * scaleFactor).clamp(baseSize * 0.8, baseSize * 1.3);
+    return (baseSize * scaleFactor).clamp(baseSize * 0.6, baseSize * 1.3);
   }
 
   // Get responsive padding based on screen size
@@ -72,7 +72,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    double basePadding = 16.0;
+    double basePadding = 14.0;
 
     // Scale padding based on screen height
     double scaleFactor = (screenHeight / 812.0).clamp(0.8, 1.2);

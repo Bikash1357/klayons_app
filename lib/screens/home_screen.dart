@@ -273,13 +273,13 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     bool isSelected = selectedIndex == index;
     Color iconColor = isSelected
         ? AppColors.primaryOrange
-        : AppColors.darkElements;
+        : Color(0xFF433C39).withOpacity(0.5);
     Widget iconWidget;
     if (assetPath.isNotEmpty) {
       iconWidget = SvgPicture.asset(
         assetPath,
-        width: 32, // Increased icon size
-        height: 32,
+        width: 28, // Increased icon size
+        height: 28,
         colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
       );
     } else if (fallbackIcon != null) {
@@ -289,7 +289,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
     // Only vertical padding to keep icon centered horizontally
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: iconWidget,
     );
   }

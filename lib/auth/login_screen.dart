@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                           color: Colors.white,
                           padding: EdgeInsets.symmetric(
                             horizontal: 24.0,
-                            vertical: 32.0,
+                            vertical: 24.0,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,14 +245,14 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                 ),
                               ),
 
-                              SizedBox(height: 60),
+                              SizedBox(height: 100),
 
                               // Terms and Privacy Policy moved to bottom
                               Center(
                                 child: RichText(
                                   textAlign: TextAlign.center,
                                   text: TextSpan(
-                                    style: AppTextStyles.bodySmall(context)
+                                    style: AppTextStyles.bodyMedium(context)
                                         .copyWith(
                                           color: AppColors.textSecondary,
                                           height: 1.4,
@@ -270,7 +270,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                           child: Text(
                                             "Terms of Use",
                                             style:
-                                                AppTextStyles.bodySmall(
+                                                AppTextStyles.bodyMedium(
                                                   context,
                                                 ).copyWith(
                                                   color:
@@ -289,7 +289,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                           child: Text(
                                             "Privacy Policy",
                                             style:
-                                                AppTextStyles.bodySmall(
+                                                AppTextStyles.bodyMedium(
                                                   context,
                                                 ).copyWith(
                                                   color:
@@ -302,8 +302,6 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                   ),
                                 ),
                               ),
-
-                              SizedBox(height: 54),
                             ],
                           ),
                         ),
