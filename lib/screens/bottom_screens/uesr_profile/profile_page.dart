@@ -4,6 +4,7 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dar
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/home_screen.dart';
 import 'package:klayons/utils/colour.dart';
+import '../../../services/auth/login_service.dart';
 import '../../../services/user_child/get_ChildServices.dart';
 import '../../../services/get_userprofile_service.dart';
 import '../../../utils/styles/fonts.dart';
@@ -20,6 +21,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   List<Child>? children;
   bool isLoading = true;
   bool isLoadingChildren = true;
+  bool isLoggingOut = false; // Add loading state for logout
   String? errorMessage;
   String? childrenErrorMessage;
 
@@ -136,6 +138,121 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  // Add logout confirmation dialog
+  Future<void> _showLogoutConfirmation() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Confirm Logout',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2D3748),
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(fontSize: 16, color: Color(0xFF4A5568)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Color(0xFF718096), fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Logout', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _performLogout();
+    }
+  }
+
+  // Add logout functionality
+  Future<void> _performLogout() async {
+    try {
+      setState(() {
+        isLoggingOut = true;
+      });
+
+      print('🔄 Starting logout process...');
+
+      // Call the logout service
+      final success = await LoginAuthService.logout();
+
+      if (success) {
+        print('✅ Logout successful');
+
+        // Clear any other local caches
+        GetChildservices.clearAllCache();
+
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logged out successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+
+        // Navigate to login screen and clear navigation stack
+        if (mounted) {
+          // Replace with your actual login screen route
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/login', // Replace with your login route
+            (route) => false,
+          );
+        }
+      } else {
+        throw Exception('Logout failed');
+      }
+    } catch (e) {
+      print('❌ Logout error: $e');
+
+      if (mounted) {
+        setState(() {
+          isLoggingOut = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _showLogoutConfirmation,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   String _getUserName() {
     if (userProfile?.name.isNotEmpty == true) {
       // Capitalize each word in the name
@@ -229,7 +346,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         centerTitle: false,
-
         actions: [
           IconButton(
             icon: const Icon(
@@ -246,23 +362,59 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshAll,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              // User Profile Section
-              _buildUserProfileSection(context),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _refreshAll,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // User Profile Section
+                  _buildUserProfileSection(context),
 
-              // Children Profiles Section
-              _buildChildrenProfilesSection(context),
+                  // Children Profiles Section
+                  _buildChildrenProfilesSection(context),
 
-              // Menu Items Section
-              _buildMenuSection(context),
-            ],
+                  // Menu Items Section
+                  _buildMenuSection(context),
+                ],
+              ),
+            ),
           ),
-        ),
+
+          // Add loading overlay for logout
+          if (isLoggingOut)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF4A90E2),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Logging out...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF2D3748),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -851,7 +1003,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
           const Divider(color: Color(0xFFE2E8F0)),
           _buildMenuItem('Privacy Policy', Icons.privacy_tip_outlined, () {}),
           const Divider(color: Color(0xFFE2E8F0)),
-          _buildMenuItem('Log Out', Icons.logout, () {}, isLogout: true),
+          _buildMenuItem(
+            'Log Out',
+            Icons.logout,
+            _showLogoutConfirmation, // Updated to call logout confirmation
+            isLogout: true,
+          ),
         ],
       ),
     );

@@ -101,7 +101,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/images/Auth_Header_img.png'),
+                      image: AssetImage(
+                        'assets/images/auth_Background_Image.png',
+                      ),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -162,7 +164,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
                 child: Text(
-                  'Verify Profile',
+                  'OTP Verification',
                   style: AppTextStyles.titleMedium(
                     context,
                   ).copyWith(color: AppColors.textSecondary),

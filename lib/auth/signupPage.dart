@@ -254,7 +254,9 @@ class _SignUnPageState extends State<SignUnPage> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: AssetImage('assets/images/Auth_Header_img.png'),
+                      image: AssetImage(
+                        'assets/images/auth_Background_Image.png',
+                      ),
                       fit: BoxFit.cover, // Same as login page
                     ),
                   ),
@@ -361,13 +363,13 @@ class _SignUnPageState extends State<SignUnPage> {
                     children: [
                       _buildResidenceOption(
                         'Society Complex',
-                        Icons.apartment,
+                        'assets/App_icons/society_complex.svg',
                         'society',
                       ),
-                      SizedBox(width: 12),
+                      SizedBox(width: 15),
                       _buildResidenceOption(
                         'Individual Housing',
-                        Icons.home,
+                        'assets/App_icons/individual_house.svg',
                         'individual',
                       ),
                     ],
@@ -584,7 +586,7 @@ class _SignUnPageState extends State<SignUnPage> {
     );
   }
 
-  Widget _buildResidenceOption(String title, IconData icon, String value) {
+  Widget _buildResidenceOption(String title, String svgPath, String value) {
     bool isSelected = _selectedResidence == value;
     return Expanded(
       child: GestureDetector(
@@ -609,22 +611,25 @@ class _SignUnPageState extends State<SignUnPage> {
                 ? Color(0xFFFF6B35).withOpacity(0.1)
                 : Colors.white,
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                color: isSelected ? Color(0xFFFF6B35) : Colors.grey[600],
+              SvgPicture.asset(
+                svgPath,
+                width: 32,
+                height: 32,
+                colorFilter: ColorFilter.mode(
+                  isSelected ? Color(0xFFFF6B35) : Colors.grey[600]!,
+                  BlendMode.srcIn,
+                ),
               ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTextStyles.bodyMedium(context).copyWith(
-                    color: isSelected ? Color(0xFFFF6B35) : Colors.grey,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
+              SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium(context).copyWith(
+                  color: isSelected ? Color(0xFFFF6B35) : Colors.grey,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ],

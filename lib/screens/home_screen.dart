@@ -269,30 +269,96 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   // Helper method to build custom navigation icons
-  Widget _buildNavIcon(String assetPath, int index, {IconData? fallbackIcon}) {
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      height: 70, // Fixed height for the entire navigation bar
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Custom navigation row
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildCustomNavItem('assets/App_icons/iconHome.svg', 0),
+                _buildCustomNavItem('assets/App_icons/iconCalendar.svg', 1),
+                _buildCustomNavItem('assets/App_icons/iconTicket.svg', 2),
+                _buildCustomNavItem('assets/App_icons/iconProfile.svg', 3),
+              ],
+            ),
+          ),
+          // Animated indicator line
+          AnimatedBuilder(
+            animation: _slideAnimation,
+            builder: (context, child) {
+              double screenWidth = MediaQuery.of(context).size.width;
+              double tabWidth = screenWidth / 4;
+              double lineWidth = 32;
+              double currentPosition = _slideAnimation.value;
+              return Positioned(
+                bottom: 0,
+                left: (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
+                child: Container(
+                  width: lineWidth,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFF6B35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Custom navigation item builder
+  Widget _buildCustomNavItem(String assetPath, int index) {
     bool isSelected = selectedIndex == index;
     Color iconColor = isSelected
         ? AppColors.primaryOrange
         : Color(0xFF433C39).withOpacity(0.5);
-    Widget iconWidget;
-    if (assetPath.isNotEmpty) {
-      iconWidget = SvgPicture.asset(
-        assetPath,
-        width: 28, // Increased icon size
-        height: 28,
-        colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-      );
-    } else if (fallbackIcon != null) {
-      iconWidget = Icon(fallbackIcon, color: iconColor, size: 32);
-    } else {
-      iconWidget = Icon(Icons.help_outline, color: iconColor, size: 32);
-    }
-    // Only vertical padding to keep icon centered horizontally
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: iconWidget,
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onBottomNavTapped(index),
+        behavior: HitTestBehavior.translucent,
+        child: Container(
+          height: 70, // Full height of nav bar
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Top spacing
+              SizedBox(height: 15),
+              // Icon
+              SvgPicture.asset(
+                assetPath,
+                width: 32,
+                height: 32,
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              ),
+              // Bottom spacing (accounting for the 4px indicator line)
+              SizedBox(height: 23), // 15 + 4 + 4 = 23 for visual balance
+            ],
+          ),
+        ),
+      ),
     );
   }
+
+  // Remove the old _buildNavIcon method as it's no longer needed
 
   @override
   Widget build(BuildContext context) {
@@ -570,77 +636,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                 ? 'Check back later for new activities'
                 : 'Try searching with different keywords',
             style: TextStyle(color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          BottomNavigationBar(
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedItemColor: AppColors.primaryOrange,
-            unselectedItemColor: Colors.grey,
-            currentIndex: selectedIndex,
-            onTap: _onBottomNavTapped,
-            items: [
-              // Home Icon - Custom SVG
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/App_icons/iconHome.svg', 0),
-                label: '',
-              ),
-              // Calendar Icon
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/App_icons/iconCalendar.svg', 1),
-                label: '',
-              ),
-              // Enrolled/Ticket Icon - Custom SVG
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/App_icons/iconTicket.svg', 2),
-                label: '',
-              ),
-              // Profile Icon - Custom SVG
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/App_icons/iconProfile.svg', 3),
-                label: '',
-              ),
-            ],
-          ),
-          AnimatedBuilder(
-            animation: _slideAnimation,
-            builder: (context, child) {
-              double screenWidth = MediaQuery.of(context).size.width;
-              double tabWidth = screenWidth / 4;
-              double lineWidth = 32; // Match icon width
-              double currentPosition = _slideAnimation.value;
-              return Positioned(
-                bottom: 0,
-                left: (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
-                child: Container(
-                  width: lineWidth,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF6B35),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              );
-            },
           ),
         ],
       ),

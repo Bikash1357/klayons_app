@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image: AssetImage(
-                                  'assets/images/Auth_Header_img.png',
+                                  'assets/images/auty_Background_Image.png',
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                         color: Colors.white,
                         padding: EdgeInsets.symmetric(
                           horizontal: 24.0,
-                          vertical: 10.0,
+                          vertical: 12.0,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +138,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                               inputFormatters: [PhoneNumberInputFormatter()],
                             ),
 
-                            SizedBox(height: 30),
+                            SizedBox(height: 24),
 
                             // Send OTP Button - now activates when user starts typing
                             SizedBox(
@@ -179,12 +179,12 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                         "Send OTP",
                                         style: AppTextStyles.formLarge(
                                           context,
-                                        ).copyWith(color: AppColors.background),
+                                        ).copyWith(color: Colors.white),
                                       ),
                               ),
                             ),
 
-                            SizedBox(height: 24),
+                            SizedBox(height: 28),
 
                             // Divider with "or"
                             Row(
@@ -214,7 +214,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                               ],
                             ),
 
-                            SizedBox(height: 24),
+                            SizedBox(height: 28),
 
                             // Register link
                             Center(
@@ -226,7 +226,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                                       context,
                                     ).copyWith(color: AppColors.textSecondary),
                                   ),
-                                  //SizedBox(height: 5),
+                                  //SizedBox(height: 1),
                                   CustomTextButton(
                                     text: "Register here!",
                                     onPressed: () {
@@ -264,8 +264,12 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Center(
+                // Replace the existing RichText widget in your Positioned widget with this:
                 child: RichText(
                   textAlign: TextAlign.center,
+                  textScaleFactor: MediaQuery.of(
+                    context,
+                  ).textScaleFactor, // Add this line
                   text: TextSpan(
                     style: AppTextStyles.bodyMedium(
                       context,
@@ -279,6 +283,9 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                           onTap: _launchTermsUrl,
                           child: Text(
                             "Terms of Use",
+                            textScaleFactor: MediaQuery.of(
+                              context,
+                            ).textScaleFactor, // Add this line
                             style: AppTextStyles.bodyMedium(
                               context,
                             ).copyWith(color: AppColors.primaryOrange),
@@ -293,6 +300,9 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                           onTap: _launchPrivacyPolicyUrl,
                           child: Text(
                             "Privacy Policy",
+                            textScaleFactor: MediaQuery.of(
+                              context,
+                            ).textScaleFactor, // Add this line
                             style: AppTextStyles.bodyMedium(
                               context,
                             ).copyWith(color: AppColors.primaryOrange),
