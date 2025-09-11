@@ -90,220 +90,241 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header with background image and back button
-            Stack(
+      body: Stack(
+        children: [
+          // Main scrollable content
+          SingleChildScrollView(
+            child: Column(
               children: [
-                Container(
-                  height: MediaQuery.of(context).size.height * 0.40,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(
-                        'assets/images/auth_Background_Image.png',
-                      ),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                // iOS-style back button
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
+                // Header with background image
+                Stack(
+                  children: [
+                    Container(
+                      height: MediaQuery.of(context).size.height * 0.40,
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: Offset(0, 2),
+                        image: DecorationImage(
+                          image: AssetImage(
+                            'assets/images/auth_Background_Image.png',
                           ),
-                        ],
-                      ),
-                      child: SvgPicture.asset(
-                        'assets/App_icons/iconBack.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: ColorFilter.mode(
-                          AppColors.darkElements,
-                          BlendMode.srcIn,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
-                  ),
-                ),
-                // Rounded overlay to blend with form section
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 25,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
+                    // Rounded overlay to blend with form section
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 25,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                        ),
                       ),
+                    ),
+                  ],
+                ),
+
+                // Title
+                Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 10.0,
+                    ),
+                    child: Text(
+                      'OTP Verification',
+                      style: AppTextStyles.titleMedium(
+                        context,
+                      ).copyWith(color: AppColors.textSecondary),
                     ),
                   ),
                 ),
-              ],
-            ),
 
-            // Title
-            Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-                child: Text(
-                  'OTP Verification',
-                  style: AppTextStyles.titleMedium(
-                    context,
-                  ).copyWith(color: AppColors.textSecondary),
-                ),
-              ),
-            ),
-
-            // OTP Form Section
-            Container(
-              width: double.infinity,
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Description Text
-                  Text(
-                    'We have sent you an OTP on ${_isEmail(widget.email) ? 'email' : 'WhatsApp'} at',
-                    style: AppTextStyles.titleMedium(
-                      context,
-                    ).copyWith(color: AppColors.textSecondary, height: 1.4),
-                    textAlign: TextAlign.center,
+                // OTP Form Section
+                Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 16.0,
                   ),
-                  SizedBox(height: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Description Text
+                      Text(
+                        '6-digit code sent on ${_isEmail(widget.email) ? 'email' : 'WhatsApp'} at',
+                        style: AppTextStyles.titleMedium(
+                          context,
+                        ).copyWith(color: AppColors.textSecondary, height: 1.4),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
 
-                  // Email/Phone display
-                  Text(
-                    widget.email,
-                    style: AppTextStyles.titleMedium(
-                      context,
-                    ).copyWith(color: AppColors.primaryOrange),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 40),
+                      // Email/Phone display
+                      Text(
+                        _isEmail(widget.email)
+                            ? widget.email
+                            : '+91 ${widget.email}',
+                        style: AppTextStyles.titleMedium(
+                          context,
+                        ).copyWith(color: AppColors.primaryOrange),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 40),
 
-                  // OTP Input Boxes with timer and resend
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Column(
-                      children: [
-                        // OTP Boxes
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: List.generate(
-                            6,
-                            (index) => _buildOTPBox(index),
-                          ),
-                        ),
-                        SizedBox(height: 12),
-
-                        // Timer and Resend Code aligned with OTP boxes
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // OTP Input Boxes with timer and resend
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10.0),
+                        child: Column(
                           children: [
-                            // Timer display on left - aligned with first OTP box
-                            Padding(
-                              padding: EdgeInsets.only(left: 4),
-                              child: Text(
-                                '00:${_resendCountdown.toString().padLeft(2, '0')}',
-                                style: AppTextStyles.titleSmall(
-                                  context,
-                                ).copyWith(color: AppColors.textSecondary),
+                            // OTP Boxes
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: List.generate(
+                                6,
+                                (index) => _buildOTPBox(index),
                               ),
                             ),
+                            SizedBox(height: 12),
 
-                            // Resend Code on right - aligned with last OTP box
-                            TextButton(
-                              onPressed: (_canResend && !_isResending)
-                                  ? _resendOTP
-                                  : null,
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 4,
+                            // Timer and Resend Code aligned with OTP boxes
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // Timer display on left - aligned with first OTP box
+                                Padding(
+                                  padding: EdgeInsets.only(left: 4),
+                                  child: Text(
+                                    '00:${_resendCountdown.toString().padLeft(2, '0')}',
+                                    style: AppTextStyles.titleSmall(
+                                      context,
+                                    ).copyWith(color: AppColors.textSecondary),
+                                  ),
                                 ),
-                                minimumSize: Size(0, 0),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                _isResending ? 'Resending...' : 'Resend Code',
-                                style: AppTextStyles.titleSmall(context)
-                                    .copyWith(
-                                      color: (_canResend && !_isResending)
-                                          ? AppColors.primaryOrange
-                                          : Colors.grey,
+
+                                // Resend Code on right - aligned with last OTP box
+                                TextButton(
+                                  onPressed: (_canResend && !_isResending)
+                                      ? _resendOTP
+                                      : null,
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 4,
                                     ),
-                              ),
+                                    minimumSize: Size(0, 0),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    _isResending
+                                        ? 'Resending...'
+                                        : 'Resend Code',
+                                    style: AppTextStyles.titleSmall(context)
+                                        .copyWith(
+                                          color: (_canResend && !_isResending)
+                                              ? AppColors.primaryOrange
+                                              : Colors.grey,
+                                        ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  SizedBox(height: 60),
+                      SizedBox(height: 60),
 
-                  // Submit Button using OrangeButton
-                  OrangeButton(
-                    onPressed: _verifyOTP,
-                    isDisabled: _isLoading || !_isOTPComplete(),
-                    child: _isLoading
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
+                      // Submit Button using OrangeButton
+                      OrangeButton(
+                        onPressed: _verifyOTP,
+                        isDisabled: _isLoading || !_isOTPComplete(),
+                        child: _isLoading
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              Text(
-                                'Verifying...',
+                                  SizedBox(width: 10),
+                                  Text(
+                                    'Verifying...',
+                                    style: AppTextStyles.titleMedium(context)
+                                        .copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                'Submit',
                                 style: AppTextStyles.titleMedium(context)
                                     .copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
                                     ),
                               ),
-                            ],
-                          )
-                        : Text(
-                            'Submit',
-                            style: AppTextStyles.titleMedium(context).copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                      ),
+                      SizedBox(height: 30),
+                    ],
                   ),
-                  SizedBox(height: 30),
+                ),
+              ],
+            ),
+          ),
+
+          // Fixed Back Button - positioned outside ScrollView
+          Positioned(
+            top:
+                MediaQuery.of(context).padding.top +
+                16, // Accounts for status bar
+            left: 16,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
                 ],
               ),
+              child: IconButton(
+                icon: SvgPicture.asset(
+                  'assets/App_icons/iconBack.svg',
+                  width: 20,
+                  height: 20,
+                  colorFilter: ColorFilter.mode(
+                    AppColors.darkElements,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                padding: EdgeInsets.all(4),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

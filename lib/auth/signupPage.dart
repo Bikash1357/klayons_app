@@ -241,348 +241,326 @@ class _SignUnPageState extends State<SignUnPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Top section with background image - SAME AS LOGIN PAGE
-            Stack(
+      body: Stack(
+        children: [
+          // Main scrollable content
+          SingleChildScrollView(
+            child: Column(
               children: [
+                // Top section with background image
+                Stack(
+                  children: [
+                    Container(
+                      height: MediaQuery.of(context).size.height * 0.40,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage(
+                            'assets/images/auth_Background_Image.png',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    // Rounded overlay to blend with form section
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 25,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Form section
                 Container(
-                  height:
-                      MediaQuery.of(context).size.height *
-                      0.40, // Same as login page
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(
-                        'assets/images/auth_Background_Image.png',
-                      ),
-                      fit: BoxFit.cover, // Same as login page
-                    ),
+                  color: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 10.0,
                   ),
-                ),
-                // Back Button positioned at top-left
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: SvgPicture.asset(
-                        'assets/App_icons/iconBack.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: ColorFilter.mode(
-                          AppColors.darkElements,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      padding: EdgeInsets.all(8),
-                    ),
-                  ),
-                ),
-                // Rounded overlay to blend with form section - SAME AS LOGIN PAGE
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 25, // Same as login page
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Form section - SAME STRUCTURE AS LOGIN PAGE
-            Container(
-              width: double.infinity,
-              color: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Signup form header - SAME STYLING AS LOGIN PAGE
-                  Center(
-                    child: Text(
-                      'Register your account',
-                      style: AppTextStyles.titleMedium(
-                        context,
-                      ).copyWith(color: AppColors.textSecondary),
-                    ),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  // Name
-                  CustomTextField(
-                    hintText: 'Name*',
-                    controller: _nameController,
-                    keyboardType: TextInputType.text,
-                    showDynamicBorders: false,
-                  ),
-                  SizedBox(height: 16),
-
-                  // Email or Phone
-                  CustomTextField(
-                    hintText: 'Email or Phone*',
-                    controller: _emailOrPhoneController,
-                    keyboardType: TextInputType.text,
-                    showDynamicBorders: false,
-                  ),
-                  SizedBox(height: 24),
-
-                  // Residence Type
-                  Text(
-                    'Where do you reside?',
-                    style: AppTextStyles.titleMedium(
-                      context,
-                    ).copyWith(color: AppColors.textSecondary),
-                  ),
-                  SizedBox(height: 12),
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildResidenceOption(
-                        'Society Complex',
-                        'assets/App_icons/society_complex.svg',
-                        'society',
+                      // Signup form header
+                      Center(
+                        child: Text(
+                          'Register your account',
+                          style: AppTextStyles.titleMedium(
+                            context,
+                          ).copyWith(color: AppColors.textSecondary),
+                        ),
                       ),
-                      SizedBox(width: 15),
-                      _buildResidenceOption(
-                        'Individual Housing',
-                        'assets/App_icons/individual_house.svg',
-                        'individual',
+
+                      SizedBox(height: 20),
+
+                      // Name
+                      CustomTextField(
+                        hintText: 'Name*',
+                        controller: _nameController,
+                        keyboardType: TextInputType.text,
+                        showDynamicBorders: false,
                       ),
-                    ],
-                  ),
+                      SizedBox(height: 16),
 
-                  // Dynamic Fields
-                  if (_selectedResidence == 'society') _buildSocietyField(),
-                  if (_selectedResidence == 'individual') _buildAddressField(),
+                      // Email or Phone
+                      CustomTextField(
+                        hintText: 'Email or Phone*',
+                        controller: _emailOrPhoneController,
+                        keyboardType: TextInputType.text,
+                        showDynamicBorders: false,
+                      ),
+                      SizedBox(height: 24),
 
-                  SizedBox(height: 32),
+                      // Residence Type
+                      Text(
+                        'Where do you reside?',
+                        style: AppTextStyles.titleMedium(
+                          context,
+                        ).copyWith(color: AppColors.textSecondary),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _buildResidenceOption(
+                            'Society Complex',
+                            'assets/App_icons/society_complex.svg',
+                            'society',
+                          ),
+                          SizedBox(width: 12),
+                          _buildResidenceOption(
+                            'Individual Housing',
+                            'assets/App_icons/individual_house.svg',
+                            'individual',
+                          ),
+                        ],
+                      ),
 
-                  // Submit Button - SAME STYLING AS LOGIN PAGE
-                  SizedBox(
-                    width: double.infinity,
+                      // Dynamic Fields
+                      if (_selectedResidence == 'society') _buildSocietyField(),
+                      if (_selectedResidence == 'individual')
+                        _buildAddressField(),
 
-                    child: OrangeButton(
-                      onPressed: _isFormValid() && !_isSubmitting
-                          ? _submitForm
-                          : null,
-                      child: _isSubmitting
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                      SizedBox(height: 32),
+
+                      // Submit Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OrangeButton(
+                          onPressed: _isFormValid() && !_isSubmitting
+                              ? _submitForm
+                              : null,
+                          child: _isSubmitting
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Text(
-                                  "Sending OTP...",
+                                    SizedBox(width: 12),
+                                    Text(
+                                      "Sending OTP...",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  'Send OTP',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                            )
-                          : Text(
-                              'Send OTP',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                    ),
-                  ),
-                  SizedBox(height: 24),
-
-                  // Divider with "or" - SAME AS LOGIN PAGE
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(color: Colors.grey[300], thickness: 1),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
                         ),
                       ),
-                      Expanded(
-                        child: Divider(color: Colors.grey[300], thickness: 1),
-                      ),
-                    ],
-                  ),
+                      SizedBox(height: 24),
 
-                  SizedBox(height: 24),
-
-                  // Login Link - SAME STYLING AS LOGIN PAGE
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          "Already have an account?",
-                          style: AppTextStyles.bodyMedium(
-                            context,
-                          ).copyWith(color: AppColors.textSecondary),
-                        ),
-                        SizedBox(height: 8),
-                        CustomTextButton(
-                          text: "Log in",
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginPage(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: 32),
-
-                  // Terms and Privacy Policy - SAME AS LOGIN PAGE
-                  Center(
-                    child: RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: AppTextStyles.bodyMedium(
-                          context,
-                        ).copyWith(color: AppColors.textSecondary),
+                      // Divider with "or"
+                      Row(
                         children: [
-                          TextSpan(text: "By continuing, I agree to the "),
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.baseline,
-                            baseline: TextBaseline.alphabetic,
-                            child: GestureDetector(
-                              onTap: () async {
-                                final url = Uri.parse(
-                                  'https://www.klayons.com/terms-conditions',
-                                );
-                                if (await canLaunchUrl(url)) {
-                                  await launchUrl(
-                                    url,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                }
-                              },
-                              child: Text(
-                                "Terms of Use",
-                                style: AppTextStyles.bodyMedium(
-                                  context,
-                                ).copyWith(color: AppColors.primaryOrange),
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey[300],
+                              thickness: 1,
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'or',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 14,
                               ),
                             ),
                           ),
-                          TextSpan(text: " & "),
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.baseline,
-                            baseline: TextBaseline.alphabetic,
-                            child: GestureDetector(
-                              onTap: () async {
-                                final url = Uri.parse(
-                                  'https://www.klayons.com/privacy-policy',
-                                );
-                                if (await canLaunchUrl(url)) {
-                                  await launchUrl(
-                                    url,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                }
-                              },
-                              child: Text(
-                                "Privacy Policy",
-                                style: AppTextStyles.bodyMedium(
-                                  context,
-                                ).copyWith(color: AppColors.primaryOrange),
-                              ),
+                          Expanded(
+                            child: Divider(
+                              color: Colors.grey[300],
+                              thickness: 1,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
 
-                  SizedBox(height: 24),
+                      SizedBox(height: 24),
+
+                      // Login Link
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              "Already have an account?",
+                              style: AppTextStyles.bodyMedium(
+                                context,
+                              ).copyWith(color: AppColors.textSecondary),
+                            ),
+                            SizedBox(height: 8),
+                            CustomTextButton(
+                              text: "Log in",
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginPage(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 32),
+
+                      // Terms and Privacy Policy
+                      Center(
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: AppTextStyles.bodyMedium(
+                              context,
+                            ).copyWith(color: AppColors.textSecondary),
+                            children: [
+                              TextSpan(text: "By continuing, I agree to the "),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final url = Uri.parse(
+                                      'https://www.klayons.com/terms-conditions',
+                                    );
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(
+                                        url,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    }
+                                  },
+                                  child: Text(
+                                    "Terms of Use",
+                                    style: AppTextStyles.bodyMedium(
+                                      context,
+                                    ).copyWith(color: AppColors.primaryOrange),
+                                  ),
+                                ),
+                              ),
+                              TextSpan(text: " & "),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    final url = Uri.parse(
+                                      'https://www.klayons.com/privacy-policy',
+                                    );
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(
+                                        url,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    }
+                                  },
+                                  child: Text(
+                                    "Privacy Policy",
+                                    style: AppTextStyles.bodyMedium(
+                                      context,
+                                    ).copyWith(color: AppColors.primaryOrange),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Fixed Back Button - positioned outside ScrollView
+          Positioned(
+            top:
+                MediaQuery.of(context).padding.top +
+                16, // Accounts for status bar
+            left: 16,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String hint) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium(
-              context,
-            ).copyWith(color: Colors.grey[500]),
-            // Grey border when inactive
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey!, width: 1),
-            ),
-            // Grey border when enabled but not focused
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: controller.text.isNotEmpty
-                    ? Color(0xFFFF6B35)
-                    : Colors.grey[300]!,
-                width: controller.text.isNotEmpty ? 2 : 1,
+              child: IconButton(
+                icon: SvgPicture.asset(
+                  'assets/App_icons/iconBack.svg',
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    AppColors.darkElements,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+                padding: EdgeInsets.all(4),
               ),
             ),
-            // Orange border when focused
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Color(0xFFFF6B35), width: 2),
-            ),
-            contentPadding: EdgeInsets.all(16),
           ),
-          onChanged: (value) {
-            setState(() {}); // Rebuild to update border color
-          },
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -623,11 +601,11 @@ class _SignUnPageState extends State<SignUnPage> {
                   BlendMode.srcIn,
                 ),
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 6),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMedium(context).copyWith(
+                style: AppTextStyles.bodySmall(context).copyWith(
                   color: isSelected ? Color(0xFFFF6B35) : Colors.grey,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),

@@ -286,7 +286,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         children: [
           // Custom navigation row
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 0),
+            padding: EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [

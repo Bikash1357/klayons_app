@@ -81,7 +81,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image: AssetImage(
-                                  'assets/images/auty_Background_Image.png',
+                                  'assets/images/auth_Background_Image.png',
                                 ),
                                 fit: BoxFit.cover,
                               ),

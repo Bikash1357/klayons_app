@@ -45,7 +45,7 @@ class _BottomErrorMessageState extends State<BottomErrorMessage> {
       right: 16,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.errorState, // Light red background
+          color: AppColors.errorStatelight, // Light red background
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Color(0xFFE57373), width: 1),
         ),
@@ -56,7 +56,7 @@ class _BottomErrorMessageState extends State<BottomErrorMessage> {
               child: Text(
                 widget.message,
                 style: TextStyle(
-                  color: Color(0xFFD32F2F), // Dark red text
+                  color: AppColors.errorStatelight, // Dark red text
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
