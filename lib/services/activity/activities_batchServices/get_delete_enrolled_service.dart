@@ -7,11 +7,9 @@ class GetEnrollment {
   final int id;
   final int childId;
   final String childName;
-  final int batchId;
-  final String batchName;
   final int activityId;
   final String activityName;
-  final double price;
+  final int price;
   final String status;
   final DateTime enrolledAt;
 
@@ -19,8 +17,6 @@ class GetEnrollment {
     required this.id,
     required this.childId,
     required this.childName,
-    required this.batchId,
-    required this.batchName,
     required this.activityId,
     required this.activityName,
     required this.price,
@@ -29,18 +25,51 @@ class GetEnrollment {
   });
 
   factory GetEnrollment.fromJson(Map<String, dynamic> json) {
-    return GetEnrollment(
-      id: json['id'],
-      childId: json['child_id'],
-      childName: json['child_name'],
-      batchId: json['batch_id'],
-      batchName: json['batch_name'],
-      activityId: json['activity_id'],
-      activityName: json['activity_name'],
-      price: (json['price'] as num).toDouble(),
-      status: json['status'],
-      enrolledAt: DateTime.parse(json['enrolled_at']),
-    );
+    try {
+      return GetEnrollment(
+        id: _parseIntSafely(json['id']),
+        childId: _parseIntSafely(json['child_id']),
+        childName: json['child_name']?.toString() ?? '',
+        activityId: _parseIntSafely(json['activity_id']),
+        activityName: json['activity_name']?.toString() ?? '',
+        price: _parseIntSafely(json['price']),
+        status: json['status']?.toString() ?? '',
+        enrolledAt: _parseDateTimeSafely(json['enrolled_at']),
+      );
+    } catch (e) {
+      print('Error parsing GetEnrollment from JSON: $e');
+      print('JSON data: $json');
+      rethrow;
+    }
+  }
+
+  // Helper method to safely parse integers from JSON
+  static int _parseIntSafely(dynamic value) {
+    if (value == null) {
+      print('Warning: Null value encountered for integer field');
+      return 0; // Default value for null integers
+    }
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    if (value is double) return value.toInt();
+    print('Warning: Unexpected type ${value.runtimeType} for integer field');
+    return 0;
+  }
+
+  // Helper method to safely parse DateTime from JSON
+  static DateTime _parseDateTimeSafely(dynamic value) {
+    if (value == null) {
+      print('Warning: Null value encountered for DateTime field');
+      return DateTime.now(); // Default to current time
+    }
+    try {
+      return DateTime.parse(value.toString());
+    } catch (e) {
+      print('Warning: Failed to parse DateTime: $value');
+      return DateTime.now(); // Default to current time
+    }
   }
 
   // Convert back to JSON for caching
@@ -49,8 +78,6 @@ class GetEnrollment {
       'id': id,
       'child_id': childId,
       'child_name': childName,
-      'batch_id': batchId,
-      'batch_name': batchName,
       'activity_id': activityId,
       'activity_name': activityName,
       'price': price,
@@ -59,7 +86,7 @@ class GetEnrollment {
     };
   }
 
-  // Helper methods (keep existing)
+  // Helper methods
   String get statusDisplay {
     switch (status.toLowerCase()) {
       case 'enrolled':
@@ -82,7 +109,7 @@ class GetEnrollment {
     }
   }
 
-  String get priceDisplay => '₹${price.toStringAsFixed(0)}';
+  String get priceDisplay => '₹$price';
 
   String get enrolledAtDisplay {
     final localDate = enrolledAt.toLocal();
@@ -206,28 +233,69 @@ class GetEnrollmentService {
       );
 
       print('API Response Status: ${response.statusCode}');
+      print('API Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData =
-            json.decode(response.body) as Map<String, dynamic>;
-        final List<dynamic> enrollmentsList =
-            responseData['enrollments'] as List<dynamic>;
+        final dynamic responseData = json.decode(response.body);
 
-        final List<GetEnrollment> enrollments = enrollmentsList
-            .map(
-              (enrollmentJson) => GetEnrollment.fromJson(
+        // Handle different response structures
+        List<GetEnrollment> allEnrollments = [];
+
+        // Check if response is a list directly
+        if (responseData is List) {
+          for (var item in responseData) {
+            if (item is Map<String, dynamic> &&
+                item.containsKey('enrollments')) {
+              final List<dynamic> enrollmentsList =
+                  item['enrollments'] as List<dynamic>;
+
+              for (var enrollmentJson in enrollmentsList) {
+                try {
+                  final enrollment = GetEnrollment.fromJson(
+                    enrollmentJson as Map<String, dynamic>,
+                  );
+                  allEnrollments.add(enrollment);
+                } catch (e) {
+                  print('Error parsing individual enrollment: $e');
+                  print('Problematic enrollment JSON: $enrollmentJson');
+                  // Continue with other enrollments instead of failing completely
+                }
+              }
+            }
+          }
+        }
+        // Check if response is a single object with enrollments array
+        else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('enrollments')) {
+          final List<dynamic> enrollmentsList =
+              responseData['enrollments'] as List<dynamic>;
+
+          for (var enrollmentJson in enrollmentsList) {
+            try {
+              final enrollment = GetEnrollment.fromJson(
                 enrollmentJson as Map<String, dynamic>,
-              ),
-            )
-            .toList();
+              );
+              allEnrollments.add(enrollment);
+            } catch (e) {
+              print('Error parsing individual enrollment: $e');
+              print('Problematic enrollment JSON: $enrollmentJson');
+              // Continue with other enrollments instead of failing completely
+            }
+          }
+        }
+        // If response structure is unexpected, log it for debugging
+        else {
+          print('Unexpected response structure: ${responseData.runtimeType}');
+          print('Response content: $responseData');
+        }
 
         // Update cache with new data
-        _updateCache(enrollments);
+        _updateCache(allEnrollments);
 
         print(
-          'Enrollments fetched and cached successfully (${enrollments.length} items)',
+          'Enrollments fetched and cached successfully (${allEnrollments.length} items)',
         );
-        return List<GetEnrollment>.from(enrollments);
+        return List<GetEnrollment>.from(allEnrollments);
       } else if (response.statusCode == 401) {
         clearCache(); // Clear cache on auth failure
         throw Exception('Authentication failed. Please login again.');
@@ -246,11 +314,12 @@ class GetEnrollmentService {
         clearCache();
         rethrow;
       }
-      if (e.toString().contains('FormatException') ||
-          e.toString().contains('type')) {
-        throw Exception(
-          'Invalid response format from server. Please try again.',
-        );
+
+      // Don't throw FormatException for individual parsing errors
+      if (e.toString().contains('FormatException') &&
+          _cachedEnrollments != null) {
+        print('Using cached data due to parsing errors');
+        return List<GetEnrollment>.from(_cachedEnrollments!);
       }
 
       throw Exception(
@@ -282,6 +351,7 @@ class GetEnrollmentService {
       );
 
       print('Unenroll API Response Status: ${response.statusCode}');
+      print('Unenroll API Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         print('Child successfully unenrolled from enrollment $enrollmentId');

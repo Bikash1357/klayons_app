@@ -147,14 +147,14 @@ class _EnrolledPageState extends State<EnrolledPage> {
                     SizedBox(height: 8),
                     Text('Child: ${enrollment.childName}'),
                     Text('Activity: ${enrollment.activityName}'),
-                    Text('Batch: ${enrollment.batchName}'),
+                    Text('Price: ${enrollment.priceDisplay}'),
                     Text('Status: ${enrollment.statusDisplay}'),
                   ],
                 ),
               ),
               SizedBox(height: 12),
               Text(
-                'This action will remove the child from the batch. You can re-enroll later if needed.',
+                'This action will remove the child from the activity. You can re-enroll later if needed.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -252,7 +252,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
           ),
         ),
         title: const Text(
-          "Enrolled Batches",
+          "My Enrollments", // Updated title to be more generic
           style: TextStyle(
             color: Colors.black87,
             fontSize: 18,
@@ -500,16 +500,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
 
-                  Text(
-                    enrollment.batchName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
                   const SizedBox(height: 8),
 
                   Row(

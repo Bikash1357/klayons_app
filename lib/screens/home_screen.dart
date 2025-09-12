@@ -3,13 +3,13 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/notification.dart';
-import 'package:klayons/services/activity/activities_batchServices/batchWithActivity.dart';
 import 'package:klayons/services/notification/notification_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import '../services/activity/activities_batchServices/allActivityServices.dart';
 import '../services/get_userprofile_service.dart';
 import '../services/notification/local_notification_service.dart';
 import '../utils/colour.dart';
-import 'batch_details_page.dart';
+import 'activity_details_page.dart';
 import 'user_calender/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
@@ -27,29 +27,35 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   int selectedIndex = 0;
   late AnimationController _slideController;
   late Animation<double> _slideAnimation;
+
   final List<Widget> _pages = [
     Container(), // Home content handled separately
     CalendarScreen(),
     EnrolledPage(),
     UserProfilePage(),
   ];
-  List<BatchWithActivity> batchData = [];
+
+  // Updated to use Activity model instead of BatchWithActivity
+  List<Activity> activityData = [];
   bool isLoading = false;
   String? errorMessage;
+
   // Notification badge state
   int unreadNotificationCount = 0;
   bool isLoadingNotifications = false;
+
   // User profile data
   UserProfile? userProfile;
   bool isLoadingUserProfile = false;
   String userName = 'User'; // Default name
   String userAddress = ''; // Default address
   String? userProfileImage; // URL for user profile image
+
   @override
   void initState() {
     super.initState();
     _initializeAnimation();
-    _loadBatchData();
+    _loadActivityData(); // Updated method name
     _loadUserProfile(); // Load user profile data
     _loadNotificationCount();
     _requestNotificationPermission();
@@ -98,15 +104,21 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  Future<void> _loadBatchData() async {
+  // Updated to use ActivityService instead of BatchService
+  Future<void> _loadActivityData() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
+
     try {
-      final batches = await BatchService.getAllBatches(page: 1, pageSize: 20);
+      // Use the new ActivityService methods
+      final activities = await ActivityService.getAllActivities(
+        page: 1,
+        pageSize: 20,
+      );
       setState(() {
-        batchData = batches;
+        activityData = activities;
         isLoading = false;
       });
     } catch (e) {
@@ -123,6 +135,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     setState(() {
       isLoadingUserProfile = true;
     });
+
     try {
       final profile = await GetUserProfileService.getUserProfile();
       if (profile != null) {
@@ -174,14 +187,17 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   // Load notification count
   Future<void> _loadNotificationCount() async {
     if (isLoadingNotifications) return;
+
     setState(() {
       isLoadingNotifications = true;
     });
+
     try {
       final announcements = await NotificationService.getAnnouncements();
       final unreadCount = announcements
           .where((announcement) => announcement.isUnread)
           .length;
+
       setState(() {
         unreadNotificationCount = unreadCount;
         isLoadingNotifications = false;
@@ -210,7 +226,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           action: SnackBarAction(
             label: 'Retry',
             textColor: Colors.white,
-            onPressed: _loadBatchData,
+            onPressed: _loadActivityData, // Updated method name
           ),
         ),
       );
@@ -219,6 +235,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   void _onBottomNavTapped(int index) {
     if (selectedIndex == index) return;
+
     _slideAnimation =
         Tween<double>(
           begin: selectedIndex.toDouble(),
@@ -226,34 +243,40 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         ).animate(
           CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
         );
+
     _slideController.reset();
     _slideController.forward();
+
     setState(() {
       selectedIndex = index;
     });
   }
 
-  List<BatchWithActivity> get filteredBatches {
-    if (searchQuery.isEmpty) return batchData;
+  // Updated to use Activity model and search in new fields
+  List<Activity> get filteredActivities {
+    if (searchQuery.isEmpty) return activityData;
+
     final query = searchQuery.toLowerCase();
-    return batchData.where((batch) {
-      return batch.ageRange.toLowerCase().contains(query) ||
-          batch.activity.categoryDisplay.toLowerCase().contains(query) ||
-          batch.activity.name.toLowerCase().contains(query) ||
-          batch.name.toLowerCase().contains(query) ||
-          batch.priceDisplay.toLowerCase().contains(query) ||
-          batch.activity.societyName.toLowerCase().contains(query) ||
-          batch.activity.instructorName.toLowerCase().contains(query);
+    return activityData.where((activity) {
+      return activity.name.toLowerCase().contains(query) ||
+          activity.category.toLowerCase().contains(query) ||
+          activity.subcategory.toLowerCase().contains(query) ||
+          activity.ageRange.toLowerCase().contains(query) ||
+          activity.venue.toLowerCase().contains(query) ||
+          activity.society.toLowerCase().contains(query) ||
+          activity.instructor.name.toLowerCase().contains(query) ||
+          activity.priceDisplay.toLowerCase().contains(query);
     }).toList();
   }
 
-  void _navigateToBatchDetail(BatchWithActivity batch) {
+  // Updated to use Activity model
+  void _navigateToActivityDetail(Activity activity) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ActivityBookingPage(
-          batchId: batch.id,
-          activityId: batch.activity.id,
+          batchId: activity.id, // Using activity ID as batch ID for now
+          activityId: activity.id,
         ),
       ),
     );
@@ -358,8 +381,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  // Remove the old _buildNavIcon method as it's no longer needed
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -389,7 +410,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                           width: 80,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: Colors.grey,
                             borderRadius: BorderRadius.circular(8),
                           ),
                         )
@@ -455,7 +476,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            _loadBatchData(),
+            _loadActivityData(), // Updated method name
             _loadUserProfile(),
             _refreshNotificationCount(),
           ]);
@@ -465,7 +486,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           child: Column(
             children: [
               _buildSearchField(),
-              if (searchQuery.isEmpty && !isLoading && batchData.isNotEmpty)
+              if (searchQuery.isEmpty &&
+                  !isLoading &&
+                  activityData.isNotEmpty) // Updated variable name
                 _buildSectionTitle(),
               SizedBox(height: 8),
               Padding(
@@ -481,6 +504,12 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   Widget _buildSearchField() {
+    // Generate dynamic hint text based on user profile
+    String hintText = 'Find Activities';
+    if (userProfile != null && userProfile!.societyName.isNotEmpty) {
+      hintText = 'Find activities in ${userProfile!.societyName} society';
+    }
+
     return Container(
       margin: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -498,9 +527,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         controller: searchController,
         onChanged: (value) => setState(() => searchQuery = value),
         decoration: InputDecoration(
-          hintText: 'Find Activities',
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 20),
+          hintText: hintText,
+          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+          prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
                   icon: Icon(Icons.clear, color: Colors.grey, size: 18),
@@ -537,19 +566,26 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Widget _buildContent() {
     if (isLoading) return _buildLoadingWidget();
     if (errorMessage != null) return _buildErrorWidget();
-    if (filteredBatches.isEmpty) return _buildEmptyWidget();
+    if (filteredActivities.isEmpty)
+      return _buildEmptyWidget(); // Updated variable name
+
     return Column(
-      children: filteredBatches
-          .map(
-            (batch) => Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: CompactBatchCard(
-                batch: batch,
-                onTap: () => _navigateToBatchDetail(batch),
-              ),
-            ),
-          )
-          .toList(),
+      children:
+          filteredActivities // Updated variable name
+              .map(
+                (activity) => Padding(
+                  // Updated parameter name
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: CompactActivityCard(
+                    // Updated widget name
+                    activity: activity, // Updated parameter name
+                    onTap: () => _navigateToActivityDetail(
+                      activity,
+                    ), // Updated method call
+                  ),
+                ),
+              )
+              .toList(),
     );
   }
 
@@ -560,10 +596,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         children: [
           CircularProgressIndicator(color: Color(0xFFFF6B35)),
           SizedBox(height: 16),
-          Text(
-            'Loading activities...',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
+          Text('Loading activities...', style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -574,25 +607,25 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       padding: EdgeInsets.all(40),
       child: Column(
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+          Icon(Icons.error_outline, size: 64, color: Colors.red),
           SizedBox(height: 16),
           Text(
             'Something went wrong',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
+              color: Colors.grey,
             ),
           ),
           SizedBox(height: 8),
           Text(
             errorMessage!,
-            style: TextStyle(color: Colors.grey[600]),
+            style: TextStyle(color: Colors.grey),
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _loadBatchData,
+            onPressed: _loadActivityData, // Updated method name
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFFF6B35),
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -618,7 +651,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       padding: EdgeInsets.all(40),
       child: Column(
         children: [
-          Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+          Icon(Icons.search_off, size: 64, color: Colors.grey),
           SizedBox(height: 16),
           Text(
             searchQuery.isEmpty
@@ -627,7 +660,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: Colors.grey,
             ),
           ),
           SizedBox(height: 8),
@@ -635,7 +668,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             searchQuery.isEmpty
                 ? 'Check back later for new activities'
                 : 'Try searching with different keywords',
-            style: TextStyle(color: Colors.grey[500]),
+            style: TextStyle(color: Colors.grey),
           ),
         ],
       ),
@@ -650,14 +683,16 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 }
 
-// Updated CompactBatchCard widget that exactly matches your image
-// Updated CompactBatchCard widget that fixes overflow and image fitting
-class CompactBatchCard extends StatelessWidget {
-  final BatchWithActivity batch;
+// Updated CompactActivityCard widget for the new Activity model
+class CompactActivityCard extends StatelessWidget {
+  final Activity activity;
   final VoidCallback onTap;
 
-  const CompactBatchCard({Key? key, required this.batch, required this.onTap})
-    : super(key: key);
+  const CompactActivityCard({
+    Key? key,
+    required this.activity,
+    required this.onTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -678,7 +713,6 @@ class CompactBatchCard extends StatelessWidget {
         ),
         padding: EdgeInsets.all(16),
         child: IntrinsicHeight(
-          // This ensures both sides have equal height
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -687,9 +721,9 @@ class CompactBatchCard extends StatelessWidget {
                 width: 110,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: batch.activity.bannerImageUrl.isNotEmpty
+                  child: activity.bannerImageUrl.isNotEmpty
                       ? Image.network(
-                          batch.activity.bannerImageUrl,
+                          activity.bannerImageUrl,
                           fit: BoxFit.cover,
                           width: 110,
                           errorBuilder: (context, error, stackTrace) =>
@@ -710,7 +744,7 @@ class CompactBatchCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          batch.activity.name,
+                          activity.name,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -721,9 +755,9 @@ class CompactBatchCard extends StatelessWidget {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          batch.name != batch.activity.name
-                              ? batch.name
-                              : batch.activity.categoryDisplay,
+                          activity.subcategory.isNotEmpty
+                              ? activity.subcategory
+                              : activity.category,
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey,
@@ -736,7 +770,7 @@ class CompactBatchCard extends StatelessWidget {
                             Icon(Icons.person, size: 16, color: Colors.grey),
                             SizedBox(width: 4),
                             Text(
-                              'Age: ${batch.ageRange.isNotEmpty ? batch.ageRange : 'All Ages'}',
+                              'Age: ${activity.ageRange.isNotEmpty ? activity.ageRange : 'All Ages'}',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey,
@@ -755,9 +789,28 @@ class CompactBatchCard extends StatelessWidget {
                             SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                batch.activity.societyName.isNotEmpty
-                                    ? batch.activity.societyName
-                                    : 'Venue name',
+                                activity.venue.isNotEmpty
+                                    ? activity.venue
+                                    : activity.society,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.school, size: 16, color: Colors.grey),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                activity.instructor.name.isNotEmpty
+                                    ? activity.instructor.name
+                                    : 'Instructor',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey,
@@ -769,7 +822,7 @@ class CompactBatchCard extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '₹ ${_formatPrice(batch.priceDisplay)} / month',
+                          '₹ ${_formatPrice(activity.priceDisplay)}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -784,10 +837,10 @@ class CompactBatchCard extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: OutlinedButton(
-                          onPressed: batch.isActive ? onTap : null,
+                          onPressed: activity.isActive ? onTap : null,
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
-                              color: batch.isActive
+                              color: activity.isActive
                                   ? Color(0xFFFF6B35)
                                   : Colors.grey,
                               width: 1.5,
@@ -801,10 +854,12 @@ class CompactBatchCard extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            batch.isActive ? 'View Details' : 'Not Available',
+                            activity.isActive
+                                ? 'View Details'
+                                : 'Not Available',
                             style: TextStyle(
                               fontSize: 13,
-                              color: batch.isActive
+                              color: activity.isActive
                                   ? Color(0xFFFF6B35)
                                   : Colors.grey,
                             ),
@@ -852,7 +907,7 @@ class CompactBatchCard extends StatelessWidget {
       ),
       child: Center(
         child: Icon(
-          _getActivityIcon(batch.activity.category),
+          _getActivityIcon(activity.category),
           size: 36,
           color: Color(0xFFFF6B35).withOpacity(0.7),
         ),
@@ -862,17 +917,23 @@ class CompactBatchCard extends StatelessWidget {
 
   IconData _getActivityIcon(String category) {
     switch (category.toLowerCase()) {
+      case 'sports & fitness':
       case 'sports':
         return Icons.sports_soccer;
+      case 'creative arts':
       case 'arts':
         return Icons.palette;
+      case 'cognitive development':
       case 'technology':
       case 'tech':
+      case 'stem & robotics':
         return Icons.computer;
+      case 'music & performing arts':
       case 'music':
         return Icons.music_note;
       case 'dance':
         return Icons.music_video;
+      case 'academic support':
       case 'academic':
         return Icons.school;
       case 'robotics':
@@ -881,6 +942,10 @@ class CompactBatchCard extends StatelessWidget {
       case 'karate':
       case 'judo':
         return Icons.sports_martial_arts;
+      case 'language learning':
+        return Icons.language;
+      case 'wellness & mindfulness':
+        return Icons.self_improvement;
       default:
         return Icons.extension;
     }

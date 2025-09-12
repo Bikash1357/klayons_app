@@ -17,7 +17,7 @@ class LoginPage extends StatefulWidget {
   _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
+class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
   final TextEditingController _emailController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _emailFocusNode = FocusNode();
@@ -252,7 +252,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
           ),
 
           // Bottom error message overlay
-          buildBottomErrorMessage(),
+          buildBottomMessages(),
 
           // Fixed bottom Terms & Privacy
           Positioned(
@@ -470,7 +470,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
 
       if (response.isSuccess) {
         // OTP sent successfully
-        _showSuccessMessage(
+        showBottomSuccess(
           response.message.isNotEmpty
               ? response.message
               : 'OTP sent successfully!',
@@ -532,24 +532,7 @@ class _LoginPageState extends State<LoginPage> with BottomErrorHandler {
   }
 
   void _showSuccessMessage(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-    }
+    showBottomSuccess(message);
   }
 
   @override
