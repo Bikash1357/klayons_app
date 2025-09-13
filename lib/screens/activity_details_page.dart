@@ -308,6 +308,100 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     );
   }
 
+  /// Enhanced error dialog for age-related and other validation errors
+  Future<void> _showValidationErrorDialog(String errorMessage) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Container(
+            padding: EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Error Icon
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.error_outline,
+                    color: Colors.red[500],
+                    size: 30,
+                  ),
+                ),
+                SizedBox(height: 16),
+
+                // Error Title
+                Text(
+                  'Enrollment Not Possible',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red[700],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 12),
+
+                // Error Message
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Text(
+                    errorMessage,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.red[800],
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // OK Button
+                Container(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[500],
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      'I Understand',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Updated enrollment handler with better error display
   Future<void> _handleEnrollment() async {
     if (selectedChild == null || activityData == null) {
       showBottomError('Please select a child to continue with enrollment.');
@@ -358,6 +452,11 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
       // Show user-friendly error message
       showBottomError(e.userFriendlyMessage);
+
+      // For validation errors (like age restrictions), also show a prominent dialog
+      if (e.type == EnrollmentErrorType.validation) {
+        await _showValidationErrorDialog(e.message);
+      }
     } catch (e) {
       setState(() {
         isEnrolling = false;
@@ -366,6 +465,138 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       // Show generic error message for unexpected errors
       showBottomError('An unexpected error occurred. Please try again.');
     }
+  }
+
+  /// Enhanced child selection widget with age display and validation warnings
+  Widget _buildChildSelectionWithAgeValidation() {
+    if (children.isEmpty) return SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Book for: ',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(width: 5),
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: children.map((child) {
+                  final isSelected = selectedChildId == child.id.toString();
+                  final childAge = _calculateAge(child.dob);
+                  final ageInt = int.tryParse(childAge) ?? 0;
+                  final isAgeWarning = ageInt < 4; // Assuming 4 is minimum age
+
+                  return GestureDetector(
+                    onTap: () => _selectChild(child),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (isAgeWarning ? Colors.orange : Colors.deepOrange)
+                            : (isAgeWarning
+                                  ? Colors.orange[50]
+                                  : Colors.grey[100]),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected
+                              ? (isAgeWarning
+                                    ? Colors.orange[300]!
+                                    : AppColors.highlight2)
+                              : (isAgeWarning
+                                    ? Colors.orange[200]!
+                                    : Colors.grey[300]!),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${child.name.split(' ').first} ($childAge)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isAgeWarning
+                                        ? Colors.orange[800]
+                                        : Colors.grey[700]),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (isAgeWarning) ...[
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.warning,
+                              size: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.orange[600],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+
+        // Age warning message
+        if (selectedChild != null) ...[
+          SizedBox(height: 8),
+          Builder(
+            builder: (context) {
+              final childAge = _calculateAge(selectedChild!.dob);
+              final ageInt = int.tryParse(childAge) ?? 0;
+              if (ageInt < 4) {
+                return Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.orange[600],
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'This child may not meet the minimum age requirement for this activity.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return SizedBox.shrink();
+            },
+          ),
+        ],
+      ],
+    );
   }
 
   String _calculateAge(String dob) {
@@ -979,7 +1210,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                                 ? Colors.deepOrange
                                 : Colors.grey,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: isEnrolling

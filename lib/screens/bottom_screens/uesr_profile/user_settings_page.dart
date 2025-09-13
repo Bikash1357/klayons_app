@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/utils/colour.dart';
+import '../../../services/UserProfileServices/updateUserProfileServices.dart';
+import '../../../services/UserProfileServices/userProfileModels.dart';
 import '../../../services/auth/login_service.dart';
-import '../../../services/get_userprofile_service.dart';
+import '../../../services/UserProfileServices/get_userprofile_service.dart';
 import '../../../utils/styles/fonts.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -122,6 +124,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  // Replace the _updateProfile method (around line 130-190)
   Future<void> _updateProfile() async {
     final nameValid =
         _nameController.text.isEmpty || _validateName(_nameController.text);
@@ -169,7 +172,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     try {
-      final updatedProfile = await GetUserProfileService.updateUserProfile(
+      final updatedProfile = await UpdateUserProfileService.updateUserProfile(
         name: _nameController.text.trim().isEmpty
             ? null
             : _nameController.text.trim(),
@@ -221,48 +224,6 @@ class _SettingsPageState extends State<SettingsPage> {
         _isUpdating = false;
       });
     }
-  }
-
-  void _showLogoutConfirmation() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            'Confirm Logout',
-            style: AppTextStyles.titleLarge(context),
-          ),
-          content: Text(
-            'Are you sure you want to log out?',
-            style: AppTextStyles.bodyLargeEmphasized(context),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Cancel',
-                style: AppTextStyles.bodyLargeEmphasized(
-                  context,
-                ).copyWith(color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _performLogout();
-              },
-              child: Text(
-                'Yes',
-                style: AppTextStyles.bodyLargeEmphasized(
-                  context,
-                ).copyWith(color: Colors.orange, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _performLogout() async {

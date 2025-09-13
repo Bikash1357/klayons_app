@@ -1,91 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:klayons/config/api_config.dart';
+import 'package:klayons/services/UserProfileServices/userProfileModels.dart';
 import 'package:klayons/services/auth/login_service.dart';
-
-class UserProfile {
-  final String name;
-  final String userEmail;
-  final String userPhone;
-  final String residenceType;
-  final int societyId;
-  final String societyName;
-  final String tower;
-  final String flatNo;
-  final String address;
-  final bool profileComplete;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
-
-  UserProfile({
-    required this.name,
-    required this.userEmail,
-    required this.userPhone,
-    required this.residenceType,
-    required this.societyId,
-    required this.societyName,
-    required this.tower,
-    required this.flatNo,
-    required this.address,
-    required this.profileComplete,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory UserProfile.fromJson(Map<String, dynamic> json) {
-    return UserProfile(
-      name: json['name'] ?? '',
-      userEmail: json['user_email'] ?? '',
-      userPhone: json['user_phone'] ?? '',
-      residenceType: json['residence_type'] ?? 'society',
-      societyId: json['society_id'] ?? 0,
-      societyName: json['society_name'] ?? '',
-      tower: json['tower'] ?? '',
-      flatNo: json['flat_no'] ?? '',
-      address: json['address'] ?? '',
-      profileComplete: json['profile_complete'] ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'])
-          : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'user_email': userEmail,
-      'user_phone': userPhone,
-      'residence_type': residenceType,
-      'society_id': societyId,
-      'society_name': societyName,
-      'tower': tower,
-      'flat_no': flatNo,
-      'address': address,
-      'profile_complete': profileComplete,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
-    };
-  }
-
-  @override
-  String toString() {
-    return 'UserProfile{name: $name, userEmail: $userEmail, userPhone: $userPhone, residenceType: $residenceType, societyId: $societyId, societyName: $societyName, tower: $tower, flatNo: $flatNo, address: $address, profileComplete: $profileComplete, createdAt: $createdAt, updatedAt: $updatedAt}';
-  }
-}
 
 class GetUserProfileService {
   static const String _baseUrl = 'https://dev-klayonsapi.vercel.app/';
-  static const String _profileEndpoint = 'api/profiles/'; // Updated endpoint
+  static const String _profileEndpoint = 'api/profiles/';
 
   // Cache variables
   static UserProfile? _cachedProfile;
   static DateTime? _cacheTimestamp;
-  static const Duration _cacheExpiration = Duration(
-    minutes: 30,
-  ); // Cache expires after 30 minutes
+  static const Duration _cacheExpiration = Duration(minutes: 30);
   static bool _isLoading = false;
 
   /// Checks if cached data is still valid
@@ -215,105 +141,6 @@ class GetUserProfileService {
     }
   }
 
-  /// Updates the user's profile and updates cache
-  static Future<UserProfile?> updateUserProfile({
-    String? name,
-    String? userEmail,
-    String? userPhone,
-    String? residenceType,
-    int? societyId,
-    String? societyName,
-    String? tower,
-    String? flatNo,
-    String? address,
-  }) async {
-    try {
-      // Get the authentication token
-      final token = await LoginAuthService.getToken();
-
-      if (token == null) {
-        print('No authentication token found');
-        throw Exception('User not authenticated');
-      }
-
-      // Prepare request body with only non-null values
-      Map<String, dynamic> requestBody = {};
-      if (name != null) requestBody['name'] = name;
-      if (userEmail != null) requestBody['user_email'] = userEmail;
-      if (userPhone != null) requestBody['user_phone'] = userPhone;
-      if (residenceType != null) requestBody['residence_type'] = residenceType;
-      if (societyId != null) requestBody['society_id'] = societyId;
-      if (societyName != null) requestBody['society_name'] = societyName;
-      if (tower != null) requestBody['tower'] = tower;
-      if (flatNo != null) requestBody['flat_no'] = flatNo;
-      if (address != null) requestBody['address'] = address;
-
-      if (requestBody.isEmpty) {
-        throw Exception('No data provided to update');
-      }
-
-      print('Updating user profile...');
-      print('API URL: $_baseUrl$_profileEndpoint');
-      print('Update data: $requestBody');
-
-      final response = await http
-          .put(
-            Uri.parse('$_baseUrl$_profileEndpoint'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': 'Bearer $token',
-              ...ApiConfig.getHeaders(),
-            },
-            body: json.encode(requestBody),
-          )
-          .timeout(
-            Duration(seconds: 30),
-            onTimeout: () {
-              throw Exception(
-                'Request timeout. Please check your internet connection.',
-              );
-            },
-          );
-
-      print('Update response status code: ${response.statusCode}');
-      print('Update response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        // Parse and update cache with new profile data
-        _cachedProfile = UserProfile.fromJson(data);
-        _cacheTimestamp = DateTime.now();
-
-        print('User profile updated and cached successfully: $_cachedProfile');
-        return _cachedProfile;
-      } else if (response.statusCode == 401) {
-        print('Unauthorized - token may be invalid or expired');
-        clearCache();
-        await LoginAuthService.clearAuthData();
-        throw Exception('Session expired. Please login again.');
-      } else if (response.statusCode == 422) {
-        final data = json.decode(response.body);
-        String errorMessage = 'Validation error. ';
-        if (data.containsKey('errors')) {
-          errorMessage += data['errors'].toString();
-        } else {
-          errorMessage += data['message'] ?? 'Please check your input.';
-        }
-        throw Exception(errorMessage);
-      } else {
-        final data = json.decode(response.body);
-        final errorMessage = data['message'] ?? 'Failed to update profile';
-        print('Error: $errorMessage');
-        throw Exception(errorMessage);
-      }
-    } catch (e) {
-      print('Update user profile error: $e');
-      rethrow;
-    }
-  }
-
   /// Checks if user has a complete profile (uses cached data if available)
   static Future<bool> hasCompleteProfile({bool forceRefresh = false}) async {
     try {
@@ -328,10 +155,31 @@ class GetUserProfileService {
       bool hasEssentialFields =
           profile.name.isNotEmpty &&
           profile.userEmail.isNotEmpty &&
-          profile.userPhone.isNotEmpty &&
-          profile.societyId > 0;
+          profile.userPhone.isNotEmpty;
 
-      return isComplete && hasEssentialFields;
+      // Check residence type specific requirements
+      bool hasResidenceRequirements = false;
+      switch (profile.residenceType) {
+        case 'society':
+          hasResidenceRequirements =
+              profile.societyId != null &&
+              profile.societyId! > 0 &&
+              (profile.tower?.isNotEmpty ?? false) &&
+              (profile.flatNo?.isNotEmpty ?? false);
+          break;
+        case 'society_other':
+          hasResidenceRequirements =
+              profile.societyName.isNotEmpty &&
+              (profile.address?.isNotEmpty ?? false);
+          break;
+        case 'individual':
+          hasResidenceRequirements = profile.address?.isNotEmpty ?? false;
+          break;
+        default:
+          hasResidenceRequirements = false;
+      }
+
+      return isComplete && hasEssentialFields && hasResidenceRequirements;
     } catch (e) {
       print('Error checking profile completeness: $e');
       return false;
@@ -367,6 +215,13 @@ class GetUserProfileService {
     }
     print('No valid cached profile available');
     return null;
+  }
+
+  /// Updates the cached profile (used after successful updates)
+  static void updateCache(UserProfile profile) {
+    _cachedProfile = profile;
+    _cacheTimestamp = DateTime.now();
+    print('Cache updated with new profile data');
   }
 
   /// Checks if profile is currently being loaded

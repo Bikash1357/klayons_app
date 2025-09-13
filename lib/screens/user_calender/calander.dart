@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../../services/calander/children_calendar_service.dart';
-import '../../services/calander/society_batch_calander.dart';
+import '../../services/calander/society_activity_calander.dart';
 import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
 import '../bottom_screens/uesr_profile/profile_page.dart';
@@ -38,7 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Set<int> _selectedChildIds = {};
 
   // Society batches variables
-  List<BatchCalendarEvent> _batchEvents = [];
+  List<ActivityCalendarEvent> _batchEvents = [];
   bool _isLoadingBatches = false;
   String? _batchError;
 
@@ -71,14 +71,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
         _batchError = null;
       });
 
-      SocietyBatchesResponse? cachedBatches =
-          SocietyBatchesService.getCachedBatches();
+      SocietyActivitiesResponse? cachedBatches =
+          SocietyActivitiesService.getCachedActivities();
       if (cachedBatches != null) {
         _generateBatchEvents(cachedBatches);
       }
 
-      SocietyBatchesResponse batchesResponse =
-          await SocietyBatchesService.fetchSocietyBatches();
+      SocietyActivitiesResponse batchesResponse =
+          await SocietyActivitiesService.fetchSocietyActivities();
       _generateBatchEvents(batchesResponse);
 
       setState(() {
@@ -94,11 +94,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  void _generateBatchEvents(SocietyBatchesResponse batchesResponse) {
+  void _generateBatchEvents(SocietyActivitiesResponse batchesResponse) {
     DateTime startDate = DateTime.now().subtract(Duration(days: 30));
     DateTime endDate = DateTime.now().add(Duration(days: 90));
 
-    _batchEvents = SocietyBatchesService.generateCalendarEvents(
+    _batchEvents = SocietyActivitiesService.generateCalendarEvents(
       batchesResponse,
       startDate,
       endDate,
@@ -259,7 +259,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     // Add society batch events if "All Activities" is selected
     if (_showAllActivities) {
-      for (BatchCalendarEvent batchEvent in _batchEvents) {
+      for (ActivityCalendarEvent batchEvent in _batchEvents) {
         if (isSameDay(batchEvent.startTime, day)) {
           eventsForDay.add(batchEvent);
         }
@@ -379,7 +379,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           mainAxisSize: MainAxisSize.min,
           children: events.take(2).map((event) {
             Color dotColor = AppColors.primaryOrange;
-            if (event is BatchCalendarEvent) {
+            if (event is ActivityCalendarEvent) {
               dotColor = event.color;
             } else if (event is ChildCalendarEvent) {
               dotColor = event.color;
@@ -788,7 +788,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ? 'for ${event.childName!.split(' ').first}'
                           : null;
                       isCancelled = event.isCancelled;
-                    } else if (event is BatchCalendarEvent) {
+                    } else if (event is ActivityCalendarEvent) {
                       title = event.title;
                       timeText =
                           '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';

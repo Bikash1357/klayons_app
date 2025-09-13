@@ -1,45 +1,52 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:klayons/utils/colour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
-// Data models for Society Batches
-class BatchOverride {
+// Data models for Society Activities (updated structure)
+class ActivityOverride {
   final String originalDate;
   final String action;
   final String status;
   final String remarks;
 
-  BatchOverride({
+  ActivityOverride({
     required this.originalDate,
     required this.action,
     required this.status,
     required this.remarks,
   });
 
-  factory BatchOverride.fromJson(Map<String, dynamic> json) {
-    return BatchOverride(
-      originalDate: json['original_date'],
-      action: json['action'],
-      status: json['status'],
+  factory ActivityOverride.fromJson(Map<String, dynamic> json) {
+    return ActivityOverride(
+      originalDate: json['original_date'] ?? '',
+      action: json['action'] ?? '',
+      status: json['status'] ?? '',
       remarks: json['remarks'] ?? '',
     );
   }
 
-  DateTime get originalDateTime => DateTime.parse(originalDate);
+  DateTime get originalDateTime {
+    try {
+      return DateTime.parse(originalDate);
+    } catch (e) {
+      return DateTime.now();
+    }
+  }
 }
 
-class BatchSchedule {
+class ActivitySchedule {
   final int id;
   final String startTime;
   final String endTime;
   final List<String> rrulePatterns;
   final List<String> rdatePatterns;
   final List<String> exdatePatterns;
-  final List<BatchOverride> overrides;
+  final List<ActivityOverride> overrides;
 
-  BatchSchedule({
+  ActivitySchedule({
     required this.id,
     required this.startTime,
     required this.endTime,
@@ -49,32 +56,32 @@ class BatchSchedule {
     required this.overrides,
   });
 
-  factory BatchSchedule.fromJson(Map<String, dynamic> json) {
-    return BatchSchedule(
-      id: json['id'],
-      startTime: json['start_time'],
-      endTime: json['end_time'],
-      rrulePatterns: List<String>.from(json['rrule_patterns']),
+  factory ActivitySchedule.fromJson(Map<String, dynamic> json) {
+    return ActivitySchedule(
+      id: json['id'] ?? 0,
+      startTime: json['start_time'] ?? '',
+      endTime: json['end_time'] ?? '',
+      rrulePatterns: List<String>.from(json['rrule_patterns'] ?? []),
       rdatePatterns: List<String>.from(json['rdate_patterns'] ?? []),
       exdatePatterns: List<String>.from(json['exdate_patterns'] ?? []),
       overrides:
           (json['overrides'] as List?)
-              ?.map((e) => BatchOverride.fromJson(e))
+              ?.map((e) => ActivityOverride.fromJson(e))
               .toList() ??
           [],
     );
   }
 }
 
-class SocietyBatch {
+class SocietyActivity {
   final int id;
   final String name;
   final int activityId;
   final String activityName;
   final String venue;
-  final List<BatchSchedule> schedules;
+  final List<ActivitySchedule> schedules;
 
-  SocietyBatch({
+  SocietyActivity({
     required this.id,
     required this.name,
     required this.activityId,
@@ -83,36 +90,40 @@ class SocietyBatch {
     required this.schedules,
   });
 
-  factory SocietyBatch.fromJson(Map<String, dynamic> json) {
-    return SocietyBatch(
-      id: json['id'],
-      name: json['name'],
-      activityId: json['activity_id'],
-      activityName: json['activity_name'],
-      venue: json['venue'],
-      schedules: (json['schedules'] as List)
-          .map((e) => BatchSchedule.fromJson(e))
-          .toList(),
+  factory SocietyActivity.fromJson(Map<String, dynamic> json) {
+    return SocietyActivity(
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      activityId: json['activity_id'] ?? 0,
+      activityName: json['activity_name'] ?? '',
+      venue: json['venue'] ?? '',
+      schedules:
+          (json['schedules'] as List?)
+              ?.map((e) => ActivitySchedule.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }
 
-class SocietyBatchesResponse {
-  final List<SocietyBatch> batches;
+class SocietyActivitiesResponse {
+  final List<SocietyActivity> activities;
 
-  SocietyBatchesResponse({required this.batches});
+  SocietyActivitiesResponse({required this.activities});
 
-  factory SocietyBatchesResponse.fromJson(Map<String, dynamic> json) {
-    return SocietyBatchesResponse(
-      batches: (json['batches'] as List)
-          .map((e) => SocietyBatch.fromJson(e))
-          .toList(),
+  factory SocietyActivitiesResponse.fromJson(Map<String, dynamic> json) {
+    return SocietyActivitiesResponse(
+      activities:
+          (json['activities'] as List?)
+              ?.map((e) => SocietyActivity.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }
 
-// Calendar Event for batches
-class BatchCalendarEvent {
+// Calendar Event for activities
+class ActivityCalendarEvent {
   final String id;
   final String title;
   final String venue;
@@ -121,10 +132,10 @@ class BatchCalendarEvent {
   final Color color;
   final bool isCancelled;
   final String? cancelReason;
-  final SocietyBatch originalBatch;
+  final SocietyActivity originalActivity;
   final bool isFromRDate;
 
-  BatchCalendarEvent({
+  ActivityCalendarEvent({
     required this.id,
     required this.title,
     required this.venue,
@@ -133,18 +144,18 @@ class BatchCalendarEvent {
     required this.color,
     this.isCancelled = false,
     this.cancelReason,
-    required this.originalBatch,
+    required this.originalActivity,
     this.isFromRDate = false,
   });
 }
 
-// API Service for Society Batches
-class SocietyBatchesService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app//api';
+// API Service for Society Activities
+class SocietyActivitiesService {
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
   static const String _tokenKey = 'auth_token';
 
   // Cache variables
-  static SocietyBatchesResponse? _cachedBatches;
+  static SocietyActivitiesResponse? _cachedActivities;
   static DateTime? _cacheTimestamp;
   static bool _isLoading = false;
   static const Duration _cacheExpiration = Duration(minutes: 15);
@@ -161,7 +172,7 @@ class SocietyBatchesService {
   }
 
   static bool _isCacheValid() {
-    if (_cachedBatches == null || _cacheTimestamp == null) {
+    if (_cachedActivities == null || _cacheTimestamp == null) {
       return false;
     }
     final now = DateTime.now();
@@ -170,27 +181,27 @@ class SocietyBatchesService {
   }
 
   static void clearCache() {
-    _cachedBatches = null;
+    _cachedActivities = null;
     _cacheTimestamp = null;
     _isLoading = false;
-    print('Society batches cache cleared');
+    print('Society activities cache cleared');
   }
 
-  // Fetch society batches from API
-  static Future<SocietyBatchesResponse> fetchSocietyBatches({
+  // Fetch society activities from API
+  static Future<SocietyActivitiesResponse> fetchSocietyActivities({
     bool forceRefresh = false,
   }) async {
     if (!forceRefresh && _isCacheValid()) {
-      print('Returning cached society batches');
-      return _cachedBatches!;
+      print('Returning cached society activities');
+      return _cachedActivities!;
     }
 
     if (_isLoading) {
-      print('Society batches loading in progress, waiting...');
+      print('Society activities loading in progress, waiting...');
       while (_isLoading) {
         await Future.delayed(Duration(milliseconds: 100));
       }
-      return _cachedBatches ?? SocietyBatchesResponse(batches: []);
+      return _cachedActivities ?? SocietyActivitiesResponse(activities: []);
     }
 
     final token = await getToken();
@@ -201,10 +212,10 @@ class SocietyBatchesService {
 
     try {
       _isLoading = true;
-      print('Fetching society batches from server...');
+      print('Fetching society activities from server...');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/calendar/society-batches/'),
+        Uri.parse('$baseUrl/calendar/society-activities/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -212,41 +223,52 @@ class SocietyBatchesService {
         },
       );
 
-      print('Society Batches API Response Status: ${response.statusCode}');
+      print('Society Activities API Response Status: ${response.statusCode}');
+      print('Society Activities API Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        Map<String, dynamic> jsonData = json.decode(response.body);
-        SocietyBatchesResponse batchesResponse =
-            SocietyBatchesResponse.fromJson(jsonData);
+        try {
+          Map<String, dynamic> jsonData = json.decode(response.body);
+          SocietyActivitiesResponse activitiesResponse =
+              SocietyActivitiesResponse.fromJson(jsonData);
 
-        _cachedBatches = batchesResponse;
-        _cacheTimestamp = DateTime.now();
+          _cachedActivities = activitiesResponse;
+          _cacheTimestamp = DateTime.now();
 
-        print(
-          'Society batches fetched and cached successfully (${batchesResponse.batches.length} batches)',
-        );
-        return batchesResponse;
+          print(
+            'Society activities fetched and cached successfully (${activitiesResponse.activities.length} activities)',
+          );
+          return activitiesResponse;
+        } catch (parseError) {
+          print('JSON parsing error: $parseError');
+          print('Raw response: ${response.body}');
+          throw Exception('Failed to parse server response: $parseError');
+        }
       } else if (response.statusCode == 401) {
         clearCache();
         throw Exception('Authentication failed. Please login again.');
       } else {
+        print('Server error response: ${response.body}');
         throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      print('Network error in fetchSocietyBatches: $e');
-      if (e.toString().contains('Authentication failed')) {
+      print('Network error in fetchSocietyActivities: $e');
+      if (e.toString().contains('Authentication failed') ||
+          e.toString().contains('Failed to parse server response')) {
         clearCache();
         rethrow;
       }
-      throw Exception('Failed to load society batches. Check your connection.');
+      throw Exception(
+        'Failed to load society activities. Check your connection.',
+      );
     } finally {
       _isLoading = false;
     }
   }
 
-  static SocietyBatchesResponse? getCachedBatches() {
+  static SocietyActivitiesResponse? getCachedActivities() {
     if (_isCacheValid()) {
-      return _cachedBatches;
+      return _cachedActivities;
     }
     return null;
   }
@@ -261,15 +283,15 @@ class SocietyBatchesService {
   }
 
   // Generate calendar events with proper RDATE and EXDATE handling
-  static List<BatchCalendarEvent> generateCalendarEvents(
-    SocietyBatchesResponse batchesResponse,
+  static List<ActivityCalendarEvent> generateCalendarEvents(
+    SocietyActivitiesResponse activitiesResponse,
     DateTime startDate,
     DateTime endDate,
   ) {
-    List<BatchCalendarEvent> events = [];
+    List<ActivityCalendarEvent> events = [];
 
-    for (SocietyBatch batch in batchesResponse.batches) {
-      for (BatchSchedule schedule in batch.schedules) {
+    for (SocietyActivity activity in activitiesResponse.activities) {
+      for (ActivitySchedule schedule in activity.schedules) {
         // Step 1: Generate RRULE events
         List<DateTime> rruleEvents = [];
         for (String rrulePattern in schedule.rrulePatterns) {
@@ -304,7 +326,7 @@ class SocietyBatchesService {
             bool isCancelled = false;
             String? cancelReason;
 
-            for (BatchOverride override in schedule.overrides) {
+            for (ActivityOverride override in schedule.overrides) {
               if (_isSameDay(override.originalDateTime, eventDate) &&
                   override.action == 'cancel') {
                 isCancelled = true;
@@ -325,16 +347,16 @@ class SocietyBatchesService {
             );
 
             events.add(
-              BatchCalendarEvent(
-                id: '${batch.id}_${schedule.id}_${eventDate.millisecondsSinceEpoch}',
-                title: batch.name,
-                venue: batch.venue,
+              ActivityCalendarEvent(
+                id: '${activity.id}_${schedule.id}_${eventDate.millisecondsSinceEpoch}',
+                title: activity.name,
+                venue: activity.venue,
                 startTime: eventDate,
                 endTime: endTime,
-                color: _getColorForActivity(batch.activityId),
+                color: _getColorForActivity(activity.activityId),
                 isCancelled: isCancelled,
                 cancelReason: cancelReason,
-                originalBatch: batch,
+                originalActivity: activity,
                 isFromRDate: isFromRDate,
               ),
             );
@@ -348,7 +370,6 @@ class SocietyBatchesService {
     return events;
   }
 
-  // Parse RRULE pattern (improved version)
   static List<DateTime> _parseRRulePattern(
     String rrulePattern,
     String startTime,
@@ -384,10 +405,7 @@ class SocietyBatchesService {
         }
       }
 
-      // Parse start time for events
       DateTime templateTime = _parseTimeToDateTime(rangeStart, startTime);
-
-      // Start from range start, find first occurrence
       DateTime current = DateTime(
         rangeStart.year,
         rangeStart.month,
@@ -395,8 +413,6 @@ class SocietyBatchesService {
         templateTime.hour,
         templateTime.minute,
       );
-
-      // Go back a bit to ensure we catch events that start before range
       current = current.subtract(Duration(days: 30));
 
       while (current.isBefore(rangeEnd.add(Duration(days: 1)))) {
@@ -436,15 +452,12 @@ class SocietyBatchesService {
           events.add(current);
         }
 
-        // Move to next occurrence
         switch (freq) {
           case 'DAILY':
             current = current.add(Duration(days: interval));
             break;
           case 'WEEKLY':
-            current = current.add(
-              Duration(days: 1),
-            ); // Check each day for BYDAY matching
+            current = current.add(Duration(days: 1));
             break;
           case 'MONTHLY':
             current = DateTime(
@@ -473,7 +486,6 @@ class SocietyBatchesService {
     return events;
   }
 
-  // Parse RDATE patterns - Updated to handle individual UTC datetime strings
   static List<DateTime> _parseRDatePatterns(
     List<String> rdatePatterns,
     String defaultStartTime,
@@ -482,7 +494,6 @@ class SocietyBatchesService {
 
     for (String rdatePattern in rdatePatterns) {
       try {
-        // Each pattern is a single UTC datetime like "20250830T183000Z"
         DateTime parsedDate = _parseUtcDateTime(rdatePattern);
         events.add(parsedDate);
         print('Parsed RDATE: $parsedDate from $rdatePattern');
@@ -494,13 +505,11 @@ class SocietyBatchesService {
     return events;
   }
 
-  // Parse EXDATE patterns - Updated to handle individual UTC datetime strings
   static List<DateTime> _parseExDatePatterns(List<String> exdatePatterns) {
     List<DateTime> exdates = [];
 
     for (String exdatePattern in exdatePatterns) {
       try {
-        // Each pattern is a single UTC datetime like "20250831T183000Z"
         DateTime parsedDate = _parseUtcDateTime(exdatePattern);
         exdates.add(parsedDate);
         print('Parsed EXDATE: $parsedDate from $exdatePattern');
@@ -512,7 +521,6 @@ class SocietyBatchesService {
     return exdates;
   }
 
-  // Filter out EXDATE events
   static List<DateTime> _filterExdates(
     List<DateTime> events,
     List<DateTime> exdates,
@@ -522,33 +530,33 @@ class SocietyBatchesService {
     }).toList();
   }
 
-  // Parse UTC datetime format like "20250831T183000Z"
   static DateTime _parseUtcDateTime(String utcString) {
-    // Remove 'Z' and insert separators
-    String cleaned = utcString.replaceAll('Z', '');
+    try {
+      String cleaned = utcString.replaceAll('Z', '');
 
-    if (cleaned.contains('T')) {
-      List<String> parts = cleaned.split('T');
-      String datePart = parts[0];
-      String timePart = parts[1];
+      if (cleaned.contains('T')) {
+        List<String> parts = cleaned.split('T');
+        String datePart = parts[0];
+        String timePart = parts[1];
 
-      // Parse date part: YYYYMMDD
-      int year = int.parse(datePart.substring(0, 4));
-      int month = int.parse(datePart.substring(4, 6));
-      int day = int.parse(datePart.substring(6, 8));
+        int year = int.parse(datePart.substring(0, 4));
+        int month = int.parse(datePart.substring(4, 6));
+        int day = int.parse(datePart.substring(6, 8));
 
-      // Parse time part: HHMMSS
-      int hour = int.parse(timePart.substring(0, 2));
-      int minute = int.parse(timePart.substring(2, 4));
-      int second = int.parse(timePart.substring(4, 6));
+        int hour = int.parse(timePart.substring(0, 2));
+        int minute = int.parse(timePart.substring(2, 4));
+        int second = int.parse(timePart.substring(4, 6));
 
-      return DateTime.utc(year, month, day, hour, minute, second);
-    } else {
-      throw FormatException('Invalid UTC datetime format: $utcString');
+        return DateTime.utc(year, month, day, hour, minute, second);
+      } else {
+        throw FormatException('Invalid UTC datetime format: $utcString');
+      }
+    } catch (e) {
+      print('Error parsing UTC datetime "$utcString": $e');
+      return DateTime.now();
     }
   }
 
-  // Helper methods
   static bool _matchesWeekDay(DateTime date, String rruleDay) {
     Map<String, int> dayMap = {
       'MO': 1,
@@ -577,7 +585,7 @@ class SocietyBatchesService {
         parsedTime.minute,
       );
     } catch (e) {
-      print('Error parsing time: $e');
+      print('Error parsing time "$timeString": $e');
       return date;
     }
   }
@@ -597,16 +605,7 @@ class SocietyBatchesService {
   }
 
   static Color _getColorForActivity(int activityId) {
-    List<Color> colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal,
-      Colors.amber,
-      Colors.indigo,
-    ];
+    List<Color> colors = [AppColors.primaryOrange];
     return colors[activityId % colors.length];
   }
 }

@@ -5,8 +5,9 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.d
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/notification/notification_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import '../services/UserProfileServices/userProfileModels.dart';
 import '../services/activity/activities_batchServices/allActivityServices.dart';
-import '../services/get_userprofile_service.dart';
+import '../services/UserProfileServices/get_userprofile_service.dart';
 import '../services/notification/local_notification_service.dart';
 import '../utils/colour.dart';
 import 'activity_details_page.dart';
@@ -166,20 +167,22 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   // Build user address from profile data
+  // Fix for _buildUserAddress method (around line 175-183)
   String _buildUserAddress(UserProfile profile) {
     List<String> addressParts = [];
     if (profile.societyName.isNotEmpty) {
       addressParts.add(profile.societyName);
     }
-    if (profile.tower.isNotEmpty && profile.flatNo.isNotEmpty) {
+    if ((profile.tower?.isNotEmpty ?? false) &&
+        (profile.flatNo?.isNotEmpty ?? false)) {
       addressParts.add('${profile.tower}-${profile.flatNo}');
-    } else if (profile.tower.isNotEmpty) {
-      addressParts.add(profile.tower);
-    } else if (profile.flatNo.isNotEmpty) {
-      addressParts.add(profile.flatNo);
+    } else if (profile.tower?.isNotEmpty ?? false) {
+      addressParts.add(profile.tower!);
+    } else if (profile.flatNo?.isNotEmpty ?? false) {
+      addressParts.add(profile.flatNo!);
     }
-    if (profile.address.isNotEmpty && addressParts.isEmpty) {
-      addressParts.add(profile.address);
+    if ((profile.address?.isNotEmpty ?? false) && addressParts.isEmpty) {
+      addressParts.add(profile.address!);
     }
     return addressParts.join(', ');
   }
@@ -294,7 +297,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   // Helper method to build custom navigation icons
   Widget _buildBottomNavigationBar() {
     return Container(
-      height: 70, // Fixed height for the entire navigation bar
+      height: 80, // Fixed height for the entire navigation bar
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -364,7 +367,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Top spacing
-              SizedBox(height: 15),
+              SizedBox(height: 5),
               // Icon
               SvgPicture.asset(
                 assetPath,
@@ -698,188 +701,197 @@ class CompactActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Image container that touches all borders (top, left, bottom)
-              Container(
-                width: MediaQuery.of(context).size.width * 0.40,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
-                  ),
-                  child: activity.bannerImageUrl.isNotEmpty
-                      ? Image.network(
-                          activity.bannerImageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildPlaceholderImage(),
-                        )
-                      : _buildPlaceholderImage(),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
-              ),
+              ],
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Image container that touches all borders (top, left, bottom)
+                  Container(
+                    width: MediaQuery.of(context).size.width * 0.40,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        bottomLeft: Radius.circular(12),
+                      ),
+                      child: activity.bannerImageUrl.isNotEmpty
+                          ? Image.network(
+                              activity.bannerImageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildPlaceholderImage(),
+                            )
+                          : _buildPlaceholderImage(),
+                    ),
+                  ),
 
-              // Right side content with padding
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Top content group
-                      Column(
+                  // Right side content with padding
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
+                          // Top content group
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      activity.name,
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black87,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          activity.name,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black87,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          ' - ${activity.batchName}',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      ' - ${activity.batchName}',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
 
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(Icons.person, size: 16, color: Colors.grey),
-                              SizedBox(width: 4),
-                              Text(
-                                'Age: ${activity.ageRange.isNotEmpty ? activity.ageRange : 'All Ages'}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  activity.venue.isNotEmpty
-                                      ? activity.venue
-                                      : activity.society,
-                                  style: TextStyle(
-                                    fontSize: 13,
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    size: 16,
                                     color: Colors.grey,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Age: ${activity.ageRange.isNotEmpty ? activity.ageRange : 'All Ages'}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 16,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      activity.venue.isNotEmpty
+                                          ? activity.venue
+                                          : activity.society,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+
+                              SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Text(
+                                    '₹ ${_formatPrice(activity.priceDisplay)}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primaryOrange,
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    '/${activity.paymentType}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: AppColors.primaryOrange,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
 
-                          SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Text(
-                                '₹ ${_formatPrice(activity.priceDisplay)}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryOrange,
+                          // Bottom content - View Details button (full width)
+                          Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: SizedBox(
+                              width: double.infinity, // Full width button
+                              child: OutlinedButton(
+                                onPressed: activity.isActive ? onTap : null,
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: activity.isActive
+                                        ? Color(0xFFFF6B35)
+                                        : Colors.grey,
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: Text(
+                                  activity.isActive
+                                      ? 'View Details'
+                                      : 'Not Available',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: activity.isActive
+                                        ? Color(0xFFFF6B35)
+                                        : Colors.grey,
+                                  ),
                                 ),
                               ),
-                              SizedBox(width: 5),
-                              Text(
-                                '/${activity.paymentType}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppColors.primaryOrange,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
-
-                      // Bottom content - View Details button (full width)
-                      Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: SizedBox(
-                          width: double.infinity, // Full width button
-                          child: OutlinedButton(
-                            onPressed: activity.isActive ? onTap : null,
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(
-                                color: activity.isActive
-                                    ? Color(0xFFFF6B35)
-                                    : Colors.grey,
-                                width: 1.5,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                            ),
-                            child: Text(
-                              activity.isActive
-                                  ? 'View Details'
-                                  : 'Not Available',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: activity.isActive
-                                    ? Color(0xFFFF6B35)
-                                    : Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          SizedBox(height: 10),
+        ],
       ),
     );
   }
