@@ -58,6 +58,7 @@ class Activity {
 
   String get displayName => name;
   String get priceDisplay => '₹$price';
+  String get paymentTypedisplay => paymentType;
   String get categoryDisplay => category;
   String get subcategoryDisplay => subcategory;
   String get instructorName => instructor.name;

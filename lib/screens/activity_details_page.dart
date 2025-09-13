@@ -415,28 +415,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        leading: IconButton(
-          icon: SvgPicture.asset(
-            'assets/App_icons/iconBack.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(
-              AppColors.darkElements,
-              BlendMode.srcIn,
-            ),
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.share, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
-      ),
       body: Stack(
         children: [
           isLoading
@@ -547,45 +525,96 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Main Image
-          Container(
-            width: double.infinity,
-            height: 250,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-              child: activity.bannerImageUrl.isNotEmpty
-                  ? Image.network(
-                      activity.bannerImageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: Colors.grey[200],
-                          child: Icon(
-                            _getActivityIcon(activity.category),
-                            size: 100,
-                            color: Colors.grey[400],
-                          ),
-                        );
-                      },
-                    )
-                  : Container(
-                      color: Colors.grey[200],
-                      child: Icon(
-                        _getActivityIcon(activity.category),
-                        size: 100,
-                        color: Colors.grey[400],
+          // Main Image with overlay buttons - Full screen with no gaps
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                height: 300, // Increased height for better visual
+                child: activity.bannerImageUrl.isNotEmpty
+                    ? Image.network(
+                        activity.bannerImageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Icon(
+                              _getActivityIcon(activity.category),
+                              size: 100,
+                              color: Colors.grey[400],
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[200],
+                        child: Icon(
+                          _getActivityIcon(activity.category),
+                          size: 100,
+                          color: Colors.grey[400],
+                        ),
                       ),
-                    ),
-            ),
+              ),
+              // Overlay buttons positioned on top of the image
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Back button with circular background
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: SvgPicture.asset(
+                            'assets/App_icons/iconBack.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.darkElements,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      // Share button with circular background
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            Icons.share,
+                            color: AppColors.darkElements,
+                            size: 24,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
 
           Padding(
@@ -594,38 +623,28 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Activity Name
-                Text(
-                  activity.name,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: 8),
 
                 // Category and Subcategory
                 Row(
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.deepOrange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.deepOrange.withOpacity(0.3),
-                        ),
+                    Text(
+                      activity.name,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
-                      child: Text(
-                        activity.category,
+                    ),
+                    SizedBox(height: 8),
+                    if (activity.subcategory.isNotEmpty) ...[
+                      Text(
+                        ' ${activity.batchName}',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.deepOrange[700],
+                          fontSize: 18,
+                          color: Colors.black87,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                    if (activity.subcategory.isNotEmpty) ...[
                       SizedBox(width: 8),
                       Container(
                         padding: EdgeInsets.symmetric(
@@ -633,7 +652,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: AppColors.primaryOrange,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.grey[300]!),
                         ),
@@ -641,7 +660,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                           activity.subcategory,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[700],
+                            color: Colors.white,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -673,7 +692,10 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     SizedBox(width: 8),
                     Text(
                       '/${activity.paymentType}',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.primaryOrange,
+                      ),
                     ),
                   ],
                 ),
@@ -682,136 +704,126 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 // Sessions and timing info
                 Text(
                   '${activity.sessionCount} sessions, ${activity.sessionDuration}mins each',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.primaryOrange,
+                  ),
                 ),
                 SizedBox(height: 8),
 
                 // Schedule info
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _formatScheduleDisplay(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-
-                // Time slots
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                    SizedBox(width: 8),
-                    Text(
-                      _getTimeSlots(),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-
-                // Location info
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        activity.venue.isNotEmpty
-                            ? activity.venue
-                            : activity.society,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16),
-
-                // Batch name if available
-                if (activity.batchName.isNotEmpty) ...[
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.blue[200]!),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.group, size: 16, color: Colors.blue[600]),
-                        SizedBox(width: 6),
-                        Text(
-                          'Batch: ${activity.batchName}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                ],
-
-                // Activity status
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: activity.isActive
-                        ? Colors.green[50]
-                        : Colors.red[50],
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: activity.isActive
-                          ? Colors.green[200]!
-                          : Colors.red[200]!,
-                    ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  padding: EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      Icon(
-                        activity.isActive ? Icons.schedule : Icons.pause_circle,
-                        size: 16,
-                        color: activity.isActive
-                            ? Colors.green[600]
-                            : Colors.red[600],
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _formatScheduleDisplay(),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: 6),
-                      Text(
-                        activity.isActive
-                            ? 'Enrollment Open!'
-                            : 'Currently Inactive',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: activity.isActive
-                              ? Colors.green[700]
-                              : Colors.red[700],
-                          fontWeight: FontWeight.w500,
-                        ),
+                      SizedBox(height: 8),
+
+                      // Time slots
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            _getTimeSlots(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
+                      SizedBox(height: 8),
+
+                      // Location info
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              activity.venue.isNotEmpty
+                                  ? activity.venue
+                                  : activity.society,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        //mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            activity.isActive
+                                ? Icons.schedule
+                                : Icons.pause_circle,
+                            size: 16,
+                            color: activity.isActive
+                                ? Colors.green[600]
+                                : Colors.red[600],
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            activity.isActive
+                                ? 'Enrollment Open!'
+                                : 'Currently Inactive',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: activity.isActive
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Activity status
                     ],
                   ),
                 ),
@@ -819,175 +831,196 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 SizedBox(height: 20),
 
                 _buildDescriptionSection(),
+
                 SizedBox(height: 20),
 
-                // Capacity Info
-                Text(
-                  '${activity.capacity - (activity.capacity ~/ 3)} spots left (Total: ${activity.capacity})',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.red[600],
-                    fontWeight: FontWeight.w500,
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(height: 20),
-
-                // Duration info
-                if (activity.startDate.isNotEmpty &&
-                    activity.endDate.isNotEmpty) ...[
-                  Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.purple[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.purple[200]!),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.date_range, color: Colors.purple[600]),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // Duration info
+                      if (activity.startDate.isNotEmpty &&
+                          activity.endDate.isNotEmpty) ...[
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.purple[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.purple[200]!),
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                'Activity Duration',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.purple[700],
-                                  fontSize: 14,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '${activity.startDate} to ${activity.endDate}',
-                                style: TextStyle(
-                                  color: Colors.purple[600],
-                                  fontSize: 13,
+                              Icon(Icons.date_range, color: Colors.purple[600]),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Activity Duration',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.purple[700],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      '${activity.startDate} to ${activity.endDate}',
+                                      style: TextStyle(
+                                        color: Colors.purple[600],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        SizedBox(height: 20),
                       ],
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                ],
 
-                // Child selection for enrollment
-                if (children.isNotEmpty) ...[
-                  Row(
-                    children: [
-                      Text(
-                        'Book for: ',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: children.map((child) {
-                            final isSelected =
-                                selectedChildId == child.id.toString();
-                            return GestureDetector(
-                              onTap: () => _selectChild(child),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Colors.deepOrange
-                                      : Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.deepOrange
-                                        : Colors.grey[300]!,
-                                  ),
-                                ),
-                                child: Text(
-                                  child.name.split(' ').first,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.grey[700],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                      // Child selection for enrollment
+                      if (children.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Text(
+                              'Book for: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
                               ),
-                            );
-                          }).toList(),
+                            ),
+                            SizedBox(width: 5),
+                            Expanded(
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: children.map((child) {
+                                  final isSelected =
+                                      selectedChildId == child.id.toString();
+                                  return GestureDetector(
+                                    onTap: () => _selectChild(child),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? Colors.deepOrange
+                                            : Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? AppColors.highlight2
+                                              : Colors.grey[300]!,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        child.name.split(' ').first,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.grey[700],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 16),
+
+                        // Capacity Info
+                        Text(
+                          '${activity.capacity - (activity.capacity ~/ 3)} spots left (Total: ${activity.capacity})',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primaryOrange,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 10),
+
+                      // Enroll button with enrollment status check
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed:
+                              (activity.isActive &&
+                                  !isEnrolling &&
+                                  !_isChildAlreadyEnrolled())
+                              ? _handleEnrollment
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                activity.isActive && !_isChildAlreadyEnrolled()
+                                ? Colors.deepOrange
+                                : Colors.grey,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: isEnrolling
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Enrolling...',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Text(
+                                  _getEnrollmentButtonText(),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 16),
-                ],
-
-                // Enroll button with enrollment status check
-                Container(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed:
-                        (activity.isActive &&
-                            !isEnrolling &&
-                            !_isChildAlreadyEnrolled())
-                        ? _handleEnrollment
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          activity.isActive && !_isChildAlreadyEnrolled()
-                          ? Colors.deepOrange
-                          : Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: isEnrolling
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Text(
-                                'Enrolling...',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            _getEnrollmentButtonText(),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
                 ),
-
                 SizedBox(height: 30),
                 _buildInstructorSection(),
                 SizedBox(height: 20),
@@ -1002,28 +1035,43 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
   Widget _buildDescriptionSection() {
     final activity = activityData!;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'DESCRIPTION',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-            letterSpacing: 1.2,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
-        ),
-        SizedBox(height: 12),
-        Text(
-          activity.description.isNotEmpty
-              ? activity.description
-              : 'This ${activity.category.toLowerCase()} activity is designed to provide students with hands-on learning experience. Join us for an engaging and educational journey that will help develop new skills and build confidence.',
-          style: AppTextStyles.titleSmall(
-            context,
-          ).copyWith(height: 1.6, color: Colors.grey[700]),
-        ),
-      ],
+        ],
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'DESCRIPTION',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+              letterSpacing: 1.2,
+            ),
+          ),
+          SizedBox(height: 12),
+          Text(
+            activity.description.isNotEmpty
+                ? activity.description
+                : 'This ${activity.category.toLowerCase()} activity is designed to provide students with hands-on learning experience. Join us for an engaging and educational journey that will help develop new skills and build confidence.',
+            style: AppTextStyles.titleSmall(
+              context,
+            ).copyWith(height: 1.6, color: Colors.grey[700]),
+          ),
+        ],
+      ),
     );
   }
 
