@@ -358,7 +358,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           : Text(
               'Hi, $_userName!',
               style: GoogleFonts.poetsenOne(
-                textStyle: AppTextStyles.headlineSmall(
+                textStyle: AppTextStyles.titleLarge(
                   context,
                 ).copyWith(color: AppColors.primaryOrange),
               ),
@@ -469,7 +469,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           'Explore Activities',
           style: AppTextStyles.titleLarge(
             context,
-          ).copyWith(color: Colors.black87),
+          ).copyWith(letterSpacing: 0.5, color: Colors.black87),
         ),
       ),
     );
@@ -761,8 +761,6 @@ class CompactActivityCard extends StatelessWidget {
                 style: AppTextStyles.titleMedium(
                   context,
                 ).copyWith(fontWeight: FontWeight.w700, color: Colors.black87),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (activity.batchName.isNotEmpty)

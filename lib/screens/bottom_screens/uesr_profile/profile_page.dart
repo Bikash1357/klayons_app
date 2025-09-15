@@ -269,6 +269,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return 'USER NAME';
   }
 
+  String _getAddress() {
+    if (userProfile?.societyName.isNotEmpty == true) {
+      // Capitalize each word in the name
+      return userProfile!.societyName
+          .split(' ')
+          .map(
+            (word) => word.isNotEmpty
+                ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+                : '',
+          )
+          .join(' ');
+    }
+    return 'SOCIETY NAME';
+  }
+
   String _formatDate(String dateString) {
     try {
       DateTime date = DateTime.parse(dateString);
