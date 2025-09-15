@@ -202,9 +202,13 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               color: Colors.grey.shade600,
                             ),
                             SizedBox(width: 8),
-                            Text(
-                              DateFormat('EEE, d MMM').format(_selectedDate),
-                              style: AppTextStyles.bodyMedium(context),
+                            Flexible(
+                              child: Text(
+                                DateFormat('EEE, d MMM').format(_selectedDate),
+                                style: AppTextStyles.bodyMedium(context),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
                             ),
                           ],
                         ),
@@ -229,11 +233,15 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               color: Colors.grey.shade600,
                             ),
                             SizedBox(width: 8),
-                            Text(
-                              _neverStops
-                                  ? 'Never Stops'
-                                  : DateFormat('EEE, d MMM').format(_endDate),
-                              style: AppTextStyles.bodyMedium(context),
+                            Flexible(
+                              child: Text(
+                                _neverStops
+                                    ? 'Never Stops'
+                                    : DateFormat('EEE, d MMM').format(_endDate),
+                                style: AppTextStyles.bodyMedium(context),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
                             ),
                           ],
                         ),

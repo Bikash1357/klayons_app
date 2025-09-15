@@ -2,97 +2,179 @@ import 'package:flutter/material.dart';
 import 'package:klayons/utils/colour.dart';
 
 class AppTextStyles {
-  // Method to get screen size factor for responsive text
-  static double _getScaleFactor(BuildContext context) {
+  // Get percentage-based font size
+  static double _getPercentageBasedSize({
+    required BuildContext context,
+    required double heightPercent,
+    required double widthPercent,
+    double minSize = 10.0,
+    double maxSize = 50.0,
+  }) {
     final size = MediaQuery.of(context).size;
     final screenWidth = size.width;
     final screenHeight = size.height;
 
-    // Calculate scale factor based on screen width
-    // Base width assumption: 375px (iPhone SE/standard mobile)
-    double widthScale = screenWidth / 375.0;
+    // Calculate size based on height percentage
+    final heightBasedSize = screenHeight * (heightPercent / 100);
 
-    // Consider both dimensions for better scaling
-    double heightScale = screenHeight / 812.0; // Base height: iPhone X/11
+    // Calculate size based on width percentage
+    final widthBasedSize = screenWidth * (widthPercent / 100);
 
-    // Use average of both scales, with width having more influence
-    double scaleFactor = (widthScale * 0.7 + heightScale * 0.3);
+    // Take the smaller of the two to ensure text fits well on all orientations
+    // You can adjust this logic based on your preference
+    final calculatedSize = (heightBasedSize + widthBasedSize) / 2;
 
-    // Clamp the scale factor to prevent extreme scaling
-    return scaleFactor.clamp(0.8, 1.3);
+    // Alternatively, you can use minimum of both:
+    // final calculatedSize = math.min(heightBasedSize, widthBasedSize);
+
+    // Clamp to prevent extreme sizes
+    return calculatedSize.clamp(minSize, maxSize);
   }
 
-  // Alternative: Simple approach using just screen width
-  static double _getSimpleScaleFactor(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+  // Alternative method for more control over height vs width influence
+  static double _getWeightedPercentageSize({
+    required BuildContext context,
+    required double heightPercent,
+    required double widthPercent,
+    double heightWeight = 0.6, // How much height influences the size
+    double widthWeight = 0.4, // How much width influences the size
+    double minSize = 10.0,
+    double maxSize = 50.0,
+  }) {
+    final size = MediaQuery.of(context).size;
+    final screenWidth = size.width;
+    final screenHeight = size.height;
 
-    if (screenWidth < 350) return 0.9; // Small phones
-    if (screenWidth < 400) return 1.0; // Medium phones
-    if (screenWidth < 450) return 1.1; // Large phones
-    return 1.2; // Tablets/very large phones
+    final heightBasedSize = screenHeight * (heightPercent / 100);
+    final widthBasedSize = screenWidth * (widthPercent / 100);
+
+    // Weighted average
+    final calculatedSize =
+        (heightBasedSize * heightWeight) + (widthBasedSize * widthWeight);
+
+    return calculatedSize.clamp(minSize, maxSize);
   }
 
-  // Responsive text styles
+  // Responsive text styles using percentage approach
   static TextStyle headlineLarge(BuildContext context) {
-    final scale = _getScaleFactor(context);
     return TextStyle(
-      fontSize: (32 * scale).clamp(28.0, 40.0),
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 4.0, // 4% of screen height
+        widthPercent: 8.5, // 8.5% of screen width
+        minSize: 28.0,
+        maxSize: 40.0,
+      ),
       fontWeight: FontWeight.w600,
     );
   }
 
   static TextStyle headlineSmall(BuildContext context) {
-    final scale = _getScaleFactor(context);
     return TextStyle(
-      fontSize: (24 * scale).clamp(20.0, 30.0),
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 3.0, // 3% of screen height
+        widthPercent: 6.5, // 6.5% of screen width
+        minSize: 20.0,
+        maxSize: 30.0,
+      ),
       fontWeight: FontWeight.w600,
     );
   }
 
   static TextStyle titleLarge(BuildContext context) {
-    final scale = _getScaleFactor(context);
     return TextStyle(
-      fontSize: (22 * scale).clamp(18.0, 28.0),
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 2.8, // 2.8% of screen height
+        widthPercent: 6.0, // 6% of screen width
+        minSize: 18.0,
+        maxSize: 28.0,
+      ),
       fontWeight: FontWeight.w500,
     );
   }
 
   static TextStyle formLarge(BuildContext context) {
-    final scale = _getScaleFactor(context);
     return TextStyle(
-      fontSize: (18 * scale).clamp(16.0, 22.0),
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 2.3, // 2.3% of screen height
+        widthPercent: 5.0, // 5% of screen width
+        minSize: 16.0,
+        maxSize: 22.0,
+      ),
       fontWeight: FontWeight.w500,
     );
   }
 
   static TextStyle titleMedium(BuildContext context) {
-    final scale = _getScaleFactor(context);
     return TextStyle(
-      fontSize: (16 * scale).clamp(14.0, 20.0),
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 2.0, // 2% of screen height
+        widthPercent: 4.3, // 4.3% of screen width
+        minSize: 14.0,
+        maxSize: 20.0,
+      ),
       fontWeight: FontWeight.w500,
     );
   }
 
   static TextStyle titleSmall(BuildContext context) {
-    final scale = _getScaleFactor(context);
     return TextStyle(
-      fontSize: (14 * scale).clamp(12.0, 18.0),
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 1.8, // 1.8% of screen height
+        widthPercent: 3.8, // 3.8% of screen width
+        minSize: 12.0,
+        maxSize: 18.0,
+      ),
       fontWeight: FontWeight.w500,
     );
   }
 
   static TextStyle bodyLargeEmphasized(BuildContext context) {
-    final scale = _getScaleFactor(context);
-    return TextStyle(fontSize: (16 * scale).clamp(14.0, 20.0));
+    return TextStyle(
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 2.0, // 2% of screen height
+        widthPercent: 4.3, // 4.3% of screen width
+        minSize: 14.0,
+        maxSize: 20.0,
+      ),
+    );
   }
 
   static TextStyle bodyMedium(BuildContext context) {
-    final scale = _getScaleFactor(context);
-    return TextStyle(fontSize: (14 * scale).clamp(12.0, 18.0));
+    return TextStyle(
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 1.8, // 1.8% of screen height
+        widthPercent: 3.8, // 3.8% of screen width
+        minSize: 12.0,
+        maxSize: 18.0,
+      ),
+    );
   }
 
   static TextStyle bodySmall(BuildContext context) {
-    final scale = _getScaleFactor(context);
-    return TextStyle(fontSize: (12 * scale).clamp(10.0, 16.0));
+    return TextStyle(
+      fontSize: _getPercentageBasedSize(
+        context: context,
+        heightPercent: 1.5, // 1.5% of screen height
+        widthPercent: 3.2, // 3.2% of screen width
+        minSize: 10.0,
+        maxSize: 16.0,
+      ),
+    );
+  }
+
+  // Utility method to get screen dimensions for debugging
+  static void debugScreenInfo(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    print('Screen Width: ${size.width}');
+    print('Screen Height: ${size.height}');
+    print('Aspect Ratio: ${size.aspectRatio}');
   }
 }

@@ -4,10 +4,10 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/child_intrest
 import 'package:http/http.dart' as http;
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../services/auth/login_service.dart';
+import '../../../../utils/styles/button.dart';
 import '../../../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
-import 'package:flutter_svg/svg.dart';
-
+import '../../../../utils/styles/textboxes.dart';
 import '../profile_page.dart';
 
 class ChildData {
@@ -43,42 +43,39 @@ class _AddChildPageState extends State<AddChildPage> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _birthdayController = TextEditingController();
+
   String _selectedGender = '';
   DateTime? _selectedDate;
   bool _isLoading = false;
   bool _isDeletingChild = false;
 
+  // Simple error/success handling
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-
-    // If editing, populate fields with existing data
     if (widget.isEditMode && widget.childToEdit != null) {
       _populateFieldsForEdit();
     }
-  }
-
-  void _populateFieldsForEdit() {
-    final child = widget.childToEdit!;
-
-    // Split the name into first and last name
-    List<String> nameParts = child.name.split(' ');
-    _firstNameController.text = nameParts.isNotEmpty ? nameParts[0] : '';
-    _lastNameController.text = nameParts.length > 1
-        ? nameParts.sublist(1).join(' ')
-        : '';
-
-    // Parse and set the date
-    try {
-      _selectedDate = DateTime.parse(child.dob);
-      _birthdayController.text =
-          "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}";
-    } catch (e) {
-      print('Error parsing date: $e');
-    }
-
-    // Set gender - convert from API format to UI format
-    _selectedGender = child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl';
   }
 
   @override
@@ -87,6 +84,26 @@ class _AddChildPageState extends State<AddChildPage> {
     _lastNameController.dispose();
     _birthdayController.dispose();
     super.dispose();
+  }
+
+  void _populateFieldsForEdit() {
+    final child = widget.childToEdit!;
+    List<String> nameParts = child.name.split(' ');
+
+    _firstNameController.text = nameParts.isNotEmpty ? nameParts[0] : '';
+    _lastNameController.text = nameParts.length > 1
+        ? nameParts.sublist(1).join(' ')
+        : '';
+
+    try {
+      _selectedDate = DateTime.parse(child.dob);
+      _birthdayController.text =
+          "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}";
+    } catch (e) {
+      _showErrorSnackBar('Error parsing date');
+    }
+
+    _selectedGender = child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl';
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -105,27 +122,17 @@ class _AddChildPageState extends State<AddChildPage> {
     }
   }
 
-  // Delete child API call
-  // Updated delete child API call with proper authentication
   Future<bool> _deleteChild(int childId) async {
     try {
-      // Use LoginAuthService.getToken() instead of getToken()
       String? authToken = await LoginAuthService.getToken();
-
       if (authToken == null || authToken.isEmpty) {
-        print('No authentication token found');
         throw Exception('No authentication token found');
       }
 
-      // Also check if user is properly authenticated
       bool isAuthenticated = await LoginAuthService.isAuthenticated();
       if (!isAuthenticated) {
-        print('User is not authenticated');
         throw Exception('User is not authenticated');
       }
-
-      print('Attempting to delete child with ID: $childId');
-      print('Using token: ${authToken.substring(0, 20)}...');
 
       final response = await http.delete(
         Uri.parse(
@@ -138,24 +145,10 @@ class _AddChildPageState extends State<AddChildPage> {
         },
       );
 
-      print('Delete response status: ${response.statusCode}');
-      print('Delete response body: ${response.body}');
-      print('Delete response headers: ${response.headers}');
-
-      // According to your API docs, successful deletion returns 204
-      if (response.statusCode == 204) {
-        print('Child deleted successfully');
-        return true;
-      } else if (response.statusCode == 200) {
-        // Some APIs return 200 instead of 204
-        print('Child deleted successfully (200 response)');
+      if (response.statusCode == 204 || response.statusCode == 200) {
         return true;
       } else if (response.statusCode == 401) {
-        print('Authentication failed - token may be expired');
-
-        // Clear invalid token
         await LoginAuthService.clearAuthData();
-
         throw Exception('Authentication failed - please login again');
       } else if (response.statusCode == 403) {
         throw Exception('Access forbidden - insufficient permissions');
@@ -163,90 +156,49 @@ class _AddChildPageState extends State<AddChildPage> {
         throw Exception('Child not found or already deleted');
       } else {
         throw Exception(
-          'Failed to delete child. Status code: ${response.statusCode}, Response: ${response.body}',
+          'Failed to delete child. Status: ${response.statusCode}',
         );
       }
     } catch (e) {
-      print('Error deleting child: $e');
-
-      if (e.toString().contains('authentication') ||
-          e.toString().contains('token')) {}
-
-      return false;
+      rethrow;
     }
   }
 
-  // Enhanced error handling for delete child process
-  Future<void> _handleDeleteChild([Function? dialogSetState]) async {
+  Future<void> _handleDeleteChild() async {
     if (widget.childToEdit?.id == null) {
-      if (dialogSetState != null) Navigator.of(context).pop();
-      _showErrorDialog('Invalid child data');
+      _showErrorSnackBar('Invalid child data');
       return;
     }
 
-    // Update both the main widget state and dialog state
-    setState(() {
-      _isDeletingChild = true;
-    });
-
-    if (dialogSetState != null) {
-      dialogSetState(() {
-        _isDeletingChild = true;
-      });
-    }
+    setState(() => _isDeletingChild = true);
 
     try {
-      // First, check if user is authenticated
       bool isAuth = await LoginAuthService.isAuthenticated();
       if (!isAuth) {
-        setState(() {
-          _isDeletingChild = false;
-        });
-        if (dialogSetState != null) {
-          dialogSetState(() {
-            _isDeletingChild = false;
-          });
-        }
-        Navigator.of(context).pop(); // Close dialog
-        _showErrorDialog('Session expired. Please login again.');
+        setState(() => _isDeletingChild = false);
+        _showErrorSnackBar('Session expired. Please login again.');
         return;
       }
 
       final success = await _deleteChild(widget.childToEdit!.id);
-
-      setState(() {
-        _isDeletingChild = false;
-      });
-      if (dialogSetState != null) {
-        dialogSetState(() {
-          _isDeletingChild = false;
-        });
-      }
+      setState(() => _isDeletingChild = false);
 
       if (success) {
         Navigator.of(context).pop(); // Close dialog
-        _showSuccessDialog(
-          'Child profile deleted successfully!',
-          isDelete: true,
-        );
+        _showSuccessSnackBar('Child profile deleted successfully!');
+        // Navigate back after delay
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.of(context).pop(true);
+        });
       } else {
         Navigator.of(context).pop(); // Close dialog
-        _showErrorDialog('Failed to delete child profile. Please try again.');
+        _showErrorSnackBar('Failed to delete child profile. Please try again.');
       }
     } catch (e) {
-      setState(() {
-        _isDeletingChild = false;
-      });
-      if (dialogSetState != null) {
-        dialogSetState(() {
-          _isDeletingChild = false;
-        });
-      }
+      setState(() => _isDeletingChild = false);
       Navigator.of(context).pop(); // Close dialog
 
-      // Handle specific error messages
       String errorMessage = 'An error occurred while deleting.';
-
       if (e.toString().contains('authentication') ||
           e.toString().contains('token')) {
         errorMessage = 'Session expired. Please login again.';
@@ -255,79 +207,77 @@ class _AddChildPageState extends State<AddChildPage> {
         errorMessage = 'Child profile not found or already deleted.';
       } else if (e.toString().contains('forbidden')) {
         errorMessage = 'You don\'t have permission to delete this child.';
-      } else if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
-        errorMessage =
-            'Network error. Please check your connection and try again.';
       }
 
-      _showErrorDialog(errorMessage);
+      _showErrorSnackBar(errorMessage);
     }
   }
 
-  // Show delete confirmation dialog
   void _showDeleteConfirmationDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, dialogSetState) {
             return AlertDialog(
-              title: const Text(
+              title: Text(
                 'Delete Child',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
+                style: AppTextStyles.titleLarge(
+                  context,
+                ).copyWith(color: Colors.red),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_isDeletingChild) ...[
-                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.025,
+                    ),
                     const CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                    Text(
                       'Deleting child profile...',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(color: Colors.grey),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.025,
+                    ),
                   ] else ...[
                     Text(
-                      'Do you want to delete ${widget.childToEdit?.name}\'s profile? This action cannot be undone and will remove all associated data.',
-                      style: const TextStyle(fontSize: 16),
+                      'Do you want to delete ${widget.childToEdit?.name}\'s profile? This action cannot be undone.',
+                      style: AppTextStyles.bodyMedium(context),
                     ),
                   ],
                 ],
               ),
               actions: _isDeletingChild
-                  ? [] // Hide buttons while deleting
+                  ? []
                   : [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text(
+                        child: Text(
                           'Cancel',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: AppTextStyles.bodyMedium(
+                            context,
+                          ).copyWith(color: Colors.grey),
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () => _handleDeleteChild(setState),
+                        onPressed: _handleDeleteChild,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Delete',
-                          style: TextStyle(
+                          style: AppTextStyles.bodyMedium(context).copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
@@ -341,86 +291,22 @@ class _AddChildPageState extends State<AddChildPage> {
     );
   }
 
-  // Handle delete child process
-
-  // Validate form fields
   bool _validateForm() {
     if (_firstNameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter first name');
+      _showErrorSnackBar('Please enter first name');
       return false;
     }
     if (_birthdayController.text.trim().isEmpty) {
-      _showErrorDialog('Please select birthday');
+      _showErrorSnackBar('Please select birthday');
       return false;
     }
     if (_selectedGender.isEmpty) {
-      _showErrorDialog('Please select gender');
+      _showErrorSnackBar('Please select gender');
       return false;
     }
     return true;
   }
 
-  // Show error dialog
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Show success dialog
-  void _showSuccessDialog(String message, {bool isDelete = false}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            isDelete ? 'Deleted' : 'Success',
-            style: TextStyle(
-              color: isDelete ? Colors.red : Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(
-                  context,
-                ).pop(true); // Go back to profile page with success
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Convert UI gender to API format
-  String _convertGenderToApiFormat(String uiGender) {
-    return uiGender.toLowerCase() == 'boy' ? 'male' : 'female';
-  }
-
-  // Format date for API (YYYY-MM-DD)
-  String _formatDateForApi(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-  }
-
-  // Navigate to interests page with child data
   void _navigateToInterests() {
     if (!_validateForm()) return;
 
@@ -446,8 +332,112 @@ class _AddChildPageState extends State<AddChildPage> {
     );
   }
 
+  Widget _buildGenderSelection() {
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Row(
+      children: [
+        Expanded(child: _buildGenderOption('Boy', screenHeight)),
+        SizedBox(width: MediaQuery.of(context).size.width * 0.03),
+        Expanded(child: _buildGenderOption('Girl', screenHeight)),
+      ],
+    );
+  }
+
+  Widget _buildGenderOption(String gender, double screenHeight) {
+    final isSelected = _selectedGender == gender;
+
+    return GestureDetector(
+      onTap: _isLoading ? null : () => setState(() => _selectedGender = gender),
+      child: Container(
+        height: screenHeight * 0.06, // 6% of screen height
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.orange[100] : Colors.white,
+          border: Border.all(
+            color: isSelected ? Colors.orange : Colors.grey[300]!,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(
+            gender,
+            style: AppTextStyles.bodyMedium(context).copyWith(
+              color: isSelected ? Colors.orange[700] : Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileImageSection() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final imageSize = screenHeight * 0.1; // 10% of screen height
+
+    return Center(
+      child: Column(
+        children: [
+          Container(
+            width: imageSize,
+            height: imageSize,
+            decoration: BoxDecoration(
+              color: widget.isEditMode
+                  ? (widget.childToEdit!.gender.toLowerCase() == 'male'
+                        ? Colors.blue[200]
+                        : Colors.pink[200])
+                  : Colors.grey[600],
+              shape: BoxShape.circle,
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(
+                    widget.isEditMode
+                        ? (widget.childToEdit!.gender.toLowerCase() == 'male'
+                              ? Icons.boy
+                              : Icons.girl)
+                        : Icons.person,
+                    size: imageSize * 0.5,
+                    color: Colors.white,
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: imageSize * 0.3,
+                    height: imageSize * 0.3,
+                    decoration: const BoxDecoration(
+                      color: Colors.purple,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      widget.isEditMode ? Icons.edit : Icons.add,
+                      size: imageSize * 0.2,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: screenHeight * 0.01),
+          Text(
+            widget.isEditMode ? 'Edit Photo' : 'Add Photo',
+            style: AppTextStyles.bodySmall(
+              context,
+            ).copyWith(color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -469,15 +459,11 @@ class _AddChildPageState extends State<AddChildPage> {
             MaterialPageRoute(builder: (context) => UserProfilePage()),
           ),
         ),
-
         title: Text(
           widget.isEditMode ? 'EDIT CHILD' : 'ADD CHILD',
-          style: const TextStyle(
-            color: Colors.black54,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 1.0,
-          ),
+          style: AppTextStyles.titleMedium(
+            context,
+          ).copyWith(color: Colors.black54, letterSpacing: 1.0),
         ),
         centerTitle: false,
         actions: widget.isEditMode
@@ -501,301 +487,102 @@ class _AddChildPageState extends State<AddChildPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: EdgeInsets.all(screenHeight * 0.025),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 20),
+                SizedBox(height: screenHeight * 0.025),
 
-                // Centered title text
+                // Title
                 Center(
                   child: Text(
                     widget.isEditMode
                         ? 'UPDATE YOUR CHILD\'S INFO'
                         : 'TELL US ABOUT YOUR CHILD',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                      letterSpacing: 0.5,
+                    style: AppTextStyles.titleMedium(
+                      context,
+                    ).copyWith(color: Colors.black87, letterSpacing: 0.5),
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.05),
+
+                // Profile Image
+                _buildProfileImageSection(),
+                SizedBox(height: screenHeight * 0.05),
+
+                // First Name Field
+                Text(
+                  'What do we call your child? *',
+                  style: AppTextStyles.bodyMedium(context).copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.01),
+                CustomTextField(
+                  hintText: 'First Name',
+                  controller: _firstNameController,
+                  heightPercentage: 0.06, // 6% of screen height
+                ),
+                SizedBox(height: screenHeight * 0.03),
+
+                // Birthday Field
+                Text(
+                  'When is the Birthday? *',
+                  style: AppTextStyles.bodyMedium(context).copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.01),
+                GestureDetector(
+                  onTap: _isLoading ? null : () => _selectDate(context),
+                  child: AbsorbPointer(
+                    child: CustomTextField(
+                      hintText: 'Date',
+                      controller: _birthdayController,
+                      heightPercentage: 0.06, // 6% of screen height
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: screenHeight * 0.03),
 
-                // Profile Image Section
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: widget.isEditMode
-                          ? (widget.childToEdit!.gender.toLowerCase() == 'male'
-                                ? Colors.blue[200]
-                                : Colors.pink[200])
-                          : Colors.grey[600],
-                      shape: BoxShape.circle,
-                    ),
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: Icon(
-                            widget.isEditMode
-                                ? (widget.childToEdit!.gender.toLowerCase() ==
-                                          'male'
-                                      ? Icons.boy
-                                      : Icons.girl)
-                                : Icons.person,
-                            size: 40,
+                // Gender Selection
+                Text(
+                  'Gender? *',
+                  style: AppTextStyles.bodyMedium(context).copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.015),
+                _buildGenderSelection(),
+                SizedBox(height: screenHeight * 0.05),
+
+                // Next Button
+                OrangeButton(
+                  onPressed: _navigateToInterests,
+                  isDisabled: _isLoading,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          'Next',
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: const BoxDecoration(
-                              color: Colors.purple,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              widget.isEditMode ? Icons.edit : Icons.add,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    widget.isEditMode ? 'Edit Photo' : 'Add Photo',
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // First Name Field
-                const Text(
-                  'What do we call your child? *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _firstNameController,
-                  enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: 'First Name',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.orange),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[200]!),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Birthday Field
-                const Text(
-                  'When is the Birthday? *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _birthdayController,
-                  readOnly: true,
-                  enabled: !_isLoading,
-                  onTap: _isLoading ? null : () => _selectDate(context),
-                  decoration: InputDecoration(
-                    hintText: 'Date',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: Colors.white,
-                    suffixIcon: Icon(Icons.calendar_month),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Colors.orange),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[200]!),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Gender Selection
-                const Text(
-                  'Gender? *',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () {
-                                setState(() {
-                                  _selectedGender = 'Boy';
-                                });
-                              },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            color: _selectedGender == 'Boy'
-                                ? Colors.orange[100]
-                                : Colors.white,
-                            border: Border.all(
-                              color: _selectedGender == 'Boy'
-                                  ? Colors.orange
-                                  : Colors.grey[300]!,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Boy',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: _selectedGender == 'Boy'
-                                    ? Colors.orange[700]
-                                    : Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () {
-                                setState(() {
-                                  _selectedGender = 'Girl';
-                                });
-                              },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            color: _selectedGender == 'Girl'
-                                ? Colors.orange[100]
-                                : Colors.white,
-                            border: Border.all(
-                              color: _selectedGender == 'Girl'
-                                  ? Colors.orange
-                                  : Colors.grey[300]!,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Girl',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: _selectedGender == 'Girl'
-                                    ? Colors.orange[700]
-                                    : Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Add sufficient spacing before the button
-                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-
-                // Next Button - Always navigates to interests page
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _navigateToInterests,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Text(
-                            'Next',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                SizedBox(height: screenHeight * 0.025),
               ],
             ),
           ),

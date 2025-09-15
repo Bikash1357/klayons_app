@@ -14,7 +14,6 @@ import 'activity_details_page.dart';
 import 'user_calender/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class KlayonsHomePage extends StatefulWidget {
   @override
@@ -23,12 +22,30 @@ class KlayonsHomePage extends StatefulWidget {
 
 class _KlayonsHomePageState extends State<KlayonsHomePage>
     with TickerProviderStateMixin {
-  String searchQuery = '';
-  TextEditingController searchController = TextEditingController();
-  int selectedIndex = 0;
+  // Controllers
+  final TextEditingController _searchController = TextEditingController();
   late AnimationController _slideController;
   late Animation<double> _slideAnimation;
 
+  // State variables
+  String _searchQuery = '';
+  int _selectedIndex = 0;
+
+  // Activity data
+  List<Activity> _activityData = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // Notification state
+  int _unreadNotificationCount = 0;
+  bool _isLoadingNotifications = false;
+
+  // User profile data
+  UserProfile? _userProfile;
+  bool _isLoadingUserProfile = false;
+  String _userName = 'User';
+
+  // Pages for bottom navigation
   final List<Widget> _pages = [
     Container(), // Home content handled separately
     CalendarScreen(),
@@ -36,68 +53,24 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     UserProfilePage(),
   ];
 
-  // Updated to use Activity model instead of BatchWithActivity
-  List<Activity> activityData = [];
-  bool isLoading = false;
-  String? errorMessage;
-
-  // Notification badge state
-  int unreadNotificationCount = 0;
-  bool isLoadingNotifications = false;
-
-  // User profile data
-  UserProfile? userProfile;
-  bool isLoadingUserProfile = false;
-  String userName = 'User'; // Default name
-  String userAddress = ''; // Default address
-  String? userProfileImage; // URL for user profile image
-
   @override
   void initState() {
     super.initState();
     _initializeAnimation();
-    _loadActivityData(); // Updated method name
-    _loadUserProfile(); // Load user profile data
-    _loadNotificationCount();
-    _requestNotificationPermission();
+    _loadInitialData();
   }
 
-  Future<void> _requestNotificationPermission() async {
-    final bool hasPermission =
-        await LocalNotificationService.areNotificationsEnabled();
-    if (!hasPermission) {
-      _showPermissionDialog();
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _slideController.dispose();
+    super.dispose();
   }
 
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Enable Notifications'),
-        content: Text(
-          'Please enable notifications to receive important announcements and updates.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Later'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await LocalNotificationService.showPermissionDialog();
-            },
-            child: Text('Enable'),
-          ),
-        ],
-      ),
-    );
-  }
-
+  // Initialize animation controller
   void _initializeAnimation() {
     _slideController = AnimationController(
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
       vsync: this,
     );
     _slideAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
@@ -105,95 +78,75 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  // Updated to use ActivityService instead of BatchService
+  // Load all initial data
+  Future<void> _loadInitialData() async {
+    await Future.wait([
+      _loadActivityData(),
+      _loadUserProfile(),
+      _loadNotificationCount(),
+      _requestNotificationPermission(),
+    ]);
+  }
+
+  // Load activity data
   Future<void> _loadActivityData() async {
     setState(() {
-      isLoading = true;
-      errorMessage = null;
+      _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      // Use the new ActivityService methods
       final activities = await ActivityService.getAllActivities(
         page: 1,
         pageSize: 20,
       );
-      setState(() {
-        activityData = activities;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _activityData = activities;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        errorMessage = 'Failed to load activities: ${e.toString()}';
-        isLoading = false;
-      });
-      _showErrorSnackBar();
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load activities';
+          _isLoading = false;
+        });
+        _showErrorSnackBar();
+      }
     }
   }
 
   // Load user profile data
   Future<void> _loadUserProfile() async {
-    setState(() {
-      isLoadingUserProfile = true;
-    });
+    setState(() => _isLoadingUserProfile = true);
 
     try {
       final profile = await GetUserProfileService.getUserProfile();
-      if (profile != null) {
+      if (mounted) {
         setState(() {
-          userProfile = profile;
-          userName = profile.name.isNotEmpty
-              ? profile.name.split(' ').first
+          _userProfile = profile;
+          _userName = profile?.name.isNotEmpty == true
+              ? profile!.name.split(' ').first
               : 'User';
-          // Create address from available location data
-          userAddress = _buildUserAddress(profile);
-          isLoadingUserProfile = false;
-        });
-      } else {
-        setState(() {
-          userName = 'User';
-          userAddress = '';
-          isLoadingUserProfile = false;
+          _isLoadingUserProfile = false;
         });
       }
     } catch (e) {
-      setState(() {
-        userName = 'User';
-        userAddress = '';
-        isLoadingUserProfile = false;
-      });
-      print('Error loading user profile: $e');
+      if (mounted) {
+        setState(() {
+          _userName = 'User';
+          _isLoadingUserProfile = false;
+        });
+      }
     }
-  }
-
-  // Build user address from profile data
-  // Fix for _buildUserAddress method (around line 175-183)
-  String _buildUserAddress(UserProfile profile) {
-    List<String> addressParts = [];
-    if (profile.societyName.isNotEmpty) {
-      addressParts.add(profile.societyName);
-    }
-    if ((profile.tower?.isNotEmpty ?? false) &&
-        (profile.flatNo?.isNotEmpty ?? false)) {
-      addressParts.add('${profile.tower}-${profile.flatNo}');
-    } else if (profile.tower?.isNotEmpty ?? false) {
-      addressParts.add(profile.tower!);
-    } else if (profile.flatNo?.isNotEmpty ?? false) {
-      addressParts.add(profile.flatNo!);
-    }
-    if ((profile.address?.isNotEmpty ?? false) && addressParts.isEmpty) {
-      addressParts.add(profile.address!);
-    }
-    return addressParts.join(', ');
   }
 
   // Load notification count
   Future<void> _loadNotificationCount() async {
-    if (isLoadingNotifications) return;
+    if (_isLoadingNotifications) return;
 
-    setState(() {
-      isLoadingNotifications = true;
-    });
+    setState(() => _isLoadingNotifications = true);
 
     try {
       final announcements = await NotificationService.getAnnouncements();
@@ -201,47 +154,98 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           .where((announcement) => announcement.isUnread)
           .length;
 
-      setState(() {
-        unreadNotificationCount = unreadCount;
-        isLoadingNotifications = false;
-      });
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = unreadCount;
+          _isLoadingNotifications = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoadingNotifications = false;
-      });
-      print('Error loading notification count: $e');
+      if (mounted) {
+        setState(() => _isLoadingNotifications = false);
+      }
     }
   }
 
-  // Method to refresh notification count
-  Future<void> _refreshNotificationCount() async {
-    await _loadNotificationCount();
+  // Request notification permission
+  Future<void> _requestNotificationPermission() async {
+    final hasPermission =
+        await LocalNotificationService.areNotificationsEnabled();
+    if (!hasPermission && mounted) {
+      _showPermissionDialog();
+    }
   }
 
+  // Show permission dialog
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Enable Notifications',
+          style: AppTextStyles.titleLarge(context),
+        ),
+        content: Text(
+          'Please enable notifications to receive important announcements and updates.',
+          style: AppTextStyles.bodyMedium(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Later',
+              style: AppTextStyles.bodyMedium(
+                context,
+              ).copyWith(color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await LocalNotificationService.showPermissionDialog();
+            },
+            child: Text(
+              'Enable',
+              style: AppTextStyles.bodyMedium(context).copyWith(
+                color: AppColors.primaryOrange,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Show error snackbar
   void _showErrorSnackBar() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Failed to load activities. Please check your connection.',
+            style: AppTextStyles.bodyMedium(
+              context,
+            ).copyWith(color: Colors.white),
           ),
           backgroundColor: Colors.red,
           action: SnackBarAction(
             label: 'Retry',
             textColor: Colors.white,
-            onPressed: _loadActivityData, // Updated method name
+            onPressed: _loadActivityData,
           ),
         ),
       );
     }
   }
 
+  // Handle bottom navigation tap
   void _onBottomNavTapped(int index) {
-    if (selectedIndex == index) return;
+    if (_selectedIndex == index) return;
 
     _slideAnimation =
         Tween<double>(
-          begin: selectedIndex.toDouble(),
+          begin: _selectedIndex.toDouble(),
           end: index.toDouble(),
         ).animate(
           CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
@@ -250,69 +254,359 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     _slideController.reset();
     _slideController.forward();
 
-    setState(() {
-      selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
-  // Updated to use Activity model and search in new fields
-  List<Activity> get filteredActivities {
-    if (searchQuery.isEmpty) return activityData;
+  // Get filtered activities based on search query
+  List<Activity> get _filteredActivities {
+    if (_searchQuery.isEmpty) return _activityData;
 
-    final query = searchQuery.toLowerCase();
-    return activityData.where((activity) {
+    final query = _searchQuery.toLowerCase();
+    return _activityData.where((activity) {
       return activity.name.toLowerCase().contains(query) ||
           activity.category.toLowerCase().contains(query) ||
           activity.subcategory.toLowerCase().contains(query) ||
           activity.ageRange.toLowerCase().contains(query) ||
           activity.venue.toLowerCase().contains(query) ||
           activity.society.toLowerCase().contains(query) ||
-          activity.instructor.name.toLowerCase().contains(query) ||
-          activity.priceDisplay.toLowerCase().contains(query);
+          activity.instructor.name.toLowerCase().contains(query);
     }).toList();
   }
 
-  // Updated to use Activity model
+  // Navigate to activity detail
   void _navigateToActivityDetail(Activity activity) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ActivityBookingPage(
-          batchId: activity.id, // Using activity ID as batch ID for now
-          activityId: activity.id,
+        builder: (context) =>
+            ActivityBookingPage(batchId: activity.id, activityId: activity.id),
+      ),
+    );
+  }
+
+  // Navigate to notifications
+  Future<void> _navigateToNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NotificationsPage()),
+    );
+    _loadNotificationCount();
+  }
+
+  // Refresh all data
+  Future<void> _refreshData() async {
+    await Future.wait([
+      _loadActivityData(),
+      _loadUserProfile(),
+      _loadNotificationCount(),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: _selectedIndex == 0 ? _buildHomePage() : _pages[_selectedIndex],
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  // Build home page content
+  Widget _buildHomePage() {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: _buildAppBar(),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildSearchField(),
+              if (_searchQuery.isEmpty &&
+                  !_isLoading &&
+                  _activityData.isNotEmpty)
+                _buildSectionTitle(),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildContent(),
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Navigate to notifications page and refresh count on return
-  void _navigateToNotifications() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NotificationsPage()),
+  // Build app bar
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppColors.background,
+      automaticallyImplyLeading: false,
+      elevation: 0,
+      title: _isLoadingUserProfile
+          ? Container(
+              width: 80,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.grey,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            )
+          : Text(
+              'Hi, $_userName!',
+              style: GoogleFonts.poetsenOne(
+                textStyle: AppTextStyles.headlineSmall(
+                  context,
+                ).copyWith(color: AppColors.primaryOrange),
+              ),
+            ),
+      actions: [
+        Stack(
+          children: [
+            IconButton(
+              icon: SvgPicture.asset(
+                'assets/App_icons/iconBell.svg',
+                width: 24,
+                height: 24,
+                colorFilter: ColorFilter.mode(
+                  AppColors.darkElements,
+                  BlendMode.srcIn,
+                ),
+              ),
+              onPressed: _navigateToNotifications,
+            ),
+            if (_unreadNotificationCount > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF6B35),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    _unreadNotificationCount > 99
+                        ? '99+'
+                        : _unreadNotificationCount.toString(),
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
-    _refreshNotificationCount();
   }
 
-  // Helper method to build custom navigation icons
+  // Build search field
+  Widget _buildSearchField() {
+    String hintText = 'Find Activities';
+    if (_userProfile?.societyName.isNotEmpty == true) {
+      hintText = 'Find activities in ${_userProfile!.societyName}';
+    }
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: AppTextStyles.bodyMedium(
+            context,
+          ).copyWith(color: Colors.grey),
+          prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
+                  onPressed: () => setState(() {
+                    _searchQuery = '';
+                    _searchController.clear();
+                  }),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
+          ),
+        ),
+        style: AppTextStyles.bodyMedium(context),
+      ),
+    );
+  }
+
+  // Build section title
+  Widget _buildSectionTitle() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'Explore Activities',
+          style: AppTextStyles.titleLarge(
+            context,
+          ).copyWith(color: Colors.black87),
+        ),
+      ),
+    );
+  }
+
+  // Build main content
+  Widget _buildContent() {
+    if (_isLoading) return _buildLoadingWidget();
+    if (_errorMessage != null) return _buildErrorWidget();
+    if (_filteredActivities.isEmpty) return _buildEmptyWidget();
+
+    return Column(
+      children: _filteredActivities
+          .map(
+            (activity) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: CompactActivityCard(
+                activity: activity,
+                onTap: () => _navigateToActivityDetail(activity),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  // Build loading widget
+  Widget _buildLoadingWidget() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          const CircularProgressIndicator(color: Color(0xFFFF6B35)),
+          const SizedBox(height: 16),
+          Text(
+            'Loading activities...',
+            style: AppTextStyles.bodyMedium(
+              context,
+            ).copyWith(color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build error widget
+  Widget _buildErrorWidget() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(
+            'Something went wrong',
+            style: AppTextStyles.titleLarge(
+              context,
+            ).copyWith(color: Colors.grey),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _errorMessage!,
+            style: AppTextStyles.bodyMedium(
+              context,
+            ).copyWith(color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadActivityData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF6B35),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: Text(
+              'Try Again',
+              style: AppTextStyles.titleMedium(
+                context,
+              ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build empty widget
+  Widget _buildEmptyWidget() {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        children: [
+          const Icon(Icons.search_off, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(
+            _searchQuery.isEmpty
+                ? 'No activities available'
+                : 'No activities found',
+            style: AppTextStyles.titleLarge(
+              context,
+            ).copyWith(color: Colors.grey),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _searchQuery.isEmpty
+                ? 'Check back later for new activities'
+                : 'Try searching with different keywords',
+            style: AppTextStyles.bodyMedium(
+              context,
+            ).copyWith(color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Build bottom navigation bar
   Widget _buildBottomNavigationBar() {
     return Container(
-      height: 80, // Fixed height for the entire navigation bar
+      height: 80,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: Stack(
         children: [
-          // Custom navigation row
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -323,14 +617,13 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
               ],
             ),
           ),
-          // Animated indicator line
           AnimatedBuilder(
             animation: _slideAnimation,
             builder: (context, child) {
-              double screenWidth = MediaQuery.of(context).size.width;
-              double tabWidth = screenWidth / 4;
-              double lineWidth = 32;
-              double currentPosition = _slideAnimation.value;
+              final screenWidth = MediaQuery.of(context).size.width;
+              final tabWidth = screenWidth / 4;
+              const lineWidth = 32.0;
+              final currentPosition = _slideAnimation.value;
               return Positioned(
                 bottom: 0,
                 left: (tabWidth * currentPosition) + (tabWidth - lineWidth) / 2,
@@ -338,7 +631,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                   width: lineWidth,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Color(0xFFFF6B35),
+                    color: const Color(0xFFFF6B35),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -350,343 +643,39 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  // Custom navigation item builder
+  // Build custom navigation item
   Widget _buildCustomNavItem(String assetPath, int index) {
-    bool isSelected = selectedIndex == index;
-    Color iconColor = isSelected
+    final isSelected = _selectedIndex == index;
+    final iconColor = isSelected
         ? AppColors.primaryOrange
-        : Color(0xFF433C39).withOpacity(0.5);
+        : const Color(0xFF433C39).withOpacity(0.5);
 
     return Expanded(
       child: GestureDetector(
         onTap: () => _onBottomNavTapped(index),
         behavior: HitTestBehavior.translucent,
-        child: Container(
-          height: 70, // Full height of nav bar
+        child: SizedBox(
+          height: 70,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Top spacing
-              SizedBox(height: 5),
-              // Icon
+              const SizedBox(height: 5),
               SvgPicture.asset(
                 assetPath,
                 width: 32,
                 height: 32,
                 colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
               ),
-              // Bottom spacing (accounting for the 4px indicator line)
-              SizedBox(height: 23), // 15 + 4 + 4 = 23 for visual balance
+              const SizedBox(height: 23),
             ],
           ),
         ),
       ),
     );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
-      body: selectedIndex == 0 ? _buildHomePage() : _pages[selectedIndex],
-      bottomNavigationBar: _buildBottomNavigationBar(),
-    );
-  }
-
-  Widget _buildHomePage() {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        automaticallyImplyLeading: false,
-        elevation: 0,
-        title: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // User greeting
-                  isLoadingUserProfile
-                      ? Container(
-                          width: 80,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Colors.grey,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        )
-                      : Text(
-                          'Hi, $userName!',
-                          style: GoogleFonts.poetsenOne(
-                            textStyle: const TextStyle(
-                              fontSize: 24,
-                              color: AppColors.primaryOrange,
-                            ),
-                          ),
-                        ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Notification icon with badge
-          Stack(
-            children: [
-              IconButton(
-                icon: SvgPicture.asset(
-                  'assets/App_icons/iconBell.svg',
-                  width: 24,
-                  height: 24,
-                  colorFilter: ColorFilter.mode(
-                    AppColors.darkElements,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                onPressed: _navigateToNotifications,
-              ),
-              // Badge for unread notifications
-              if (unreadNotificationCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFFF6B35),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      unreadNotificationCount > 99
-                          ? '99+'
-                          : unreadNotificationCount.toString(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await Future.wait([
-            _loadActivityData(), // Updated method name
-            _loadUserProfile(),
-            _refreshNotificationCount(),
-          ]);
-        },
-        child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              _buildSearchField(),
-              if (searchQuery.isEmpty &&
-                  !isLoading &&
-                  activityData.isNotEmpty) // Updated variable name
-                _buildSectionTitle(),
-              SizedBox(height: 8),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: _buildContent(),
-              ),
-              SizedBox(height: 100),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchField() {
-    // Generate dynamic hint text based on user profile
-    String hintText = 'Find Activities';
-    if (userProfile != null && userProfile!.societyName.isNotEmpty) {
-      hintText = 'Find activities in ${userProfile!.societyName}';
-    }
-
-    return Container(
-      margin: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: searchController,
-        onChanged: (value) => setState(() => searchQuery = value),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
-          suffixIcon: searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey, size: 18),
-                  onPressed: () => setState(() {
-                    searchQuery = '';
-                    searchController.clear();
-                  }),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Explore Activities',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    if (isLoading) return _buildLoadingWidget();
-    if (errorMessage != null) return _buildErrorWidget();
-    if (filteredActivities.isEmpty)
-      return _buildEmptyWidget(); // Updated variable name
-
-    return Column(
-      children:
-          filteredActivities // Updated variable name
-              .map(
-                (activity) => Padding(
-                  // Updated parameter name
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: CompactActivityCard(
-                    // Updated widget name
-                    activity: activity, // Updated parameter name
-                    onTap: () => _navigateToActivityDetail(
-                      activity,
-                    ), // Updated method call
-                  ),
-                ),
-              )
-              .toList(),
-    );
-  }
-
-  Widget _buildLoadingWidget() {
-    return Container(
-      padding: EdgeInsets.all(40),
-      child: Column(
-        children: [
-          CircularProgressIndicator(color: Color(0xFFFF6B35)),
-          SizedBox(height: 16),
-          Text('Loading activities...', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Container(
-      padding: EdgeInsets.all(40),
-      child: Column(
-        children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red),
-          SizedBox(height: 16),
-          Text(
-            'Something went wrong',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            errorMessage!,
-            style: TextStyle(color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _loadActivityData, // Updated method name
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF6B35),
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
-            child: Text(
-              'Try Again',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyWidget() {
-    return Container(
-      padding: EdgeInsets.all(40),
-      child: Column(
-        children: [
-          Icon(Icons.search_off, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            searchQuery.isEmpty
-                ? 'No activities available'
-                : 'No activities found',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            searchQuery.isEmpty
-                ? 'Check back later for new activities'
-                : 'Try searching with different keywords',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    _slideController.dispose();
-    super.dispose();
   }
 }
 
-// Updated CompactActivityCard widget for the new Activity model
+// Compact Activity Card Widget
 class CompactActivityCard extends StatelessWidget {
   final Activity activity;
   final VoidCallback onTap;
@@ -701,219 +690,188 @@ class CompactActivityCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Image container
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.40,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    bottomLeft: Radius.circular(12),
+                  ),
+                  child: activity.bannerImageUrl.isNotEmpty
+                      ? Image.network(
+                          activity.bannerImageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildPlaceholderImage(),
+                        )
+                      : _buildPlaceholderImage(),
                 ),
-              ],
-            ),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Image container that touches all borders (top, left, bottom)
-                  Container(
-                    width: MediaQuery.of(context).size.width * 0.40,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        bottomLeft: Radius.circular(12),
-                      ),
-                      child: activity.bannerImageUrl.isNotEmpty
-                          ? Image.network(
-                              activity.bannerImageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildPlaceholderImage(),
-                            )
-                          : _buildPlaceholderImage(),
-                    ),
-                  ),
-
-                  // Right side content with padding
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Top content group
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          activity.name,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black87,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Text(
-                                          ' - ${activity.batchName}',
-                                          style: TextStyle(
-                                            fontSize: 17,
-                                            color: Colors.black87,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.person,
-                                    size: 16,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Age: ${activity.ageRange.isNotEmpty ? activity.ageRange : 'All Ages'}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.location_on,
-                                    size: 16,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      activity.venue.isNotEmpty
-                                          ? activity.venue
-                                          : activity.society,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Text(
-                                    '₹ ${_formatPrice(activity.priceDisplay)}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.primaryOrange,
-                                    ),
-                                  ),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    '/${activity.paymentType}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: AppColors.primaryOrange,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-
-                          // Bottom content - View Details button (full width)
-                          Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: SizedBox(
-                              width: double.infinity, // Full width button
-                              child: OutlinedButton(
-                                onPressed: activity.isActive ? onTap : null,
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: activity.isActive
-                                        ? Color(0xFFFF6B35)
-                                        : Colors.grey,
-                                    width: 1.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                child: Text(
-                                  activity.isActive
-                                      ? 'View Details'
-                                      : 'Not Available',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: activity.isActive
-                                        ? Color(0xFFFF6B35)
-                                        : Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
               ),
-            ),
+              // Content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildActivityInfo(context),
+                      _buildActionButton(context),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 10),
-        ],
+        ),
       ),
     );
   }
 
-  String _formatPrice(String priceDisplay) {
-    // Remove ₹ symbol if it exists and any extra formatting
-    String cleanPrice = priceDisplay
-        .replaceAll('₹', '')
-        .replaceAll('Rs.', '')
-        .trim();
-    // Extract just the number part
-    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
-    if (numberMatch != null) {
-      return numberMatch.group(0) ?? priceDisplay;
-    }
-    return cleanPrice;
+  // Build activity information section
+  Widget _buildActivityInfo(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Activity name and batch
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                activity.name,
+                style: AppTextStyles.titleMedium(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w700, color: Colors.black87),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (activity.batchName.isNotEmpty)
+              Text(
+                ' - ${activity.batchName}',
+                style: AppTextStyles.titleMedium(
+                  context,
+                ).copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Age range
+        Row(
+          children: [
+            const Icon(Icons.person, size: 16, color: Colors.grey),
+            const SizedBox(width: 4),
+            Text(
+              'Age: ${activity.ageRange.isNotEmpty ? activity.ageRange : 'All Ages'}',
+              style: AppTextStyles.bodySmall(
+                context,
+              ).copyWith(color: Colors.grey),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // Location
+        Row(
+          children: [
+            const Icon(Icons.location_on, size: 16, color: Colors.grey),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                activity.venue.isNotEmpty ? activity.venue : activity.society,
+                style: AppTextStyles.bodySmall(
+                  context,
+                ).copyWith(color: Colors.grey),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Price
+        Row(
+          children: [
+            Text(
+              '₹ ${_formatPrice(activity.priceDisplay)}',
+              style: AppTextStyles.titleMedium(context).copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryOrange,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              '/${activity.paymentType}',
+              style: AppTextStyles.titleMedium(
+                context,
+              ).copyWith(color: AppColors.primaryOrange),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
+  // Build action button
+  Widget _buildActionButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton(
+          onPressed: activity.isActive ? onTap : null,
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(
+              color: activity.isActive ? const Color(0xFFFF6B35) : Colors.grey,
+              width: 1.5,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ),
+          child: Text(
+            activity.isActive ? 'View Details' : 'Not Available',
+            style: AppTextStyles.bodySmall(context).copyWith(
+              color: activity.isActive ? const Color(0xFFFF6B35) : Colors.grey,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Format price string
+  String _formatPrice(String priceDisplay) {
+    final cleanPrice = priceDisplay.replaceAll(RegExp(r'[₹Rs.]'), '').trim();
+    final numberMatch = RegExp(r'[\d,]+').firstMatch(cleanPrice);
+    return numberMatch?.group(0) ?? cleanPrice;
+  }
+
+  // Build placeholder image
   Widget _buildPlaceholderImage() {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(12),
           bottomLeft: Radius.circular(12),
         ),
@@ -921,8 +879,8 @@ class CompactActivityCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFF6B35).withOpacity(0.1),
-            Color(0xFFFF6B35).withOpacity(0.05),
+            const Color(0xFFFF6B35).withOpacity(0.1),
+            const Color(0xFFFF6B35).withOpacity(0.05),
           ],
         ),
       ),
@@ -930,12 +888,13 @@ class CompactActivityCard extends StatelessWidget {
         child: Icon(
           _getActivityIcon(activity.category),
           size: 36,
-          color: Color(0xFFFF6B35).withOpacity(0.7),
+          color: const Color(0xFFFF6B35).withOpacity(0.7),
         ),
       ),
     );
   }
 
+  // Get activity icon based on category
   IconData _getActivityIcon(String category) {
     switch (category.toLowerCase()) {
       case 'sports & fitness':
