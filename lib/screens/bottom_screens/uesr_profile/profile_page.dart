@@ -33,14 +33,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _loadChildren();
   }
 
-  Future<void> _loadUserProfile() async {
+  Future<void> _loadUserProfile({bool forceRefresh = false}) async {
     try {
       setState(() {
         isLoading = true;
         errorMessage = null;
       });
 
-      final profile = await GetUserProfileService.getUserProfile();
+      final profile = await GetUserProfileService.getUserProfile(
+        forceRefresh: forceRefresh,
+      );
 
       setState(() {
         userProfile = profile;
@@ -61,7 +63,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             action: SnackBarAction(
               label: 'Retry',
               textColor: Colors.white,
-              onPressed: _loadUserProfile,
+              onPressed: () => _loadUserProfile(forceRefresh: true),
             ),
           ),
         );
@@ -270,18 +272,53 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   String _getAddress() {
-    if (userProfile?.societyName.isNotEmpty == true) {
-      // Capitalize each word in the name
-      return userProfile!.societyName
-          .split(' ')
-          .map(
-            (word) => word.isNotEmpty
-                ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-                : '',
-          )
-          .join(' ');
+    if (userProfile == null) return 'SOCIETY NAME';
+
+    // Handle different residence types
+    switch (userProfile!.residenceType) {
+      case 'society':
+        // If society name is available, use it; otherwise fallback to society ID info
+        if (userProfile!.societyName.isNotEmpty) {
+          return _capitalizeWords(userProfile!.societyName);
+        } else if (userProfile!.societyId != null &&
+            userProfile!.societyId! > 0) {
+          return 'Society ID: ${userProfile!.societyId}';
+        }
+        return 'Society Resident';
+
+      case 'society_other':
+        if (userProfile!.societyName.isNotEmpty) {
+          return _capitalizeWords(userProfile!.societyName);
+        }
+        return 'Other Society';
+
+      case 'individual':
+        if (userProfile!.address?.isNotEmpty == true) {
+          return _capitalizeWords(userProfile!.address!);
+        }
+        return 'Individual Residence';
+
+      default:
+        if (userProfile!.societyName.isNotEmpty) {
+          return _capitalizeWords(userProfile!.societyName);
+        } else if (userProfile!.address?.isNotEmpty == true) {
+          return _capitalizeWords(userProfile!.address!);
+        }
+        return 'Location not set';
     }
-    return 'SOCIETY NAME';
+  }
+
+  String _capitalizeWords(String text) {
+    if (text.isEmpty) return text;
+
+    return text
+        .split(' ')
+        .map(
+          (word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+              : '',
+        )
+        .join(' ');
   }
 
   String _formatDate(String dateString) {
@@ -609,13 +646,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
               const SizedBox(height: 6),
 
               // Location Row
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.location_on, size: 16, color: Color(0xFF718096)),
-                  SizedBox(width: 6),
-                  Text(
-                    'Tata Primanti',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF4A5568)),
+                  const Icon(
+                    Icons.location_on,
+                    size: 16,
+                    color: Color(0xFF718096),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _getAddress(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF4A5568),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ],
               ),

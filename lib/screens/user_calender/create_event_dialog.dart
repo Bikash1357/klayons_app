@@ -86,9 +86,10 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
             children: [
               Text(
                 'Add Custom Activity',
-                style: AppTextStyles.titleLarge(
-                  context,
-                ).copyWith(color: Colors.orange, fontWeight: FontWeight.bold),
+                style: AppTextStyles.titleLarge(context).copyWith(
+                  color: AppColors.primaryOrange,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               SizedBox(height: 20),
 
@@ -119,12 +120,12 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                             ),
                             decoration: BoxDecoration(
                               color: _selectedChild == child.name
-                                  ? Colors.orange.shade50
+                                  ? AppColors.primaryOrange
                                   : Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: _selectedChild == child.name
-                                    ? Colors.orange
+                                    ? AppColors.primaryOrange
                                     : Colors.grey.shade300,
                                 width: _selectedChild == child.name ? 2 : 1,
                               ),
@@ -133,7 +134,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               child.name,
                               style: AppTextStyles.bodyMedium(context).copyWith(
                                 color: _selectedChild == child.name
-                                    ? Colors.orange.shade700
+                                    ? Colors.white
                                     : Colors.grey.shade700,
                                 fontWeight: _selectedChild == child.name
                                     ? FontWeight.w600
@@ -159,7 +160,10 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.orange, width: 2),
+                    borderSide: BorderSide(
+                      color: AppColors.primaryOrange,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -176,7 +180,10 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.orange, width: 2),
+                    borderSide: BorderSide(
+                      color: AppColors.primaryOrange,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -233,7 +240,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               color: Colors.grey.shade600,
                             ),
                             SizedBox(width: 8),
-                            Flexible(
+                            Expanded(
                               child: Text(
                                 _neverStops
                                     ? 'Never Stops'
@@ -334,7 +341,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isSelected
-                            ? Colors.orange
+                            ? AppColors.primaryOrange
                             : Colors.grey.shade200,
                       ),
                       child: Center(
@@ -378,7 +385,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     child: ElevatedButton(
                       onPressed: _createEvent,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
+                        backgroundColor: AppColors.primaryOrange,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -430,7 +437,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       child: Theme(
                         data: Theme.of(context).copyWith(
                           colorScheme: ColorScheme.light(
-                            primary: Colors.orange,
+                            primary: AppColors.primaryOrange,
                           ),
                         ),
                         child: CalendarDatePicker(
@@ -445,7 +452,10 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     ),
                   ],
                 ),
+
+                // Replace the actions section in your end date dialog with this code:
                 actions: [
+                  // Cancel button
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop(); // Cancel
@@ -457,25 +467,66 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ).copyWith(color: Colors.grey.shade600),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).pop(tempPickedDate); // Save selected date
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  // Buttons row with fixed spacing
+                  Row(
+                    children: [
+                      // Never Stop button - fixed to left with margin of 2
+                      Container(
+                        margin: EdgeInsets.only(left: 2),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop({'action': 'never_stop'});
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOrange,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Text(
+                            'Never Stop',
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      'Save',
-                      style: AppTextStyles.bodyMedium(context).copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                      // Spacer to push Save button to the right
+                      Spacer(),
+                      // Save button - fixed to right with margin of 2
+                      Container(
+                        margin: EdgeInsets.only(right: 2),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                            ).pop({'action': 'save', 'date': tempPickedDate});
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryOrange,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Text(
+                            'Save',
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               );
@@ -516,7 +567,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       child: Theme(
                         data: Theme.of(context).copyWith(
                           colorScheme: ColorScheme.light(
-                            primary: Colors.orange,
+                            primary: AppColors.primaryOrange,
                           ),
                         ),
                         child: CalendarDatePicker(
@@ -531,6 +582,8 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     ),
                   ],
                 ),
+
+                // Replace the actions section in your end date dialog with this code:
                 actions: [
                   // Cancel button
                   TextButton(
@@ -544,47 +597,67 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ).copyWith(color: Colors.grey.shade600),
                     ),
                   ),
-                  // Save button
+                  // Row with Never Stop and Save buttons with proper spacing
                   Row(
                     children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop({'action': 'never_stop'});
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(255, 152, 0, 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Set as Never Stop',
-                          style: AppTextStyles.bodyMedium(context).copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                      // Never Stop button - aligned to left with margin
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          margin: EdgeInsets.only(left: 2, right: 6),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(
+                                context,
+                              ).pop({'action': 'never_stop'});
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color.fromRGBO(
+                                255,
+                                152,
+                                0,
+                                1,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              'Never Stop',
+                              style: AppTextStyles.bodyMedium(context).copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-
-                      SizedBox(width: 40),
-
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(
-                            context,
-                          ).pop({'action': 'save', 'date': tempPickedDate});
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Save',
-                          style: AppTextStyles.bodyMedium(context).copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                      // Save button - aligned to right with margin
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          margin: EdgeInsets.only(left: 6, right: 2),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(
+                                context,
+                              ).pop({'action': 'save', 'date': tempPickedDate});
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryOrange,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Text(
+                              'Save',
+                              style: AppTextStyles.bodyMedium(context).copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -621,9 +694,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
           : (_endTime ?? TimeOfDay(hour: 18, minute: 0)),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(
-            context,
-          ).copyWith(colorScheme: ColorScheme.light(primary: Colors.orange)),
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(primary: AppColors.primaryOrange),
+          ),
           child: child!,
         );
       },
@@ -693,7 +766,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       startTime: startDateTime,
       endTime: endDateTime,
       recurrence: recurrence,
-      color: Colors.orange,
+      color: AppColors.primaryOrange,
       childName: _selectedChild, // Add this line to pass selected child name
     );
 

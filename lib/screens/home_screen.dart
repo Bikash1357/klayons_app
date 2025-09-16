@@ -351,7 +351,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
               width: 80,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.grey,
+                color: Colors.white60,
                 borderRadius: BorderRadius.circular(8),
               ),
             )
@@ -467,9 +467,11 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         alignment: Alignment.centerLeft,
         child: Text(
           'Explore Activities',
-          style: AppTextStyles.titleLarge(
-            context,
-          ).copyWith(letterSpacing: 0.5, color: Colors.black87),
+          style: AppTextStyles.titleMedium(context).copyWith(
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.01,
+            color: Colors.black87,
+          ),
         ),
       ),
     );
@@ -757,20 +759,16 @@ class CompactActivityCard extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                activity.name,
+                activity.batchName.isNotEmpty
+                    ? '${activity.name} - ${activity.batchName}'
+                    : activity.name,
                 style: AppTextStyles.titleMedium(
                   context,
                 ).copyWith(fontWeight: FontWeight.w700, color: Colors.black87),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
-            if (activity.batchName.isNotEmpty)
-              Text(
-                ' - ${activity.batchName}',
-                style: AppTextStyles.titleMedium(
-                  context,
-                ).copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
-                overflow: TextOverflow.ellipsis,
-              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -816,11 +814,15 @@ class CompactActivityCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 5),
-            Text(
-              '/${activity.paymentType}',
-              style: AppTextStyles.titleMedium(
-                context,
-              ).copyWith(color: AppColors.primaryOrange),
+            Flexible(
+              child: Text(
+                '/${activity.paymentType}',
+                style: AppTextStyles.titleMedium(
+                  context,
+                ).copyWith(color: AppColors.primaryOrange),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
           ],
         ),
