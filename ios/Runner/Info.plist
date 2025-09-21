@@ -2,16 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- Notification permissions -->
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>remote-notification</string>
-        <string>background-fetch</string>
-    </array>
-
-    <!-- Optional: For local notifications -->
-    <key>CFBundleDisplayName</key>
-    <string>Klayons</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>This app needs access to your location to auto-fill your address and provide location-based services.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

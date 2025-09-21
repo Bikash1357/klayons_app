@@ -36,15 +36,17 @@ class Event {
 
   static Event fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'],
-      title: json['title'],
-      address: json['address'],
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      address: json['address'] ?? '',
       startTime: DateTime.parse(json['startTime']),
       endTime: DateTime.parse(json['endTime']),
       recurrence: json['recurrence'] != null
           ? RecurrenceRule.fromJson(json['recurrence'])
           : null,
-      color: Color(json['color'] ?? Colors.orange.value),
+      color: json.containsKey('color') && json['color'] != null
+          ? Color(json['color'])
+          : Colors.orange,
       childName: json['childName'],
     );
   }
@@ -67,12 +69,40 @@ class RecurrenceRule {
     this.occurrences,
   });
 
+  static RecurrenceType _recurrenceTypeFromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'daily':
+        return RecurrenceType.daily;
+      case 'weekly':
+        return RecurrenceType.weekly;
+      case 'monthly':
+        return RecurrenceType.monthly;
+      case 'yearly':
+        return RecurrenceType.yearly;
+      default:
+        throw Exception('Unknown RecurrenceType: $value');
+    }
+  }
+
+  static RecurrenceEnd _recurrenceEndFromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'never':
+        return RecurrenceEnd.never;
+      case 'ondate':
+        return RecurrenceEnd.onDate;
+      case 'after':
+        return RecurrenceEnd.after;
+      default:
+        throw Exception('Unknown RecurrenceEnd: $value');
+    }
+  }
+
   Map<String, dynamic> toJson() {
     return {
-      'type': type.index,
+      'type': type.toString().split('.').last, // 'weekly' etc.
       'interval': interval,
       'daysOfWeek': daysOfWeek,
-      'endRule': endRule.index,
+      'endRule': endRule.toString().split('.').last, // 'onDate' etc.
       'endDate': endDate?.toIso8601String(),
       'occurrences': occurrences,
     };
@@ -80,12 +110,15 @@ class RecurrenceRule {
 
   static RecurrenceRule fromJson(Map<String, dynamic> json) {
     return RecurrenceRule(
-      type: RecurrenceType.values[json['type']],
+      type: _recurrenceTypeFromString(json['type']),
       interval: json['interval'],
       daysOfWeek: List<int>.from(json['daysOfWeek']),
-      endRule: RecurrenceEnd.values[json['endRule']],
+      endRule: _recurrenceEndFromString(json['endRule']),
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
-      occurrences: json['occurrences'],
+      occurrences:
+          json.containsKey('occurrences') && json['occurrences'] != null
+          ? json['occurrences']
+          : null,
     );
   }
 }

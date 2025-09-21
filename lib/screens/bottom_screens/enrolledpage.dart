@@ -68,7 +68,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${enrollment.childName} has been unenrolled from ${enrollment.activityName}',
+                '${enrollment.childName} has been unenrolled from ${enrollment.activityName} ',
               ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,

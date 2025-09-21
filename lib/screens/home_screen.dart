@@ -1,16 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/notification.dart';
-import 'package:klayons/services/notification/notification_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import '../services/UserProfileServices/userProfileModels.dart';
 import '../services/activity/activities_batchServices/allActivityServices.dart';
 import '../services/UserProfileServices/get_userprofile_service.dart';
-import '../services/notification/local_notification_service.dart';
 import '../utils/colour.dart';
 import 'activity_details_page.dart';
 import 'user_calender/calander.dart';
@@ -82,13 +78,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   // Load all initial data
   Future<void> _loadInitialData() async {
-    await NotificationService.initialize();
-    await Future.wait([
-      _loadActivityData(),
-      _loadUserProfile(),
-      _loadNotificationCount(),
-      _requestNotificationPermission(),
-    ]);
+    await Future.wait([_loadActivityData(), _loadUserProfile()]);
   }
 
   // Load activity data
@@ -145,318 +135,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
   }
 
-  // Load notification count
-  Future<void> _loadNotificationCount() async {
-    if (_isLoadingNotifications) return;
-
-    setState(() => _isLoadingNotifications = true);
-
-    try {
-      final announcements = await NotificationService.getAnnouncements();
-      final unreadCount = announcements
-          .where((announcement) => announcement.isUnread)
-          .length;
-
-      if (mounted) {
-        setState(() {
-          _unreadNotificationCount = unreadCount;
-          _isLoadingNotifications = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingNotifications = false);
-      }
-    }
-  }
-
-  // Request notification permission
-  Future<void> _requestNotificationPermission() async {
-    try {
-      // Use the enhanced service to check permissions more reliably
-      final hasPermission = await NotificationService.areNotificationsEnabled();
-
-      if (!hasPermission && mounted) {
-        _showPermissionDialog();
-      }
-    } catch (e) {
-      print('Error checking notification permissions: $e');
-    }
-  }
-
   // Show permission dialog
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(
-              Icons.notifications_active,
-              color: AppColors.primaryOrange,
-              size: 28,
-            ),
-            SizedBox(width: 12),
-            Text(
-              'Enable Notifications',
-              style: AppTextStyles.titleLarge(
-                context,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Stay updated with:',
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(fontWeight: FontWeight.w500),
-            ),
-            SizedBox(height: 8),
-            _buildPermissionBenefit('📢', 'Activity announcements'),
-            _buildPermissionBenefit('📅', 'Schedule updates'),
-            _buildPermissionBenefit('🎯', 'Important reminders'),
-            _buildPermissionBenefit('🆕', 'New activity alerts'),
-            SizedBox(height: 16),
-            Text(
-              'Tap "Enable" to allow notifications from Klayons.',
-              style: AppTextStyles.bodySmall(
-                context,
-              ).copyWith(color: Colors.grey[600], fontStyle: FontStyle.italic),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text(
-              'Not Now',
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(color: Colors.grey[600]),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await _handleNotificationEnable();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: Text(
-              'Enable',
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleNotificationEnable() async {
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => Center(
-          child: Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.primaryOrange),
-                SizedBox(height: 16),
-                Text(
-                  'Enabling notifications...',
-                  style: AppTextStyles.bodyMedium(context),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      // First try to request permission directly
-      final permissionGranted =
-          await NotificationService.requestNotificationPermission();
-
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-
-      if (permissionGranted) {
-        // Success - show confirmation and test notification
-        _showNotificationSuccessMessage();
-        await NotificationService.showTestNotification();
-      } else {
-        // Permission denied or needs manual enabling - show settings dialog
-        _showSettingsDialog();
-      }
-    } catch (e) {
-      // Close loading dialog if still open
-      if (mounted) Navigator.pop(context);
-
-      print('Error handling notification enable: $e');
-      _showSettingsDialog(); // Fallback to settings
-    }
-  }
-
-  void _showSettingsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.settings, color: AppColors.primaryOrange),
-            SizedBox(width: 12),
-            Text(
-              'Enable in Settings',
-              style: AppTextStyles.titleMedium(
-                context,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              Platform.isIOS
-                  ? 'To receive notifications:\n\n1. Tap "Open Settings" below\n2. Find "Klayons" app\n3. Tap "Notifications"\n4. Turn on "Allow Notifications"'
-                  : 'To receive notifications:\n\n1. Tap "Open Settings" below\n2. Find "Klayons" in the list\n3. Turn on "Notifications"',
-              style: AppTextStyles.bodyMedium(context),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(color: Colors.grey[600]),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final opened = await NotificationService.openAppSettings();
-
-              if (opened && mounted) {
-                // Show a toast message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Return to Klayons after enabling notifications',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: AppColors.primaryOrange,
-                    duration: Duration(seconds: 4),
-                    action: SnackBarAction(
-                      label: 'OK',
-                      textColor: Colors.white,
-                      onPressed: () {},
-                    ),
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryOrange,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Open Settings',
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Build permission benefit item
-  Widget _buildPermissionBenefit(String emoji, String text) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Text(emoji, style: TextStyle(fontSize: 16)),
-          SizedBox(width: 12),
-          Expanded(child: Text(text, style: AppTextStyles.bodyMedium(context))),
-        ],
-      ),
-    );
-  }
-
-  void _showNotificationSuccessMessage() {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Notifications enabled successfully!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-    }
-  }
-
-  void _checkNotificationPermissionsOnResume() async {
-    // Call this when app comes back to foreground
-    final hasPermission = await NotificationService.areNotificationsEnabled();
-    if (hasPermission) {
-      // Refresh notification count if permissions are now enabled
-      _loadNotificationCount();
-    }
-  }
-
-  void _initializeNotificationService() async {
-    await NotificationService.initialize();
-    await NotificationService.createNotificationChannels();
-  }
 
   // Show error snackbar
   void _showErrorSnackBar() {
@@ -531,16 +210,11 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       context,
       MaterialPageRoute(builder: (context) => NotificationsPage()),
     );
-    _loadNotificationCount();
   }
 
   // Refresh all data
   Future<void> _refreshData() async {
-    await Future.wait([
-      _loadActivityData(),
-      _loadUserProfile(),
-      _loadNotificationCount(),
-    ]);
+    await Future.wait([_loadActivityData(), _loadUserProfile()]);
   }
 
   @override
@@ -710,7 +384,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           'Explore Activities',
           style: AppTextStyles.titleMedium(context).copyWith(
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.1,
+            letterSpacing: 0.01,
             color: Colors.black87,
           ),
         ),
@@ -1003,9 +677,7 @@ class CompactActivityCard extends StatelessWidget {
                 activity.batchName.isNotEmpty
                     ? '${activity.name} - ${activity.batchName}'
                     : activity.name,
-                style: AppTextStyles.titleMedium(
-                  context,
-                ).copyWith(color: Colors.black87),
+                style: AppTextStyles.titleMedium(context),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),

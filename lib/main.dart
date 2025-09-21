@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:klayons/services/notification/notification_service.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:klayons/auth/login_screen.dart';
 import 'package:klayons/auth/signupPage.dart';
@@ -14,10 +13,6 @@ import 'package:klayons/services/get_societyname.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize notification service early
-  await NotificationService.initialize();
-  await NotificationService.createNotificationChannels();
 
   runApp(KlayonsApp());
 }

@@ -860,21 +860,13 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                   children: [
                     Text(
                       activity.name,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                      style: AppTextStyles.titleLarge(context),
                     ),
                     SizedBox(height: 8),
                     if (activity.subcategory.isNotEmpty) ...[
                       Text(
                         ' ${activity.batchName}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: AppTextStyles.titleLarge(context),
                       ),
                       SizedBox(width: 8),
                       Container(
@@ -913,7 +905,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 Row(
                   children: [
                     Text(
-                      'â‚¹${activity.price.toStringAsFixed(0)}',
+                      activity.price.toStringAsFixed(0),
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,

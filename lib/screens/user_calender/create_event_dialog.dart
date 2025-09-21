@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:klayons/utils/colour.dart';
 
+import '../../services/calander/post_custome_child_calender_services.dart';
 import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
 import 'event_model.dart';
@@ -101,51 +102,67 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                 ).copyWith(fontWeight: FontWeight.w500),
               ),
               SizedBox(height: 8),
-              Row(
-                children: [
-                  ...widget.children
-                      .take(2)
-                      .map(
-                        (child) => GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedChild = child.name;
-                            });
-                          },
-                          child: Container(
-                            margin: EdgeInsets.only(right: 12),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _selectedChild == child.name
-                                  ? AppColors.primaryOrange
-                                  : Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: _selectedChild == child.name
-                                    ? AppColors.primaryOrange
-                                    : Colors.grey.shade300,
-                                width: _selectedChild == child.name ? 2 : 1,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ...widget.children
+                        .take(2)
+                        .map(
+                          (child) => GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedChild = child.name.split(' ').first;
+                              });
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(right: 12),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                            ),
-                            child: Text(
-                              child.name,
-                              style: AppTextStyles.bodyMedium(context).copyWith(
-                                color: _selectedChild == child.name
-                                    ? Colors.white
-                                    : Colors.grey.shade700,
-                                fontWeight: _selectedChild == child.name
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
+                              decoration: BoxDecoration(
+                                color:
+                                    _selectedChild ==
+                                        child.name.split(' ').first
+                                    ? AppColors.primaryOrange
+                                    : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color:
+                                      _selectedChild ==
+                                          child.name.split(' ').first
+                                      ? AppColors.primaryOrange
+                                      : Colors.grey.shade300,
+                                  width:
+                                      _selectedChild ==
+                                          child.name.split(' ').first
+                                      ? 2
+                                      : 1,
+                                ),
+                              ),
+                              child: Text(
+                                child.name.split(' ').first,
+                                style: AppTextStyles.bodyMedium(context)
+                                    .copyWith(
+                                      color:
+                                          _selectedChild ==
+                                              child.name.split(' ').first
+                                          ? Colors.white
+                                          : Colors.grey.shade700,
+                                      fontWeight:
+                                          _selectedChild ==
+                                              child.name.split(' ').first
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
                               ),
                             ),
                           ),
-                        ),
-                      )
-                      .toList(),
-                ],
+                        )
+                        .toList(),
+                  ],
+                ),
               ),
               SizedBox(height: 20),
 
@@ -452,13 +469,11 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     ),
                   ],
                 ),
-
-                // Replace the actions section in your end date dialog with this code:
                 actions: [
                   // Cancel button
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pop(); // Cancel
+                      Navigator.of(context).pop(); // Returns null
                     },
                     child: Text(
                       'Cancel',
@@ -467,66 +482,30 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ).copyWith(color: Colors.grey.shade600),
                     ),
                   ),
-                  // Buttons row with fixed spacing
-                  Row(
-                    children: [
-                      // Never Stop button - fixed to left with margin of 2
-                      Container(
-                        margin: EdgeInsets.only(left: 2),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop({'action': 'never_stop'});
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryOrange,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Text(
-                            'Never Stop',
-                            style: AppTextStyles.bodyMedium(context).copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                  // Save button - returns the selected date
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(
+                        context,
+                      ).pop(tempPickedDate); // Returns DateTime
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      // Spacer to push Save button to the right
-                      Spacer(),
-                      // Save button - fixed to right with margin of 2
-                      Container(
-                        margin: EdgeInsets.only(right: 2),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(
-                              context,
-                            ).pop({'action': 'save', 'date': tempPickedDate});
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryOrange,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Text(
-                            'Save',
-                            style: AppTextStyles.bodyMedium(context).copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                    ],
+                    ),
+                    child: Text(
+                      'Save',
+                      style: AppTextStyles.bodyMedium(context).copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               );
@@ -582,8 +561,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     ),
                   ],
                 ),
-
-                // Replace the actions section in your end date dialog with this code:
                 actions: [
                   // Cancel button
                   TextButton(
@@ -612,12 +589,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               ).pop({'action': 'never_stop'});
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromRGBO(
-                                255,
-                                152,
-                                0,
-                                1,
-                              ),
+                              backgroundColor: AppColors.primaryOrange,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -716,7 +688,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
     }
   }
 
-  void _createEvent() {
+  void _createEvent() async {
     if (_titleController.text.isEmpty ||
         _startTime == null ||
         _endTime == null) {
@@ -729,7 +701,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       return;
     }
 
-    // Create DateTime objects using the selected date and times
     final DateTime startDateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -767,10 +738,45 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       endTime: endDateTime,
       recurrence: recurrence,
       color: AppColors.primaryOrange,
-      childName: _selectedChild, // Add this line to pass selected child name
+      childName: _selectedChild,
     );
 
-    widget.onEventCreated(event);
-    Navigator.of(context).pop();
+    // Show loading indicator while API is called
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // You need to get the current access token for the API.
+      // Replace this with your actual token retrieval logic.
+      String accessToken = await getAccessToken();
+
+      final createdEvent = await CustomActivityService.createCustomActivity(
+        event,
+        accessToken: accessToken,
+      );
+
+      Navigator.of(context).pop(); // Remove loading dialog
+
+      // Pass the created event back
+      widget.onEventCreated(createdEvent);
+      Navigator.of(context).pop(); // Close the create dialog
+    } catch (e) {
+      Navigator.of(context).pop(); // Remove loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create activity: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Dummy function for access token
+  Future<String> getAccessToken() async {
+    // Replace with your actual SharedPreferences/JWT fetch logic.
+    return 'auth_token';
   }
 }
