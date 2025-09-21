@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- Notification permissions -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+        <string>background-fetch</string>
+    </array>
+
+    <!-- Optional: For local notifications -->
+    <key>CFBundleDisplayName</key>
+    <string>Klayons</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app needs access to your location to auto-fill your address and provide location-based services.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app needs access to your location to auto-fill your address and provide location-based services.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -29,6 +43,11 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+    <dict>
+        <key>AddressAutoFill</key>
+        <string>Allow location access to automatically fill your address</string>
+    </dict>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>

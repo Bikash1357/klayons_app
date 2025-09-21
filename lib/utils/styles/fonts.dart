@@ -66,6 +66,7 @@ class AppTextStyles {
         maxSize: 40.0,
       ),
       fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
     );
   }
 
@@ -117,7 +118,8 @@ class AppTextStyles {
         minSize: 14.0,
         maxSize: 20.0,
       ),
-      fontWeight: FontWeight.w500,
+      //fontWeight: FontWeight.w500,
+      letterSpacing: 0.1,
     );
   }
 

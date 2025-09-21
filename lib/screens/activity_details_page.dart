@@ -1387,26 +1387,26 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      if (activity.instructor.phone.isNotEmpty) ...[
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.phone,
-                              size: 12,
-                              color: Colors.grey[500],
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              activity.instructor.phone,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      // if (activity.instructor.phone.isNotEmpty) ...[
+                      //   SizedBox(height: 4),
+                      //   Row(
+                      //     children: [
+                      //       Icon(
+                      //         Icons.phone,
+                      //         size: 12,
+                      //         color: Colors.grey[500],
+                      //       ),
+                      //       SizedBox(width: 4),
+                      //       Text(
+                      //         activity.instructor.phone,
+                      //         style: TextStyle(
+                      //           fontSize: 12,
+                      //           color: Colors.grey[600],
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ],
                     ],
                   ),
                 ),
