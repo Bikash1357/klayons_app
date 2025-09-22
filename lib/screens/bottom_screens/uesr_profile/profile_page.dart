@@ -892,7 +892,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildNoChildrenFound() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
       child: const Column(
         children: [
           Icon(Icons.child_care, size: 48, color: Color(0xFF718096)),

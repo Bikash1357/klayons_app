@@ -1,12 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Add this import for input formatters
 import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/utils/colour.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/UserProfileServices/updateUserProfileServices.dart';
 import '../../../services/UserProfileServices/userProfileModels.dart';
 import '../../../services/auth/login_service.dart';
 import '../../../services/UserProfileServices/get_userprofile_service.dart';
-import '../../../utils/styles/fonts.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -16,25 +19,50 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  // Loading states
   bool _isLoggingOut = false;
   bool _isLoading = true;
   bool _isUpdating = false;
+  bool _isVerifyingEmail = false;
+  bool _isVerifyingPhone = false;
+  bool _isVerifyingOTP = false;
 
+  // Form controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _flatController = TextEditingController();
-  final TextEditingController _societyIdController = TextEditingController();
   final TextEditingController _societyNameController = TextEditingController();
   final TextEditingController _towerController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
-  UserProfile? _userProfile;
-  String? _userAvatar;
+  // OTP controllers
+  final List<TextEditingController> _otpControllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
+  final List<FocusNode> _otpFocusNodes = List.generate(
+    6,
+    (index) => FocusNode(),
+  );
 
+  // State variables
+  UserProfile? _userProfile;
   bool _isEmailValid = true;
   bool _isPhoneValid = true;
   bool _isNameValid = true;
+  bool _showEmailOTP = false;
+  bool _showPhoneOTP = false;
+  String _pendingVerificationType = '';
+
+  // Add these new state variables to track user input
+  bool _hasEmailInput = false;
+  bool _hasPhoneInput = false;
+
+  // Constants
+  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
+  static const Duration snackBarDuration = Duration(seconds: 2);
+  static const Duration errorDuration = Duration(seconds: 3);
 
   @override
   void initState() {
@@ -44,29 +72,49 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _disposeControllers() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _flatController.dispose();
-    _societyIdController.dispose();
     _societyNameController.dispose();
     _towerController.dispose();
     _addressController.dispose();
-    super.dispose();
+
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (var focusNode in _otpFocusNodes) {
+      focusNode.dispose();
+    }
   }
 
-  bool _validateName(String name) {
-    return name.trim().length >= 2;
+  // Utility methods
+  Future<String?> _getAuthToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('auth_token');
+    } catch (e) {
+      debugPrint('Error getting auth token: $e');
+      return null;
+    }
   }
+
+  bool _validateName(String name) => name.trim().length >= 2;
 
   bool _validateEmail(String email) {
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return emailRegex.hasMatch(email);
   }
 
+  // Updated phone validation to check for exactly 10 digits
   bool _validatePhone(String phone) {
-    final phoneRegex = RegExp(r'^\+?[\d\s\-\(\)]+$');
-    return phone.length >= 10 && phoneRegex.hasMatch(phone);
+    final phoneRegex = RegExp(r'^\d{10}$'); // Exactly 10 digits
+    return phoneRegex.hasMatch(phone.trim());
   }
 
   bool get _hasSocietyInfo {
@@ -75,101 +123,84 @@ class _SettingsPageState extends State<SettingsPage> {
             (_userProfile?.societyId ?? 0) > 0);
   }
 
-  Future<void> _fetchUserProfile() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      final profile = await GetUserProfileService.getUserProfile();
-      if (profile != null) {
-        setState(() {
-          _userProfile = profile;
-          _nameController.text = profile.name ?? '';
-          _emailController.text = profile.userEmail ?? '';
-          _phoneController.text = profile.userPhone ?? '';
-          _flatController.text = profile.flatNo ?? '';
-          _societyIdController.text = (profile.societyId != 0)
-              ? profile.societyId.toString()
-              : '';
-          _societyNameController.text = profile.societyName ?? '';
-          _towerController.text = profile.tower ?? '';
-          _addressController.text = profile.address ?? '';
-          _isNameValid = profile.name.isEmpty || _validateName(profile.name);
-          _isEmailValid =
-              profile.userEmail.isEmpty || _validateEmail(profile.userEmail);
-          _isPhoneValid =
-              profile.userPhone.isEmpty || _validatePhone(profile.userPhone);
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to load profile: ${e.toString().replaceAll('Exception: ', '')}',
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+  bool get _hasEmailData {
+    return _userProfile != null && (_userProfile?.userEmail ?? '').isNotEmpty;
+  }
+
+  bool get _hasPhoneData {
+    return _userProfile != null && (_userProfile?.userPhone ?? '').isNotEmpty;
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: isError ? errorDuration : snackBarDuration,
+      ),
+    );
+  }
+
+  void _clearOTPFields() {
+    for (var controller in _otpControllers) {
+      controller.clear();
     }
   }
 
-  // Replace the _updateProfile method (around line 130-190)
-  Future<void> _updateProfile() async {
-    final nameValid =
-        _nameController.text.isEmpty || _validateName(_nameController.text);
-    final emailValid =
-        _emailController.text.isEmpty || _validateEmail(_emailController.text);
-    final phoneValid =
-        _phoneController.text.isEmpty || _validatePhone(_phoneController.text);
-    setState(() {
-      _isNameValid = nameValid;
-      _isEmailValid = emailValid;
-      _isPhoneValid = phoneValid;
-    });
+  // API methods
+  Future<void> _fetchUserProfile() async {
+    setState(() => _isLoading = true);
 
-    if (!nameValid || !emailValid || !phoneValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fix the validation errors'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isUpdating = true;
-    });
-
-    int? societyId;
-    if (_societyIdController.text.trim().isNotEmpty) {
-      societyId = int.tryParse(_societyIdController.text.trim());
-      if (societyId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please enter a valid society ID (numbers only)'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
-          ),
-        );
+    try {
+      final profile = await GetUserProfileService.getUserProfile();
+      if (profile != null && mounted) {
         setState(() {
-          _isUpdating = false;
+          _userProfile = profile;
+          _populateFormFields(profile);
+          _isLoading = false;
         });
-        return;
+      } else {
+        setState(() => _isLoading = false);
       }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showSnackBar(
+        'Failed to load profile: ${_getErrorMessage(e)}',
+        isError: true,
+      );
     }
+  }
+
+  void _populateFormFields(UserProfile profile) {
+    _nameController.text = profile.name ?? '';
+    _emailController.text = profile.userEmail ?? '';
+    _phoneController.text = profile.userPhone ?? '';
+    _flatController.text = profile.flatNo ?? '';
+    _societyNameController.text = profile.societyName ?? '';
+    _towerController.text = profile.tower ?? '';
+    _addressController.text = profile.address ?? '';
+
+    _isNameValid = profile.name.isEmpty || _validateName(profile.name);
+    _isEmailValid =
+        profile.userEmail.isEmpty || _validateEmail(profile.userEmail);
+    _isPhoneValid =
+        profile.userPhone.isEmpty || _validatePhone(profile.userPhone);
+
+    // Set initial input states based on existing data
+    _hasEmailInput = (profile.userEmail ?? '').isNotEmpty;
+    _hasPhoneInput = (profile.userPhone ?? '').isNotEmpty;
+  }
+
+  String _getErrorMessage(dynamic error) {
+    return error.toString().replaceAll('Exception: ', '');
+  }
+
+  Future<void> _updateProfile() async {
+    if (!_validateForm()) return;
+
+    setState(() => _isUpdating = true);
 
     try {
       final updatedProfile = await UpdateUserProfileService.updateUserProfile(
@@ -182,10 +213,10 @@ class _SettingsPageState extends State<SettingsPage> {
         userPhone: _phoneController.text.trim().isEmpty
             ? null
             : _phoneController.text.trim(),
-        societyId: societyId,
         societyName: _societyNameController.text.trim().isEmpty
             ? null
             : _societyNameController.text.trim(),
+        residenceType: 'society',
         tower: _towerController.text.trim().isEmpty
             ? null
             : _towerController.text.trim(),
@@ -195,87 +226,268 @@ class _SettingsPageState extends State<SettingsPage> {
         address: _addressController.text.trim().isEmpty
             ? null
             : _addressController.text.trim(),
-        residenceType: 'society',
       );
-      if (updatedProfile != null) {
-        setState(() {
-          _userProfile = updatedProfile;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
+
+      if (updatedProfile != null && mounted) {
+        setState(() => _userProfile = updatedProfile);
+        _showSnackBar('Profile updated successfully');
+
+        // Add delay to show success message
+        await Future.delayed(const Duration(seconds: 1));
+
+        // Navigate to homepage after successful update
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/user_profile_page',
+            (Route<dynamic> route) => false, // This removes all previous routes
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to update profile: ${e.toString().replaceAll('Exception: ', '')}',
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+      _showSnackBar(
+        'Failed to update profile: ${_getErrorMessage(e)}',
+        isError: true,
       );
     } finally {
-      setState(() {
-        _isUpdating = false;
-      });
+      setState(() => _isUpdating = false);
     }
+  }
+
+  bool _validateForm() {
+    final nameValid =
+        _nameController.text.isEmpty || _validateName(_nameController.text);
+    final emailValid =
+        _emailController.text.isEmpty || _validateEmail(_emailController.text);
+    final phoneValid =
+        _phoneController.text.isEmpty || _validatePhone(_phoneController.text);
+
+    setState(() {
+      _isNameValid = nameValid;
+      _isEmailValid = emailValid;
+      _isPhoneValid = phoneValid;
+    });
+
+    if (!nameValid || !emailValid || !phoneValid) {
+      _showSnackBar('Please fix the validation errors', isError: true);
+      return false;
+    }
+    return true;
   }
 
   Future<void> _performLogout() async {
-    setState(() {
-      _isLoggingOut = true;
-    });
+    setState(() => _isLoggingOut = true);
+
     try {
       final success = await LoginAuthService.logout();
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Logged out successfully'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
-          await Future.delayed(const Duration(milliseconds: 500));
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
-        }
+      if (success && mounted) {
+        _showSnackBar('Logged out successfully');
+        await Future.delayed(const Duration(milliseconds: 500));
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Logout failed. Please try again.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        _showSnackBar('Logout failed. Please try again.', isError: true);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('An error occurred during logout'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+      _showSnackBar('An error occurred during logout', isError: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoggingOut = false;
-        });
-      }
+      if (mounted) setState(() => _isLoggingOut = false);
     }
   }
 
+  Future<Map<String, dynamic>> _makeApiCall(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final token = await _getAuthToken();
+      final response = await http.post(
+        Uri.parse('$baseUrl$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+        body: json.encode(body),
+      );
+
+      debugPrint('API call to $endpoint - Status: ${response.statusCode}');
+      debugPrint('Request body: ${json.encode(body)}');
+      debugPrint('Response: ${response.body}');
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': responseData};
+      } else if (response.statusCode == 400) {
+        // Handle validation errors from API
+        String errorMessage = 'Validation error';
+        if (responseData.containsKey('message')) {
+          errorMessage = responseData['message'];
+        } else if (responseData.containsKey('error')) {
+          errorMessage = responseData['error'];
+        }
+        throw Exception(errorMessage);
+      } else if (response.statusCode == 404) {
+        throw Exception('Resource not found');
+      } else {
+        throw Exception('Request failed with status ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error in API call to $endpoint: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _linkEmail() async {
+    if (!_validateEmailInput()) return;
+
+    debugPrint('Linking email: ${_emailController.text.trim()}');
+    setState(() => _isVerifyingEmail = true);
+
+    try {
+      await _makeApiCall('/auth/link-email/', {
+        'email': _emailController.text.trim(),
+      });
+
+      setState(() {
+        _showEmailOTP = true;
+        _pendingVerificationType = 'email';
+        _clearOTPFields();
+      });
+
+      _showSnackBar('OTP sent to your email');
+
+      // Focus on first OTP field
+      if (_otpFocusNodes.isNotEmpty) {
+        _otpFocusNodes[0].requestFocus();
+      }
+    } catch (e) {
+      debugPrint('Email linking error: $e');
+      _showSnackBar(
+        'Failed to send OTP: ${_getErrorMessage(e)}',
+        isError: true,
+      );
+    } finally {
+      setState(() => _isVerifyingEmail = false);
+    }
+  }
+
+  Future<void> _linkPhone() async {
+    if (!_validatePhoneInput()) return;
+
+    setState(() => _isVerifyingPhone = true);
+
+    try {
+      await _makeApiCall('/auth/link-phone/', {
+        'phone': _phoneController.text.trim(),
+      });
+      setState(() {
+        _showPhoneOTP = true;
+        _pendingVerificationType = 'phone';
+        _clearOTPFields();
+      });
+      _showSnackBar('OTP sent to your phone');
+    } catch (e) {
+      _showSnackBar(
+        'Failed to send OTP: ${_getErrorMessage(e)}',
+        isError: true,
+      );
+    } finally {
+      setState(() => _isVerifyingPhone = false);
+    }
+  }
+
+  bool _validateEmailInput() {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showSnackBar('Please enter an email address', isError: true);
+      return false;
+    }
+    if (!_validateEmail(email)) {
+      _showSnackBar('Please enter a valid email address', isError: true);
+      return false;
+    }
+    return true;
+  }
+
+  bool _validatePhoneInput() {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) {
+      _showSnackBar('Please enter a phone number', isError: true);
+      return false;
+    }
+    if (!_validatePhone(phone)) {
+      _showSnackBar('Please enter exactly 10 digits', isError: true);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _verifyOTP() async {
+    final otp = _otpControllers.map((controller) => controller.text).join();
+    if (otp.length != 6) {
+      _showSnackBar('Please enter complete 6-digit OTP', isError: true);
+      return;
+    }
+
+    setState(() => _isVerifyingOTP = true);
+
+    try {
+      // Build request body based on verification type
+      Map<String, dynamic> requestBody = {'otp': otp};
+
+      if (_pendingVerificationType == 'email') {
+        requestBody['email'] = _emailController.text.trim();
+      } else if (_pendingVerificationType == 'phone') {
+        requestBody['phone'] = _phoneController.text.trim();
+      }
+
+      debugPrint('Sending OTP verification request: $requestBody');
+
+      final result = await _makeApiCall('/auth/verify-otp/', requestBody);
+
+      if (result['success'] == true) {
+        // Handle successful verification
+        final responseData = result['data'];
+
+        // If access token is returned, save it
+        if (responseData.containsKey('access')) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', responseData['access']);
+        }
+
+        setState(() {
+          _showEmailOTP = false;
+          _showPhoneOTP = false;
+          _pendingVerificationType = '';
+          _clearOTPFields();
+        });
+
+        // Refresh user profile to get updated data
+        await _fetchUserProfile();
+
+        _showSnackBar(
+          '${_pendingVerificationType == 'email' ? 'Email' : 'Phone'} verified successfully!',
+        );
+      }
+    } catch (e) {
+      debugPrint('OTP verification error: $e');
+      _showSnackBar(
+        'OTP verification failed: ${_getErrorMessage(e)}',
+        isError: true,
+      );
+
+      // Clear OTP fields on error so user can try again
+      _clearOTPFields();
+      if (_otpFocusNodes.isNotEmpty) {
+        _otpFocusNodes[0].requestFocus();
+      }
+    } finally {
+      setState(() => _isVerifyingOTP = false);
+    }
+  }
+
+  // UI Builder methods
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -285,13 +497,14 @@ class _SettingsPageState extends State<SettingsPage> {
     Function(String)? onChanged,
     int maxLines = 1,
     bool enabled = true,
+    List<TextInputFormatter>? inputFormatters, // Add input formatters parameter
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: enabled ? Colors.grey.shade50 : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isValid ? Colors.grey.shade300 : Colors.red,
@@ -304,20 +517,22 @@ class _SettingsPageState extends State<SettingsPage> {
             onChanged: onChanged,
             maxLines: maxLines,
             enabled: enabled,
+            inputFormatters: inputFormatters, // Apply input formatters
             style: TextStyle(
               fontSize: 16,
-              color: enabled ? Colors.black87 : Colors.grey,
+              color: enabled ? Colors.black87 : Colors.grey.shade600,
             ),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+              hintStyle: TextStyle(
+                color: enabled ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontSize: 16,
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 14,
               ),
-              filled: !enabled,
-              fillColor: enabled ? null : Colors.grey.shade100,
             ),
           ),
         ),
@@ -326,7 +541,7 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.only(top: 4, left: 4),
             child: Text(
               errorText,
-              style: TextStyle(color: Colors.red, fontSize: 12),
+              style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ),
       ],
@@ -338,11 +553,171 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.only(bottom: 16, top: 24),
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
+      ),
+    );
+  }
+
+  Widget _buildVerifyButton({
+    required String text,
+    required VoidCallback onPressed,
+    required bool isLoading,
+    Color? backgroundColor,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor ?? const Color(0xFFFF5722),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 0,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Text(
+                text,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildOTPFields() {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        const Text(
+          'Enter 6-digit OTP',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(6, (index) {
+            return Container(
+              width: 45,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300, width: 1),
+              ),
+              child: TextField(
+                controller: _otpControllers[index],
+                focusNode: _otpFocusNodes[index],
+                textAlign: TextAlign.center,
+                keyboardType: TextInputType.number,
+                maxLength: 1,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  counterText: '',
+                  contentPadding: EdgeInsets.zero,
+                ),
+                onChanged: (value) => _handleOTPInput(value, index),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _isVerifyingOTP ? null : _verifyOTP,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryOrange,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            child: _isVerifyingOTP
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    'Verify OTP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleOTPInput(String value, int index) {
+    if (value.isNotEmpty && index < 5) {
+      _otpFocusNodes[index + 1].requestFocus();
+    } else if (value.isEmpty && index > 0) {
+      _otpFocusNodes[index - 1].requestFocus();
+    }
+
+    // Auto-verify when all 6 digits are entered
+    if (index == 5 && value.isNotEmpty) {
+      final otp = _otpControllers.map((controller) => controller.text).join();
+      if (otp.length == 6) {
+        // Optional: Auto-verify after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && otp.length == 6) {
+            _verifyOTP();
+          }
+        });
+      }
+    }
+  }
+
+  Widget _buildInfoCard(String message, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(message, style: TextStyle(color: color, fontSize: 12)),
+          ),
+        ],
       ),
     );
   }
@@ -363,7 +738,7 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        title: Text(
+        title: const Text(
           'Settings',
           style: TextStyle(
             color: Colors.black87,
@@ -384,7 +759,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           onPressed: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => UserProfilePage()),
+            MaterialPageRoute(builder: (context) => const UserProfilePage()),
           ),
         ),
       ),
@@ -404,49 +779,173 @@ class _SettingsPageState extends State<SettingsPage> {
                   errorText: _isNameValid
                       ? null
                       : 'Name must be at least 2 characters',
-                  onChanged: (value) {
-                    setState(() {
-                      _isNameValid = value.isEmpty || _validateName(value);
-                    });
-                  },
+                  onChanged: (value) => setState(
+                    () => _isNameValid = value.isEmpty || _validateName(value),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _buildTextField(
-                  controller: _emailController,
-                  hint: 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                  isValid: _isEmailValid,
-                  errorText: _isEmailValid
-                      ? null
-                      : 'Please enter a valid email',
-                  onChanged: (value) {
-                    setState(() {
-                      _isEmailValid = value.isEmpty || _validateEmail(value);
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                _buildTextField(
-                  controller: _phoneController,
-                  hint: 'Enter your phone number',
-                  keyboardType: TextInputType.phone,
-                  isValid: _isPhoneValid,
-                  errorText: _isPhoneValid ? null : 'That doesn\'t look right',
-                  onChanged: (value) {
-                    setState(() {
+
+                // Dynamic email/phone layout based on existing data
+                if (_hasEmailData) ...[
+                  _buildTextField(
+                    controller: _emailController,
+                    hint: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                    isValid: _isEmailValid,
+                    errorText: _isEmailValid
+                        ? null
+                        : 'Please enter a valid email',
+                    enabled: false,
+                    onChanged: (value) => setState(
+                      () => _isEmailValid =
+                          value.isEmpty || _validateEmail(value),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    controller: _phoneController,
+                    hint: 'Enter your phone number',
+                    keyboardType: TextInputType.phone,
+                    isValid: _isPhoneValid,
+                    errorText: _isPhoneValid
+                        ? null
+                        : 'Please enter exactly 10 digits',
+                    enabled: !_hasPhoneData,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    onChanged: (value) => setState(() {
                       _isPhoneValid = value.isEmpty || _validatePhone(value);
-                    });
-                  },
-                ),
+                      _hasPhoneInput = value.trim().isNotEmpty;
+                    }),
+                  ),
+                  if (!_hasPhoneData &&
+                      !_showPhoneOTP &&
+                      _hasPhoneInput &&
+                      _isPhoneValid) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildVerifyButton(
+                        text: 'Verify Phone',
+                        onPressed: _linkPhone,
+                        isLoading: _isVerifyingPhone,
+                      ),
+                    ),
+                  ],
+                  if (_showPhoneOTP) _buildOTPFields(),
+                ] else if (_hasPhoneData) ...[
+                  _buildTextField(
+                    controller: _phoneController,
+                    hint: 'Enter your phone number',
+                    keyboardType: TextInputType.phone,
+                    isValid: _isPhoneValid,
+                    errorText: _isPhoneValid
+                        ? null
+                        : 'Please enter exactly 10 digits',
+                    enabled: false,
+                    onChanged: (value) => setState(
+                      () => _isPhoneValid =
+                          value.isEmpty || _validatePhone(value),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    controller: _emailController,
+                    hint: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                    isValid: _isEmailValid,
+                    errorText: _isEmailValid
+                        ? null
+                        : 'Please enter a valid email',
+                    enabled: !_hasEmailData,
+                    onChanged: (value) => setState(() {
+                      _isEmailValid = value.isEmpty || _validateEmail(value);
+                      _hasEmailInput = value.trim().isNotEmpty;
+                    }),
+                  ),
+                  if (!_hasEmailData &&
+                      !_showEmailOTP &&
+                      _hasEmailInput &&
+                      _isEmailValid) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildVerifyButton(
+                        text: 'Verify Email',
+                        onPressed: _linkEmail,
+                        isLoading: _isVerifyingEmail,
+                      ),
+                    ),
+                  ],
+                  if (_showEmailOTP) _buildOTPFields(),
+                ] else ...[
+                  _buildTextField(
+                    controller: _emailController,
+                    hint: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                    isValid: _isEmailValid,
+                    errorText: _isEmailValid
+                        ? null
+                        : 'Please enter a valid email',
+                    enabled: true,
+                    onChanged: (value) => setState(() {
+                      _isEmailValid = value.isEmpty || _validateEmail(value);
+                      _hasEmailInput = value.trim().isNotEmpty;
+                    }),
+                  ),
+                  if (!_showEmailOTP && _hasEmailInput && _isEmailValid) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildVerifyButton(
+                        text: 'Verify Email',
+                        onPressed: _linkEmail,
+                        isLoading: _isVerifyingEmail,
+                      ),
+                    ),
+                  ],
+                  if (_showEmailOTP) _buildOTPFields(),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    controller: _phoneController,
+                    hint: 'Enter your phone number',
+                    keyboardType: TextInputType.phone,
+                    isValid: _isPhoneValid,
+                    errorText: _isPhoneValid
+                        ? null
+                        : 'Please enter exactly 10 digits',
+                    enabled: true,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    onChanged: (value) => setState(() {
+                      _isPhoneValid = value.isEmpty || _validatePhone(value);
+                      _hasPhoneInput = value.trim().isNotEmpty;
+                    }),
+                  ),
+                  if (!_showPhoneOTP && _hasPhoneInput && _isPhoneValid) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildVerifyButton(
+                        text: 'Verify Phone',
+                        onPressed: _linkPhone,
+                        isLoading: _isVerifyingPhone,
+                      ),
+                    ),
+                  ],
+                  if (_showPhoneOTP) _buildOTPFields(),
+                ],
 
                 // Address Information Section
                 _buildSectionTitle('Address Information'),
-
                 if (_hasSocietyInfo) ...[
                   _buildTextField(
-                    controller: _addressController,
-                    hint: 'Address',
-                    maxLines: 1,
+                    controller: _societyNameController,
+                    hint: 'Society',
                     enabled: false,
                   ),
                   const SizedBox(height: 12),
@@ -456,7 +955,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: _buildTextField(
                           controller: _towerController,
                           hint: 'Tower',
-                          enabled: false,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -464,7 +962,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: _buildTextField(
                           controller: _flatController,
                           hint: 'Flat',
-                          enabled: false,
                         ),
                       ),
                     ],
@@ -473,29 +970,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildTextField(
                     controller: _addressController,
                     hint: 'Address',
-                    maxLines: 1,
-                    enabled: false,
                   ),
                 ],
 
                 const SizedBox(height: 16),
-
-                // Info message
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Text(
-                    'If you wish to change your address, please send us a mail at support@klayons.com',
-                    style: TextStyle(color: Colors.blue.shade700, fontSize: 13),
-                  ),
+                _buildInfoCard(
+                  'If you wish to change your address, please send us a mail at support@klayons.com',
+                  AppColors.primaryOrange,
                 ),
 
                 const SizedBox(height: 40),
-
                 // Save Button
                 SizedBox(
                   width: double.infinity,
@@ -520,7 +1004,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                             ),
                           )
-                        : Text(
+                        : const Text(
                             'Save Details',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
@@ -530,7 +1014,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                   ),
                 ),
-
                 const SizedBox(height: 40),
               ],
             ),

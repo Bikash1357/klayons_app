@@ -190,7 +190,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
                 // Congratulations Text
                 Text(
-                  'Congratulations! ðŸŽ‰',
+                  'Congratulations! ${selectedChild!.name}',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -202,7 +202,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
                 // Success Message
                 Text(
-                  'You have successfully enrolled ${selectedChild!.name} in ${response.activityName}!',
+                  'You have successfully enrolled in ${response.activityName}!',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[700],
