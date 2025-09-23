@@ -93,7 +93,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // Utility methods
   Future<String?> _getAuthToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -111,7 +110,6 @@ class _SettingsPageState extends State<SettingsPage> {
     return emailRegex.hasMatch(email);
   }
 
-  // Updated phone validation to check for exactly 10 digits
   bool _validatePhone(String phone) {
     final phoneRegex = RegExp(r'^\d{10}$'); // Exactly 10 digits
     return phoneRegex.hasMatch(phone.trim());
@@ -149,7 +147,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // API methods
   Future<void> _fetchUserProfile() async {
     setState(() => _isLoading = true);
 
@@ -188,7 +185,6 @@ class _SettingsPageState extends State<SettingsPage> {
     _isPhoneValid =
         profile.userPhone.isEmpty || _validatePhone(profile.userPhone);
 
-    // Set initial input states based on existing data
     _hasEmailInput = (profile.userEmail ?? '').isNotEmpty;
     _hasPhoneInput = (profile.userPhone ?? '').isNotEmpty;
   }
@@ -231,15 +227,12 @@ class _SettingsPageState extends State<SettingsPage> {
       if (updatedProfile != null && mounted) {
         setState(() => _userProfile = updatedProfile);
         _showSnackBar('Profile updated successfully');
-
-        // Add delay to show success message
         await Future.delayed(const Duration(seconds: 1));
 
-        // Navigate to homepage after successful update
         if (mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil(
             '/user_profile_page',
-            (Route<dynamic> route) => false, // This removes all previous routes
+            (Route<dynamic> route) => false,
           );
         }
       }
@@ -301,39 +294,38 @@ class _SettingsPageState extends State<SettingsPage> {
   ) async {
     try {
       final token = await _getAuthToken();
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+      debugPrint('API POST $endpoint');
+      debugPrint('Headers: $headers');
+      debugPrint('Body: ${json.encode(body)}');
+
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token',
-        },
+        headers: headers,
         body: json.encode(body),
       );
 
-      debugPrint('API call to $endpoint - Status: ${response.statusCode}');
-      debugPrint('Request body: ${json.encode(body)}');
-      debugPrint('Response: ${response.body}');
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': responseData};
-      } else if (response.statusCode == 400) {
-        // Handle validation errors from API
-        String errorMessage = 'Validation error';
-        if (responseData.containsKey('message')) {
-          errorMessage = responseData['message'];
-        } else if (responseData.containsKey('error')) {
-          errorMessage = responseData['error'];
-        }
-        throw Exception(errorMessage);
-      } else if (response.statusCode == 404) {
-        throw Exception('Resource not found');
       } else {
-        throw Exception('Request failed with status ${response.statusCode}');
+        String errorMessage =
+            responseData['message'] ??
+            responseData['error'] ??
+            responseData['detail'] ??
+            'Unknown error';
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('Error in API call to $endpoint: $e');
+      debugPrint('Error in $endpoint: $e');
       rethrow;
     }
   }
@@ -341,28 +333,22 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _linkEmail() async {
     if (!_validateEmailInput()) return;
 
-    debugPrint('Linking email: ${_emailController.text.trim()}');
     setState(() => _isVerifyingEmail = true);
 
     try {
-      await _makeApiCall('/auth/link-email/', {
-        'email': _emailController.text.trim(),
-      });
-
+      final email = _emailController.text.trim();
+      await _makeApiCall('/auth/link-email/', {'email': email});
       setState(() {
         _showEmailOTP = true;
         _pendingVerificationType = 'email';
         _clearOTPFields();
       });
-
       _showSnackBar('OTP sent to your email');
 
-      // Focus on first OTP field
       if (_otpFocusNodes.isNotEmpty) {
         _otpFocusNodes[0].requestFocus();
       }
     } catch (e) {
-      debugPrint('Email linking error: $e');
       _showSnackBar(
         'Failed to send OTP: ${_getErrorMessage(e)}',
         isError: true,
@@ -378,15 +364,18 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _isVerifyingPhone = true);
 
     try {
-      await _makeApiCall('/auth/link-phone/', {
-        'phone': _phoneController.text.trim(),
-      });
+      final phone = _phoneController.text.trim().replaceAll(' ', '');
+      await _makeApiCall('/auth/link-phone/', {'phone': phone});
       setState(() {
         _showPhoneOTP = true;
         _pendingVerificationType = 'phone';
         _clearOTPFields();
       });
       _showSnackBar('OTP sent to your phone');
+
+      if (_otpFocusNodes.isNotEmpty) {
+        _otpFocusNodes[0].requestFocus();
+      }
     } catch (e) {
       _showSnackBar(
         'Failed to send OTP: ${_getErrorMessage(e)}',
@@ -424,7 +413,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _verifyOTP() async {
-    final otp = _otpControllers.map((controller) => controller.text).join();
+    final otp = _otpControllers.map((c) => c.text).join();
     if (otp.length != 6) {
       _showSnackBar('Please enter complete 6-digit OTP', isError: true);
       return;
@@ -433,28 +422,54 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _isVerifyingOTP = true);
 
     try {
-      // Build request body based on verification type
-      Map<String, dynamic> requestBody = {'otp': otp};
+      final token = await _getAuthToken();
+
+      String otpString = otp.toString().trim();
+      Map<String, dynamic> requestBody = {'otp': otpString};
 
       if (_pendingVerificationType == 'email') {
         requestBody['email'] = _emailController.text.trim();
       } else if (_pendingVerificationType == 'phone') {
-        requestBody['phone'] = _phoneController.text.trim();
+        requestBody['phone'] = _phoneController.text.trim().replaceAll(' ', '');
       }
 
-      debugPrint('Sending OTP verification request: $requestBody');
+      // Log full request info
+      debugPrint('=== VERIFY OTP DEBUG START ===');
+      debugPrint('POST URL: $baseUrl/auth/verify-otp/');
+      debugPrint('Headers:');
+      Map<String, String> headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+      headers.forEach((key, value) => debugPrint(' - $key: $value'));
+      debugPrint('Request Body: ${json.encode(requestBody)}');
+      debugPrint('OTP Type: ${otpString.runtimeType}, Value: "$otpString"');
+      debugPrint('Verification Type: $_pendingVerificationType');
 
-      final result = await _makeApiCall('/auth/verify-otp/', requestBody);
+      final stopwatch = Stopwatch()..start();
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-otp/'),
+        headers: headers,
+        body: json.encode(requestBody),
+      );
+      stopwatch.stop();
 
-      if (result['success'] == true) {
-        // Handle successful verification
-        final responseData = result['data'];
+      debugPrint('Response time: ${stopwatch.elapsedMilliseconds} ms');
+      debugPrint('OTP verification response status: ${response.statusCode}');
+      debugPrint('OTP verification response body: ${response.body}');
 
-        // If access token is returned, save it
+      // Full raw response body logging for error inspection
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
         if (responseData.containsKey('access')) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', responseData['access']);
+          debugPrint('New auth token saved!');
         }
+
+        final verifiedType = _pendingVerificationType;
 
         setState(() {
           _showEmailOTP = false;
@@ -463,21 +478,32 @@ class _SettingsPageState extends State<SettingsPage> {
           _clearOTPFields();
         });
 
-        // Refresh user profile to get updated data
         await _fetchUserProfile();
 
         _showSnackBar(
-          '${_pendingVerificationType == 'email' ? 'Email' : 'Phone'} verified successfully!',
+          '${verifiedType == 'email' ? 'Email' : 'Phone'} verified successfully!',
         );
+      } else {
+        String errorMsg =
+            responseData['message'] ??
+            responseData['error'] ??
+            'OTP verification failed';
+        debugPrint('Verification Error Message: $errorMsg');
+        _showSnackBar(errorMsg, isError: true);
+        _clearOTPFields();
+        if (_otpFocusNodes.isNotEmpty) {
+          _otpFocusNodes[0].requestFocus();
+        }
       }
-    } catch (e) {
+
+      debugPrint('=== VERIFY OTP DEBUG END ===');
+    } catch (e, stacktrace) {
       debugPrint('OTP verification error: $e');
+      debugPrint('Stack trace: $stacktrace');
       _showSnackBar(
-        'OTP verification failed: ${_getErrorMessage(e)}',
+        'Network error: Please check your connection and try again',
         isError: true,
       );
-
-      // Clear OTP fields on error so user can try again
       _clearOTPFields();
       if (_otpFocusNodes.isNotEmpty) {
         _otpFocusNodes[0].requestFocus();
@@ -487,7 +513,8 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // UI Builder methods
+  // UI builder methods (unchanged from your original code)...
+
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -497,7 +524,7 @@ class _SettingsPageState extends State<SettingsPage> {
     Function(String)? onChanged,
     int maxLines = 1,
     bool enabled = true,
-    List<TextInputFormatter>? inputFormatters, // Add input formatters parameter
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,7 +544,7 @@ class _SettingsPageState extends State<SettingsPage> {
             onChanged: onChanged,
             maxLines: maxLines,
             enabled: enabled,
-            inputFormatters: inputFormatters, // Apply input formatters
+            inputFormatters: inputFormatters,
             style: TextStyle(
               fontSize: 16,
               color: enabled ? Colors.black87 : Colors.grey.shade600,
@@ -592,7 +619,7 @@ class _SettingsPageState extends State<SettingsPage> {
             : Text(
                 text,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
@@ -692,7 +719,6 @@ class _SettingsPageState extends State<SettingsPage> {
     if (index == 5 && value.isNotEmpty) {
       final otp = _otpControllers.map((controller) => controller.text).join();
       if (otp.length == 6) {
-        // Optional: Auto-verify after a short delay
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted && otp.length == 6) {
             _verifyOTP();
@@ -940,7 +966,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   if (_showPhoneOTP) _buildOTPFields(),
                 ],
 
-                // Address Information Section
                 _buildSectionTitle('Address Information'),
                 if (_hasSocietyInfo) ...[
                   _buildTextField(
@@ -980,7 +1005,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
 
                 const SizedBox(height: 40),
-                // Save Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

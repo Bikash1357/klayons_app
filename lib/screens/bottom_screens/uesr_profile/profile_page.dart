@@ -449,7 +449,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       children: [
                         CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF4A90E2),
+                            Colors.deepOrange,
                           ),
                         ),
                         SizedBox(height: 16),
@@ -473,25 +473,33 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildUserProfileSection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SettingsPage()),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: isLoading
+            ? _buildLoadingProfile()
+            : errorMessage != null
+            ? _buildErrorProfile()
+            : _buildUserProfileContent(),
       ),
-      child: isLoading
-          ? _buildLoadingProfile()
-          : errorMessage != null
-          ? _buildErrorProfile()
-          : _buildUserProfileContent(),
     );
   }
 

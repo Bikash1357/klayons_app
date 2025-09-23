@@ -8,6 +8,7 @@ import '../services/activity/activities_batchServices/post_enrollment_service.da
 import '../services/activity/activities_batchServices/get_delete_enrolled_service.dart';
 import '../services/user_child/get_ChildServices.dart';
 import 'package:klayons/utils/colour.dart';
+import '../utils/styles/errorMessage.dart';
 
 class ActivityBookingPage extends StatefulWidget {
   final int activityId;
@@ -20,8 +21,13 @@ class ActivityBookingPage extends StatefulWidget {
   _ActivityBookingPageState createState() => _ActivityBookingPageState();
 }
 
-class _ActivityBookingPageState extends State<ActivityBookingPage>
-    with BottomMessageHandler {
+class _ActivityBookingPageState extends State<ActivityBookingPage> {
+  // Error and success state management
+  String? _errorMessage;
+  String? _successMessage;
+  bool _showError = false;
+  bool _showSuccess = false;
+
   String? selectedChildId;
   Child? selectedChild;
   ActivityDetail? activityData;
@@ -401,16 +407,26 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     );
   }
 
+  // Method to show error message
+  void _showErrorMessage(String message) {
+    setState(() {
+      _errorMessage = message;
+      _showError = true;
+      _showSuccess = false;
+      _successMessage = null;
+    });
+  }
+
   /// Updated enrollment handler with better error display
   Future<void> _handleEnrollment() async {
     if (selectedChild == null || activityData == null) {
-      showBottomError('Please select a child to continue with enrollment.');
+      _showErrorMessage('Please select a child to continue with enrollment.');
       return;
     }
 
     // Check if child is already enrolled
     if (_isChildAlreadyEnrolled()) {
-      showBottomError('This child is already enrolled in this activity.');
+      _showErrorMessage('This child is already enrolled in this activity.');
       return;
     }
 
@@ -442,7 +458,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       await _showSuccessDialog(enrollmentResponse);
 
       // Also show bottom success message (optional)
-      showBottomSuccess(
+      _showErrorMessage(
         '${selectedChild!.name} ${enrollmentResponse.statusDisplay} in ${enrollmentResponse.activityName}!',
       );
     } on EnrollmentException catch (e) {
@@ -451,7 +467,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       });
 
       // Show user-friendly error message
-      showBottomError(e.userFriendlyMessage);
+      _showErrorMessage(e.userFriendlyMessage);
 
       // For validation errors (like age restrictions), also show a prominent dialog
       if (e.type == EnrollmentErrorType.validation) {
@@ -463,7 +479,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       });
 
       // Show generic error message for unexpected errors
-      showBottomError('An unexpected error occurred. Please try again.');
+      _showErrorMessage('An unexpected error occurred. Please try again.');
     }
   }
 
@@ -655,9 +671,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
               : activityData != null
               ? _buildContent()
               : _buildEmptyWidget(),
-
-          // Add bottom messages overlay
-          buildBottomMessages(),
         ],
       ),
     );
@@ -860,13 +873,21 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                   children: [
                     Text(
                       activity.name,
-                      style: AppTextStyles.titleLarge(context),
+                      style: AppTextStyles.titleLarge(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.001,
+                        color: Colors.black87,
+                      ),
                     ),
                     SizedBox(height: 8),
                     if (activity.subcategory.isNotEmpty) ...[
                       Text(
                         ' ${activity.batchName}',
-                        style: AppTextStyles.titleLarge(context),
+                        style: AppTextStyles.titleLarge(context).copyWith(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.001,
+                          color: Colors.black87,
+                        ),
                       ),
                       SizedBox(width: 8),
                       Container(
@@ -914,7 +935,8 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     ),
                     SizedBox(width: 8),
                     Text(
-                      '/${activity.paymentType}',
+                      // '/'
+                      ' ${activity.paymentType}',
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.primaryOrange,
@@ -1402,11 +1424,11 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey[400],
-                ),
+                // Icon(
+                //   Icons.arrow_forward_ios,
+                //   size: 16,
+                //   color: Colors.grey[400],
+                // ),
               ],
             ),
           ),
@@ -1490,7 +1512,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     ),
                     SizedBox(width: 4),
                     Text(
-                      'Fee: â‚¹${activityData!.price.toStringAsFixed(0)} /${activityData!.paymentType}',
+                      'Fee: ${activityData!.price.toStringAsFixed(0)} /${activityData!.paymentType}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,

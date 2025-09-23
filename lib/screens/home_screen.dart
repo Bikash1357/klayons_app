@@ -237,11 +237,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              _buildSearchField(),
-              if (_searchQuery.isEmpty &&
-                  !_isLoading &&
-                  _activityData.isNotEmpty)
-                _buildSectionTitle(),
+              _buildSectionTitle(),
               const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -256,8 +252,10 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   // Build app bar
+  // Build app bar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
+      toolbarHeight: 140, // Increased height to accommodate search field
       backgroundColor: AppColors.background,
       automaticallyImplyLeading: false,
       elevation: 0,
@@ -270,62 +268,86 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                 borderRadius: BorderRadius.circular(8),
               ),
             )
-          : Text(
-              'Hi, $_userName!',
-              style: GoogleFonts.poetsenOne(
-                textStyle: AppTextStyles.titleLarge(
-                  context,
-                ).copyWith(color: AppColors.primaryOrange),
-              ),
-            ),
-      actions: [
-        Stack(
-          children: [
-            IconButton(
-              icon: SvgPicture.asset(
-                'assets/App_icons/iconBell.svg',
-                width: 24,
-                height: 24,
-                colorFilter: ColorFilter.mode(
-                  AppColors.darkElements,
-                  BlendMode.srcIn,
-                ),
-              ),
-              onPressed: _navigateToNotifications,
-            ),
-            if (_unreadNotificationCount > 0)
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B35),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    _unreadNotificationCount > 99
-                        ? '99+'
-                        : _unreadNotificationCount.toString(),
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+          : Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start, // Align content to start
+              children: [
+                const SizedBox(height: 10),
+                // Top row with name and bell icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Name aligned to left
+                    Text(
+                      'Hi, $_userName!',
+                      style: GoogleFonts.poetsenOne(
+                        textStyle: AppTextStyles.titleLarge(
+                          context,
+                        ).copyWith(color: AppColors.primaryOrange),
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                    // Bell icon aligned to right, inline with name
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: SvgPicture.asset(
+                            'assets/App_icons/iconBell.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: ColorFilter.mode(
+                              AppColors.darkElements,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          onPressed: _navigateToNotifications,
+                        ),
+                        if (_unreadNotificationCount > 0)
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B35),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                _unreadNotificationCount > 99
+                                    ? '99+'
+                                    : _unreadNotificationCount.toString(),
+                                style: AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-          ],
-        ),
-      ],
+                //const SizedBox(height: 16), // Space between name row and search
+                // Search field taking full width
+                _buildSearchField(),
+                if (_searchQuery.isEmpty &&
+                    !_isLoading &&
+                    _activityData.isNotEmpty)
+                  const SizedBox(height: 10),
+              ],
+            ),
+      actions: const [], // Remove actions since bell icon is now in title
     );
   }
 
   // Build search field
+  // Build search field - Updated to remove margin
   Widget _buildSearchField() {
     String hintText = 'Find Activities';
     if (_userProfile?.societyName.isNotEmpty == true) {
@@ -333,7 +355,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
 
     return Container(
-      margin: const EdgeInsets.all(16),
+      width: double.infinity, // Take full available width
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -677,7 +699,7 @@ class CompactActivityCard extends StatelessWidget {
                 activity.batchName.isNotEmpty
                     ? '${activity.name} - ${activity.batchName}'
                     : activity.name,
-                style: AppTextStyles.titleMedium(context),
+                style: AppTextStyles.titleSmall(context),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -729,7 +751,8 @@ class CompactActivityCard extends StatelessWidget {
             const SizedBox(width: 5),
             Flexible(
               child: Text(
-                '/${activity.paymentType}',
+                //'/'
+                ' ${activity.paymentType}',
                 style: AppTextStyles.titleMedium(
                   context,
                 ).copyWith(color: AppColors.primaryOrange),

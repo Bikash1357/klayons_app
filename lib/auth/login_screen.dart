@@ -12,16 +12,23 @@ import 'otp_verification_page.dart';
 import '../utils/colour.dart';
 import 'package:klayons/utils/colour.dart';
 
+// Import the reusable error widget
 class LoginPage extends StatefulWidget {
   @override
   _LoginPageState createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _emailFocusNode = FocusNode();
   bool _isLoading = false;
+
+  // Error and success state management
+  String? _errorMessage;
+  String? _successMessage;
+  bool _showError = false;
+  bool _showSuccess = false;
 
   @override
   void initState() {
@@ -36,7 +43,15 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
 
   void _onTextChanged() {
     setState(() {
-      // This will trigger rebuild and update button state
+      // Clear messages when user starts typing
+      if (_showError) {
+        _showError = false;
+        _errorMessage = null;
+      }
+      if (_showSuccess) {
+        _showSuccess = false;
+        _successMessage = null;
+      }
     });
   }
 
@@ -55,11 +70,41 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
     }
   }
 
+  // Method to show error message
+  void _showErrorMessage(String message) {
+    setState(() {
+      _errorMessage = message;
+      _showError = true;
+      _showSuccess = false;
+      _successMessage = null;
+    });
+  }
+
+  // Method to show success message
+  void _showSuccessMessage(String message) {
+    setState(() {
+      _successMessage = message;
+      _showSuccess = true;
+      _showError = false;
+      _errorMessage = null;
+    });
+  }
+
+  // Method to clear all messages
+  void _clearMessages() {
+    setState(() {
+      _showError = false;
+      _showSuccess = false;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false, // <-- Add this line
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // Main content
@@ -68,9 +113,7 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  padding: EdgeInsets.only(
-                    bottom: 100,
-                  ), // <-- Add enough padding for bottom bar
+                  padding: EdgeInsets.only(bottom: 100),
                   child: Column(
                     children: [
                       Stack(
@@ -137,6 +180,22 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
                               keyboardType: TextInputType.text,
                               inputFormatters: [PhoneNumberInputFormatter()],
                             ),
+
+                            // Error message display
+                            if (_showError && _errorMessage != null)
+                              ErrorMessageWidget(
+                                message: _errorMessage!,
+                                onClose: _clearMessages,
+                                showCloseButton: true,
+                              ),
+
+                            // Success message display using reusable widget
+                            if (_showSuccess && _successMessage != null)
+                              SuccessMessageWidget(
+                                message: _successMessage!,
+                                onClose: _clearMessages,
+                                showCloseButton: true,
+                              ),
 
                             SizedBox(height: 24),
 
@@ -226,7 +285,6 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
                                       context,
                                     ).copyWith(color: AppColors.textSecondary),
                                   ),
-                                  //SizedBox(height: 1),
                                   CustomTextButton(
                                     text: "Register here!",
                                     onPressed: () {
@@ -251,25 +309,17 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
             ],
           ),
 
-          // Bottom error message overlay
-          buildBottomMessages(),
-
           // Fixed bottom Terms & Privacy
           Positioned(
             left: 0,
             right: 0,
-            bottom:
-                MediaQuery.of(context).size.height *
-                0.04, // 30% of screen height
+            bottom: MediaQuery.of(context).size.height * 0.04,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Center(
-                // Replace the existing RichText widget in your Positioned widget with this:
                 child: RichText(
                   textAlign: TextAlign.center,
-                  textScaleFactor: MediaQuery.of(
-                    context,
-                  ).textScaleFactor, // Add this line
+                  textScaleFactor: MediaQuery.of(context).textScaleFactor,
                   text: TextSpan(
                     style: AppTextStyles.bodyMedium(
                       context,
@@ -285,7 +335,7 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
                             "Terms of Use",
                             textScaleFactor: MediaQuery.of(
                               context,
-                            ).textScaleFactor, // Add this line
+                            ).textScaleFactor,
                             style: AppTextStyles.bodyMedium(
                               context,
                             ).copyWith(color: AppColors.primaryOrange),
@@ -302,7 +352,7 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
                             "Privacy Policy",
                             textScaleFactor: MediaQuery.of(
                               context,
-                            ).textScaleFactor, // Add this line
+                            ).textScaleFactor,
                             style: AppTextStyles.bodyMedium(
                               context,
                             ).copyWith(color: AppColors.primaryOrange),
@@ -434,7 +484,7 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
 
     // Basic validation for email or phone
     if (emailOrPhone.isEmpty) {
-      showBottomError('Please enter your email or phone number');
+      _showErrorMessage('Please enter your email or phone number');
       return;
     }
 
@@ -442,13 +492,13 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
     if (emailOrPhone.contains('@')) {
       // Validate email format
       if (!_isValidEmail(emailOrPhone)) {
-        showBottomError('Please enter a valid email address');
+        _showErrorMessage('Please enter a valid email address');
         return;
       }
     } else {
       // Validate phone format - check for exactly 10 digits
       if (!_isValidPhone(emailOrPhone)) {
-        showBottomError('Please enter a valid 10-digit phone number');
+        _showErrorMessage('Please enter a valid 10-digit phone number');
         return;
       }
     }
@@ -456,6 +506,9 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
     setState(() {
       _isLoading = true;
     });
+
+    // Clear any existing messages
+    _clearMessages();
 
     try {
       print('🔄 Sending login OTP to: $emailOrPhone');
@@ -467,45 +520,67 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
 
       print('📡 Login OTP response: ${response.isSuccess}');
       print('💬 Message: ${response.message}');
+      print('🔢 Status Code: ${response.httpStatusCode}');
 
       if (response.isSuccess) {
         // OTP sent successfully
-        showBottomSuccess(
+        _showSuccessMessage(
           response.message.isNotEmpty
               ? response.message
               : 'OTP sent successfully!',
         );
 
-        // Navigate to OTP verification page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OTPVerificationPage(
-              email: emailOrPhone, // Pass email or phone
-              purpose: 'login',
+        // Navigate to OTP verification page after a short delay
+        Future.delayed(Duration(milliseconds: 1500), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  OTPVerificationPage(email: emailOrPhone, purpose: 'login'),
             ),
-          ),
-        );
+          );
+        });
       } else {
-        // Handle error responses
-        String errorMessage = response.message.isNotEmpty
-            ? response.message
-            : 'Failed to send OTP. Please try again.';
+        // Handle error responses with detailed logging
+        String errorMessage = 'Failed to send OTP. Please try again.';
+
+        print('❌ Error Response Details:');
+        print('   - Success: ${response.isSuccess}');
+        print('   - Message: ${response.message}');
+        print('   - Status Code: ${response.httpStatusCode}');
 
         // Handle specific error cases
         if (response.httpStatusCode == 400) {
-          errorMessage = response.message.isNotEmpty
-              ? response.message
-              : 'Account not found. Please register first.';
+          if (response.message.toLowerCase().contains('not found') ||
+              response.message.toLowerCase().contains('not registered')) {
+            errorMessage = 'Account not found. Please register first.';
+          } else if (response.message.toLowerCase().contains(
+            'already registered',
+          )) {
+            errorMessage =
+                'This account is already registered. Please check your credentials.';
+          } else {
+            errorMessage = response.message.isNotEmpty
+                ? response.message
+                : 'Invalid request. Please check your input.';
+          }
+        } else if (response.httpStatusCode == 401) {
+          errorMessage = 'Authentication failed. Please try again.';
+        } else if (response.httpStatusCode == 404) {
+          errorMessage = 'Account not found. Please register first.';
+        } else if (response.httpStatusCode == 429) {
+          errorMessage = 'Too many attempts. Please try again later.';
         } else if (response.httpStatusCode == 500) {
           errorMessage = 'Server error. Please try again later.';
+        } else if (response.message.isNotEmpty) {
+          errorMessage = response.message;
         }
 
-        showBottomError(errorMessage);
+        _showErrorMessage(errorMessage);
       }
     } catch (e) {
       print('❌ Login OTP error: $e');
-      showBottomError(
+      _showErrorMessage(
         'Network error. Please check your connection and try again.',
       );
     } finally {
@@ -529,10 +604,6 @@ class _LoginPageState extends State<LoginPage> with BottomMessageHandler {
 
     // Check if it's exactly 10 digits for phone numbers
     return digitsOnly.length == 10;
-  }
-
-  void _showSuccessMessage(String message) {
-    showBottomSuccess(message);
   }
 
   @override
