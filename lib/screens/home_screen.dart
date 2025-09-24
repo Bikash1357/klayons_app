@@ -24,10 +24,12 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   final TextEditingController _searchController = TextEditingController();
   late AnimationController _slideController;
   late Animation<double> _slideAnimation;
+  final ScrollController _scrollController = ScrollController();
 
   // State variables
   String _searchQuery = '';
   int _selectedIndex = 0;
+  bool _isAppBarVisible = true;
 
   // Activity data
   List<Activity> _activityData = [];
@@ -56,13 +58,28 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     super.initState();
     _initializeAnimation();
     _loadInitialData();
+    _setupScrollListener();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _slideController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  // Setup scroll listener for AppBar hide/show behavior
+  void _setupScrollListener() {
+    _scrollController.addListener(() {
+      final isVisible =
+          _scrollController.offset < 100; // Hide after 100px scroll
+      if (isVisible != _isAppBarVisible) {
+        setState(() {
+          _isAppBarVisible = isVisible;
+        });
+      }
+    });
   }
 
   // Initialize animation controller
@@ -134,8 +151,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       }
     }
   }
-
-  // Show permission dialog
 
   // Show error snackbar
   void _showErrorSnackBar() {
@@ -230,124 +245,114 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Widget _buildHomePage() {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
-      body: RefreshIndicator(
-        onRefresh: _refreshData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              _buildSectionTitle(),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildContent(),
+      body: Stack(
+        children: [
+          // Main content with CustomScrollView
+          CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Flexible AppBar that can hide/show
+              SliverAppBar(
+                expandedHeight: 40,
+                floating: true,
+                snap: true,
+                pinned: false,
+                backgroundColor: AppColors.background,
+                automaticallyImplyLeading: false,
+                elevation: 0,
+                title: _isLoadingUserProfile
+                    ? Container(
+                        width: 80,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white60,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      )
+                    : Text(
+                        'Hi, $_userName!',
+                        style: GoogleFonts.poetsenOne(
+                          textStyle: AppTextStyles.titleLarge(
+                            context,
+                          ).copyWith(color: AppColors.primaryOrange),
+                        ),
+                      ),
+                actions: [
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'assets/App_icons/iconBell.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: ColorFilter.mode(
+                            AppColors.darkElements,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        onPressed: _navigateToNotifications,
+                      ),
+                      if (_unreadNotificationCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6B35),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              _unreadNotificationCount > 99
+                                  ? '99+'
+                                  : _unreadNotificationCount.toString(),
+                              style: AppTextStyles.bodySmall(context).copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 100),
+
+              // Pinned search bar
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SearchBarDelegate(
+                  child: _buildSearchField(),
+                  height: 80,
+                ),
+              ),
+              // Section title
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: _buildSectionTitle(),
+                ),
+              ),
+              // Main content
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverToBoxAdapter(child: _buildContent()),
+              ),
+              // Bottom spacing
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
 
-  // Build app bar
-  // Build app bar
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      toolbarHeight: 140, // Increased height to accommodate search field
-      backgroundColor: AppColors.background,
-      automaticallyImplyLeading: false,
-      elevation: 0,
-      title: _isLoadingUserProfile
-          ? Container(
-              width: 80,
-              height: 16,
-              decoration: BoxDecoration(
-                color: Colors.white60,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            )
-          : Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start, // Align content to start
-              children: [
-                const SizedBox(height: 10),
-                // Top row with name and bell icon
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Name aligned to left
-                    Text(
-                      'Hi, $_userName!',
-                      style: GoogleFonts.poetsenOne(
-                        textStyle: AppTextStyles.titleLarge(
-                          context,
-                        ).copyWith(color: AppColors.primaryOrange),
-                      ),
-                    ),
-                    // Bell icon aligned to right, inline with name
-                    Stack(
-                      children: [
-                        IconButton(
-                          icon: SvgPicture.asset(
-                            'assets/App_icons/iconBell.svg',
-                            width: 24,
-                            height: 24,
-                            colorFilter: ColorFilter.mode(
-                              AppColors.darkElements,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                          onPressed: _navigateToNotifications,
-                        ),
-                        if (_unreadNotificationCount > 0)
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF6B35),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Text(
-                                _unreadNotificationCount > 99
-                                    ? '99+'
-                                    : _unreadNotificationCount.toString(),
-                                style: AppTextStyles.bodySmall(context)
-                                    .copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-                //const SizedBox(height: 16), // Space between name row and search
-                // Search field taking full width
-                _buildSearchField(),
-                if (_searchQuery.isEmpty &&
-                    !_isLoading &&
-                    _activityData.isNotEmpty)
-                  const SizedBox(height: 10),
-              ],
-            ),
-      actions: const [], // Remove actions since bell icon is now in title
-    );
-  }
-
   // Build search field
-  // Build search field - Updated to remove margin
   Widget _buildSearchField() {
     String hintText = 'Find Activities';
     if (_userProfile?.societyName.isNotEmpty == true) {
@@ -355,13 +360,13 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
 
     return Container(
-      width: double.infinity, // Take full available width
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -398,17 +403,14 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   // Build section title
   Widget _buildSectionTitle() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Explore Activities',
-          style: AppTextStyles.titleMedium(context).copyWith(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.01,
-            color: Colors.black87,
-          ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        'Explore Activities',
+        style: AppTextStyles.titleMedium(context).copyWith(
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.01,
+          color: Colors.black87,
         ),
       ),
     );
@@ -614,6 +616,33 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 }
 
+// Custom delegate for pinned search bar
+class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height;
+
+  _SearchBarDelegate({required this.child, required this.height});
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: AppColors.background, child: child);
+  }
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
+}
+
 // Compact Activity Card Widget
 class CompactActivityCard extends StatelessWidget {
   final Activity activity;
@@ -749,17 +778,17 @@ class CompactActivityCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                //'/'
-                ' ${activity.paymentType}',
-                style: AppTextStyles.titleMedium(
-                  context,
-                ).copyWith(color: AppColors.primaryOrange),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+            if (_getPaymentTypeDisplay(activity.paymentType).isNotEmpty)
+              Flexible(
+                child: Text(
+                  _getPaymentTypeDisplay(activity.paymentType),
+                  style: AppTextStyles.titleSmall(
+                    context,
+                  ).copyWith(color: AppColors.primaryOrange),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
-            ),
           ],
         ),
       ],
@@ -794,6 +823,21 @@ class CompactActivityCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getPaymentTypeDisplay(String paymentType) {
+    switch (paymentType.toLowerCase()) {
+      case 'monthly':
+        return '/month';
+      case 'annual':
+        return '/year';
+      case 'quarterly':
+        return '/quarter';
+      case 'one-time':
+        return '';
+      default:
+        return '';
+    }
   }
 
   // Format price string
