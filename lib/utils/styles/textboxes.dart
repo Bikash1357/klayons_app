@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:klayons/utils/colour.dart';
-import 'fonts.dart'; // Your AppTextStyles
 
 class CustomTextField extends StatefulWidget {
   final String hintText;

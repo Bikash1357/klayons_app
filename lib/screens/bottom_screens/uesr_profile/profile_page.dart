@@ -418,6 +418,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       body: Stack(
         children: [
           RefreshIndicator(
+            color: AppColors.primaryOrange,
             onRefresh: _refreshAll,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),

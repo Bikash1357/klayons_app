@@ -593,7 +593,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
         actions: [
-          IconButton(onPressed: _notification, icon: Icon(Icons.notifications)),
+          IconButton(
+            onPressed: _notification,
+            icon: SvgPicture.asset(
+              'assets/App_icons/iconBell.svg',
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                AppColors.darkElements,
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
         ],
       ),
       body: Column(
@@ -979,6 +990,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEventDialog(context),
         backgroundColor: AppColors.primaryOrange,
+        shape: const CircleBorder(),
         child: Icon(Icons.add, color: Colors.white),
       ),
     );

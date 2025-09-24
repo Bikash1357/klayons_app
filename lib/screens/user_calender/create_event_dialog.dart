@@ -87,7 +87,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
             children: [
               Text(
                 'Add Custom Activity',
-                style: AppTextStyles.titleLarge(context).copyWith(
+                style: AppTextStyles.titleLarge(context).copyWith(          
                   color: AppColors.primaryOrange,
                   fontWeight: FontWeight.bold,
                 ),

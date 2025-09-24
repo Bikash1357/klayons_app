@@ -14,7 +14,6 @@ import 'package:klayons/utils/styles/textboxes.dart';
 import '../utils/styles/textButton.dart';
 import 'login_screen.dart';
 import 'otp_verification_page.dart';
-import 'package:klayons/utils/styles/button.dart';
 
 class Society {
   final int id;
@@ -286,7 +285,7 @@ class _SignUnPageState extends State<SignUnPage> {
                   width: double.infinity,
                   color: Colors.white,
                   padding: EdgeInsets.symmetric(
-                    horizontal: 24.0,
+                    horizontal: 40.0,
                     vertical: 10.0,
                   ),
                   child: Column(
@@ -386,11 +385,10 @@ class _SignUnPageState extends State<SignUnPage> {
                                   ],
                                 )
                               : Text(
-                                  'Send OTP',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  "Send OTP",
+                                  style: AppTextStyles.bodyLargeEmphasized(
+                                    context,
+                                  ).copyWith(color: Colors.white),
                                 ),
                         ),
                       ),
@@ -436,7 +434,7 @@ class _SignUnPageState extends State<SignUnPage> {
                                 context,
                               ).copyWith(color: AppColors.textSecondary),
                             ),
-                            SizedBox(height: 8),
+
                             CustomTextButton(
                               text: "Log in",
                               onPressed: () => Navigator.push(
@@ -457,11 +455,21 @@ class _SignUnPageState extends State<SignUnPage> {
                         child: RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            style: AppTextStyles.bodyMedium(
+                            style: AppTextStyles.bodySmall(
                               context,
                             ).copyWith(color: AppColors.textSecondary),
                             children: [
-                              TextSpan(text: "By continuing, I agree to the "),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.baseline,
+                                baseline: TextBaseline.alphabetic,
+                                child: Text(
+                                  "By continuing, you agree to the ",
+                                  style: AppTextStyles.bodySmall(
+                                    context,
+                                  ).copyWith(color: AppColors.textSecondary),
+                                ),
+                              ),
+                              TextSpan(text: "\n"),
                               WidgetSpan(
                                 alignment: PlaceholderAlignment.baseline,
                                 baseline: TextBaseline.alphabetic,
@@ -478,10 +486,14 @@ class _SignUnPageState extends State<SignUnPage> {
                                     }
                                   },
                                   child: Text(
-                                    "Terms of Use",
-                                    style: AppTextStyles.bodyMedium(
-                                      context,
-                                    ).copyWith(color: AppColors.primaryOrange),
+                                    "Terms of Use ",
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                          decorationColor:
+                                              AppColors.textSecondary,
+                                          decoration: TextDecoration.underline,
+                                          color: AppColors.textSecondary,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -503,9 +515,13 @@ class _SignUnPageState extends State<SignUnPage> {
                                   },
                                   child: Text(
                                     "Privacy Policy",
-                                    style: AppTextStyles.bodyMedium(
-                                      context,
-                                    ).copyWith(color: AppColors.primaryOrange),
+                                    style: AppTextStyles.bodySmall(context)
+                                        .copyWith(
+                                          decorationColor:
+                                              AppColors.textSecondary,
+                                          decoration: TextDecoration.underline,
+                                          color: AppColors.textSecondary,
+                                        ),
                                   ),
                                 ),
                               ),

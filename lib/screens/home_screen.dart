@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import '../services/UserProfileServices/userProfileModels.dart';
@@ -14,6 +13,8 @@ import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
 
 class KlayonsHomePage extends StatefulWidget {
+  const KlayonsHomePage({super.key});
+
   @override
   _KlayonsHomePageState createState() => _KlayonsHomePageState();
 }
@@ -782,7 +783,7 @@ class CompactActivityCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   _getPaymentTypeDisplay(activity.paymentType),
-                  style: AppTextStyles.titleSmall(
+                  style: AppTextStyles.bodySmall(
                     context,
                   ).copyWith(color: AppColors.primaryOrange),
                   overflow: TextOverflow.ellipsis,

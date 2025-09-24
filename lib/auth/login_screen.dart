@@ -173,12 +173,15 @@ class _LoginPageState extends State<LoginPage> {
                             SizedBox(height: 16),
 
                             // Email/Phone input field with input formatter
-                            CustomTextField(
-                              hintText: "Email or Phone",
-                              controller: _emailController,
-                              focusNode: _emailFocusNode,
-                              keyboardType: TextInputType.text,
-                              inputFormatters: [PhoneNumberInputFormatter()],
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: CustomTextField(
+                                hintText: "Email or Phone",
+                                controller: _emailController,
+                                focusNode: _emailFocusNode,
+                                keyboardType: TextInputType.text,
+                                inputFormatters: [PhoneNumberInputFormatter()],
+                              ),
                             ),
 
                             // Error message display
@@ -197,80 +200,89 @@ class _LoginPageState extends State<LoginPage> {
                                 showCloseButton: true,
                               ),
 
-                            SizedBox(height: 24),
+                            SizedBox(height: 16),
 
                             // Send OTP Button - now activates when user starts typing
                             SizedBox(
                               width: double.infinity,
-                              child: OrangeButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : (_emailController.text.trim().isNotEmpty
-                                          ? _sendLoginOTP
-                                          : null),
-                                child: _isLoading
-                                    ? Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: OrangeButton(
+                                  onPressed: _isLoading
+                                      ? null
+                                      : (_emailController.text.trim().isNotEmpty
+                                            ? _sendLoginOTP
+                                            : null),
+                                  child: _isLoading
+                                      ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
                                             ),
-                                          ),
-                                          SizedBox(width: 12),
-                                          Text(
-                                            "Sending OTP...",
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
+                                            SizedBox(width: 12),
+                                            Text(
+                                              "Sending OTP...",
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      )
-                                    : Text(
-                                        "Send OTP",
-                                        style: AppTextStyles.formLarge(
-                                          context,
-                                        ).copyWith(color: Colors.white),
-                                      ),
+                                          ],
+                                        )
+                                      : Text(
+                                          "Send OTP",
+                                          style:
+                                              AppTextStyles.bodyLargeEmphasized(
+                                                context,
+                                              ).copyWith(color: Colors.white),
+                                        ),
+                                ),
                               ),
                             ),
 
                             SizedBox(height: 28),
 
                             // Divider with "or"
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Divider(
-                                    color: Colors.grey[300],
-                                    thickness: 1,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text(
-                                    'or',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 14,
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(
+                                      color: Colors.grey[300],
+                                      thickness: 1,
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: Divider(
-                                    color: Colors.grey[300],
-                                    thickness: 1,
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Text(
+                                      'or',
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 14,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  Expanded(
+                                    child: Divider(
+                                      color: Colors.grey[300],
+                                      thickness: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
 
                             SizedBox(height: 28),
@@ -319,26 +331,44 @@ class _LoginPageState extends State<LoginPage> {
               child: Center(
                 child: RichText(
                   textAlign: TextAlign.center,
-                  textScaleFactor: MediaQuery.of(context).textScaleFactor,
                   text: TextSpan(
-                    style: AppTextStyles.bodyMedium(
+                    style: AppTextStyles.bodySmall(
                       context,
                     ).copyWith(color: AppColors.textSecondary),
                     children: [
-                      TextSpan(text: "By continuing, I agree to the "),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: Text(
+                          "By continuing, you agree to the ",
+                          style: AppTextStyles.bodySmall(
+                            context,
+                          ).copyWith(color: AppColors.textSecondary),
+                        ),
+                      ),
+                      TextSpan(text: "\n"),
                       WidgetSpan(
                         alignment: PlaceholderAlignment.baseline,
                         baseline: TextBaseline.alphabetic,
                         child: GestureDetector(
-                          onTap: _launchTermsUrl,
+                          onTap: () async {
+                            final url = Uri.parse(
+                              'https://www.klayons.com/terms-conditions',
+                            );
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          },
                           child: Text(
-                            "Terms of Use",
-                            textScaleFactor: MediaQuery.of(
-                              context,
-                            ).textScaleFactor,
-                            style: AppTextStyles.bodyMedium(
-                              context,
-                            ).copyWith(color: AppColors.primaryOrange),
+                            "Terms of Use ",
+                            style: AppTextStyles.bodySmall(context).copyWith(
+                              decorationColor: AppColors.textSecondary,
+                              decoration: TextDecoration.underline,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ),
@@ -347,15 +377,24 @@ class _LoginPageState extends State<LoginPage> {
                         alignment: PlaceholderAlignment.baseline,
                         baseline: TextBaseline.alphabetic,
                         child: GestureDetector(
-                          onTap: _launchPrivacyPolicyUrl,
+                          onTap: () async {
+                            final url = Uri.parse(
+                              'https://www.klayons.com/privacy-policy',
+                            );
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          },
                           child: Text(
                             "Privacy Policy",
-                            textScaleFactor: MediaQuery.of(
-                              context,
-                            ).textScaleFactor,
-                            style: AppTextStyles.bodyMedium(
-                              context,
-                            ).copyWith(color: AppColors.primaryOrange),
+                            style: AppTextStyles.bodySmall(context).copyWith(
+                              decorationColor: AppColors.textSecondary,
+                              decoration: TextDecoration.underline,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ),
                       ),
