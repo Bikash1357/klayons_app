@@ -3,9 +3,12 @@ import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/UserProfileServices/userProfileModels.dart';
 import '../services/activity/activities_batchServices/allActivityServices.dart';
 import '../services/UserProfileServices/get_userprofile_service.dart';
+import '../services/notification/announcementService.dart';
+import '../services/notification/modelAnnouncement.dart' hide Activity;
 import '../utils/colour.dart';
 import 'activity_details_page.dart';
 import 'user_calender/calander.dart';
@@ -40,11 +43,15 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   // Notification state
   int _unreadNotificationCount = 0;
   bool _isLoadingNotifications = false;
+  List<Announcement> _allAnnouncements = [];
 
   // User profile data
   UserProfile? _userProfile;
   bool _isLoadingUserProfile = false;
   String _userName = 'User';
+
+  // Announcement service
+  final AnnouncementService _announcementService = AnnouncementService();
 
   // Pages for bottom navigation
   final List<Widget> _pages = [
@@ -96,7 +103,116 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   // Load all initial data
   Future<void> _loadInitialData() async {
-    await Future.wait([_loadActivityData(), _loadUserProfile()]);
+    await Future.wait([
+      _loadActivityData(),
+      _loadUserProfile(),
+      _loadNotificationCount(),
+    ]);
+  }
+
+  // Load notification count
+  Future<void> _loadNotificationCount() async {
+    setState(() => _isLoadingNotifications = true);
+
+    try {
+      // Get all announcements
+      final announcements = await _announcementService.getAnnouncements();
+
+      if (mounted) {
+        setState(() {
+          _allAnnouncements = announcements;
+        });
+
+        // Calculate unread count
+        await _calculateUnreadCount();
+      }
+    } catch (e) {
+      print('Error loading notifications: $e');
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = 0;
+          _isLoadingNotifications = false;
+        });
+      }
+    }
+  }
+
+  // Calculate unread notification count
+  Future<void> _calculateUnreadCount() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Get last seen notification timestamp
+      final lastSeenTimestamp = prefs.getString('last_seen_notification') ?? '';
+      DateTime? lastSeenDate;
+
+      if (lastSeenTimestamp.isNotEmpty) {
+        lastSeenDate = DateTime.tryParse(lastSeenTimestamp);
+      }
+
+      // Get read notification IDs
+      final readNotificationIds =
+          prefs.getStringList('read_notifications') ?? [];
+      final readIds = readNotificationIds
+          .map((id) => int.tryParse(id))
+          .where((id) => id != null)
+          .cast<int>()
+          .toSet();
+
+      int unreadCount = 0;
+
+      for (final announcement in _allAnnouncements) {
+        // Check if notification is unread
+        bool isUnread = true;
+
+        // If user has read this specific notification
+        if (readIds.contains(announcement.id)) {
+          isUnread = false;
+        }
+        // If user visited notifications after this announcement was created
+        else if (lastSeenDate != null &&
+            announcement.createdAt.isBefore(lastSeenDate)) {
+          isUnread = false;
+        }
+
+        if (isUnread) {
+          unreadCount++;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = unreadCount;
+          _isLoadingNotifications = false;
+        });
+      }
+    } catch (e) {
+      print('Error calculating unread count: $e');
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = 0;
+          _isLoadingNotifications = false;
+        });
+      }
+    }
+  }
+
+  // Mark notifications as seen when user opens notification page
+  Future<void> _markNotificationsAsSeen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        'last_seen_notification',
+        DateTime.now().toIso8601String(),
+      );
+
+      // Reset unread count
+      setState(() {
+        _unreadNotificationCount = 0;
+      });
+    } catch (e) {
+      print('Error marking notifications as seen: $e');
+    }
   }
 
   // Load activity data
@@ -222,15 +338,27 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   // Navigate to notifications
   Future<void> _navigateToNotifications() async {
-    await Navigator.push(
+    // Mark notifications as seen before navigation
+    await _markNotificationsAsSeen();
+
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => NotificationsPage()),
     );
+
+    // Refresh notification count when returning from notifications page
+    if (result == true || result == null) {
+      await _loadNotificationCount();
+    }
   }
 
   // Refresh all data
   Future<void> _refreshData() async {
-    await Future.wait([_loadActivityData(), _loadUserProfile()]);
+    await Future.wait([
+      _loadActivityData(),
+      _loadUserProfile(),
+      _loadNotificationCount(),
+    ]);
   }
 
   @override
@@ -282,18 +410,30 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                   Stack(
                     children: [
                       IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/App_icons/iconBell.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.darkElements,
-                            BlendMode.srcIn,
-                          ),
-                        ),
+                        icon: _isLoadingNotifications
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.darkElements,
+                                  ),
+                                ),
+                              )
+                            : SvgPicture.asset(
+                                'assets/App_icons/iconBell.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: ColorFilter.mode(
+                                  AppColors.darkElements,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
                         onPressed: _navigateToNotifications,
                       ),
-                      if (_unreadNotificationCount > 0)
+                      if (_unreadNotificationCount > 0 &&
+                          !_isLoadingNotifications)
                         Positioned(
                           right: 8,
                           top: 8,
@@ -314,6 +454,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                               style: AppTextStyles.bodySmall(context).copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 10,
                               ),
                               textAlign: TextAlign.center,
                             ),
