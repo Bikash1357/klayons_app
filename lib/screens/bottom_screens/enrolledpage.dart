@@ -1,13 +1,18 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/home_screen.dart';
 
-import '../../services/activity/activities_batchServices/get_delete_enrolled_service.dart';
+import '../../services/activity/activities_batchServices/deleteEnrollmentService.dart';
+import '../../services/activity/activities_batchServices/enrollementModel.dart';
+import '../../services/activity/activities_batchServices/get_enrolled_service.dart';
 import '../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
 
+import '../activity_details_page.dart';
+
 class EnrolledPage extends StatefulWidget {
-  const EnrolledPage({Key? key}) : super(key: key);
+  const EnrolledPage({super.key});
 
   @override
   State<EnrolledPage> createState() => _EnrolledPageState();
@@ -21,7 +26,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
   @override
   void initState() {
     super.initState();
-    _loadEnrollments(forceRefresh: false); // Use cache on initial load
+    _loadEnrollments(forceRefresh: false);
   }
 
   void _loadEnrollments({bool forceRefresh = false}) {
@@ -39,7 +44,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
     });
 
     try {
-      // Force refresh ignores cache and calls API
       _loadEnrollments(forceRefresh: true);
       await _futureEnrollments;
     } finally {
@@ -62,22 +66,40 @@ class _EnrolledPageState extends State<EnrolledPage> {
       });
 
       try {
-        await GetEnrollmentService.unenrollChild(enrollment.id);
+        final response = await EnrollmentService.unenrollFromActivity(
+          enrollment.id,
+        );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '${enrollment.childName} has been unenrolled from ${enrollment.activityName} ',
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          setState(() {
+            _deletingEnrollments.remove(enrollment.id);
+          });
 
-          // Reload data after successful unenrollment
-          // Don't force refresh since cache was already updated
-          _loadEnrollments(forceRefresh: false);
+          if (response.success && response.data != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${response.data!.child.name} has been unenrolled from ${response.data!.activity.name}',
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 3),
+                action: SnackBarAction(
+                  label: 'OK',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
+              ),
+            );
+
+            EnrollmentService.clearEnrollmentCache();
+            _loadEnrollments(forceRefresh: true);
+          } else {
+            _showErrorDialog(
+              'Unenrollment Failed',
+              response.error ?? 'An unknown error occurred',
+            );
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -85,7 +107,18 @@ class _EnrolledPageState extends State<EnrolledPage> {
             _deletingEnrollments.remove(enrollment.id);
           });
 
-          _showErrorDialog('Unenrollment Failed', e.toString());
+          String errorMessage = 'Network error occurred';
+
+          if (e.toString().contains('Authentication')) {
+            errorMessage = 'Please log in again to continue';
+          } else if (e.toString().contains('Permission')) {
+            errorMessage =
+                'You don\'t have permission to unenroll from this activity';
+          } else if (e.toString().contains('not found')) {
+            errorMessage = 'This enrollment was not found or already removed';
+          }
+
+          _showErrorDialog('Unenrollment Failed', errorMessage);
         }
       }
     }
@@ -145,10 +178,14 @@ class _EnrolledPageState extends State<EnrolledPage> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    Text('Child: ${enrollment.childName}'),
-                    Text('Activity: ${enrollment.activityName}'),
-                    Text('Price: ${enrollment.priceDisplay}'),
-                    Text('Status: ${enrollment.statusDisplay}'),
+                    Text('Child: ${enrollment.child?.name ?? 'N/A'}'),
+                    Text('Activity: ${enrollment.activity?.name ?? 'N/A'}'),
+                    Text(
+                      'Price: ₹${enrollment.activity?.price ?? '0'}/${enrollment.activity?.paymentType ?? 'month'}',
+                    ),
+                    Text('Status: ${_getStatusDisplay(enrollment.status)}'),
+                    if (enrollment.activity?.batchName != null)
+                      Text('Batch: ${enrollment.activity!.batchName}'),
                   ],
                 ),
               ),
@@ -213,7 +250,10 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
             ],
           ),
-          content: Text(message),
+          content: Text(
+            message,
+            style: TextStyle(fontSize: 14, color: Colors.black87),
+          ),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -252,7 +292,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
           ),
         ),
         title: const Text(
-          "My Enrollments", // Updated title to be more generic
+          "My Enrollments",
           style: TextStyle(
             color: Colors.black87,
             fontSize: 18,
@@ -262,10 +302,17 @@ class _EnrolledPageState extends State<EnrolledPage> {
         automaticallyImplyLeading: false,
         backgroundColor: AppColors.background,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: AppColors.darkElements),
+            onPressed: _isRefreshing ? null : _refreshEnrollments,
+            tooltip: 'Refresh Enrollments',
+          ),
+        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _refreshEnrollments, // This will force refresh
+          onRefresh: _refreshEnrollments,
           color: Colors.deepOrange,
           child: FutureBuilder<List<GetEnrollment>>(
             future: _futureEnrollments,
@@ -411,141 +458,315 @@ class _EnrolledPageState extends State<EnrolledPage> {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: _getImageColor(index),
-              ),
-              child: Icon(
-                _getActivityIcon(enrollment.activityName),
-                color: Colors.white,
-                size: 24,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          // Navigate to ActivityBookingPage with activity id
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActivityBookingPage(
+                batchId: enrollment.activity?.id ?? 0,
+                activityId: enrollment.activity?.id ?? 0,
               ),
             ),
-            const SizedBox(width: 16),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          enrollment.activityName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildActivityImage(enrollment),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${enrollment.activity?.name ?? 'N/A'}  ${enrollment.activity?.batchName ?? 'N/A'}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                              enrollment.status,
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _getStatusColor(enrollment.status),
+                            ),
+                          ),
+                          child: Text(
+                            _getStatusDisplay(enrollment.status),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusColor(enrollment.status),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: isDeleting
+                              ? null
+                              : () => _handleUnenrollment(enrollment),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.red[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red[200]!),
+                            ),
+                            child: isDeleting
+                                ? SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.red,
+                                    ),
+                                  )
+                                : SvgPicture.asset(
+                                    'assets/App_icons/iconDelete.svg',
+                                    width: 16,
+                                    height: 16,
+                                    colorFilter: ColorFilter.mode(
+                                      Colors.red,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Rest of your existing column content remains the same
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.child_care,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          enrollment.child?.name ?? 'Unknown Child',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.category, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${enrollment.activity?.category ?? 'N/A'} • ${enrollment.activity?.subcategory ?? 'N/A'}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${enrollment.activity?.instructor ?? 'N/A'} • ${enrollment.activity?.batchName ?? 'N/A'}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (enrollment.activity?.society != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              enrollment.activity!.society!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                    ],
+                    if (enrollment.waitlistPosition != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.queue,
+                            size: 16,
+                            color: Colors.orange[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Waitlist Position: ${enrollment.waitlistPosition}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          '₹${enrollment.activity?.price ?? '0'}/${enrollment.activity?.paymentType ?? 'month'}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.deepOrange,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: enrollment.statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: enrollment.statusColor),
-                        ),
-                        child: Text(
-                          enrollment.statusDisplay,
+                        const Spacer(),
+                        Text(
+                          'Enrolled: ${_getEnrollmentDate(enrollment)}',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: enrollment.statusColor,
+                            color: Colors.grey[500],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: isDeleting
-                            ? null
-                            : () => _handleUnenrollment(enrollment),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red[200]!),
-                          ),
-                          child: isDeleting
-                              ? SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.red,
-                                  ),
-                                )
-                              : SvgPicture.asset(
-                                  'assets/App_icons/iconDelete.svg',
-                                  width: 16,
-                                  height: 16,
-                                  colorFilter: ColorFilter.mode(
-                                    Colors.red,
-                                    BlendMode.srcIn,
-                                  ),
+                      ],
+                    ),
+                    if (enrollment.notes != null &&
+                        enrollment.notes!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.note, size: 14, color: Colors.blue[700]),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                enrollment.notes!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue[700],
                                 ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(Icons.child_care, size: 16, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        enrollment.childName,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Text(
-                        enrollment.priceDisplay,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.deepOrange,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Enrolled: ${enrollment.enrolledAtDisplay}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Color _getImageColor(int index) {
+  Widget _buildActivityImage(GetEnrollment enrollment) {
+    final imageUrl = enrollment.activity?.bannerImageUrl ?? '';
+    final activityId = enrollment.activity?.id ?? 0;
+    final activityName = enrollment.activity?.name ?? '';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: imageUrl.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: imageUrl,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: _getImageColor(activityId),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: _getImageColor(activityId),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getFallbackActivityIcon(activityName),
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            )
+          : Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: _getImageColor(activityId),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                _getFallbackActivityIcon(activityName),
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+    );
+  }
+
+  Color _getImageColor(int activityId) {
     const List<Color> colors = [
       Color(0xFF8B4513),
       Color(0xFF2E8B57),
@@ -553,11 +774,80 @@ class _EnrolledPageState extends State<EnrolledPage> {
       Color(0xFF9932CC),
       Color(0xFFFF6347),
       Color(0xFF32CD32),
+      Color(0xFFFF8C00),
+      Color(0xFF20B2AA),
+      Color(0xFFDC143C),
+      Color(0xFF4169E1),
     ];
-    return colors[index % colors.length];
+    return colors[activityId % colors.length];
   }
 
-  IconData _getActivityIcon(String activityName) {
+  String _getStatusDisplay(String status) {
+    switch (status.toLowerCase()) {
+      case 'enrolled':
+        return 'Enrolled';
+      case 'reenrolled':
+        return 'Re-enrolled';
+      case 'unenrolled':
+        return 'Unenrolled';
+      case 'waitlist':
+        return 'Waitlisted';
+      default:
+        return status.toUpperCase();
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'enrolled':
+        return Colors.green;
+      case 'reenrolled':
+        return Colors.blue;
+      case 'unenrolled':
+        return Colors.red;
+      case 'waitlist':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getEnrollmentDate(GetEnrollment enrollment) {
+    try {
+      if (enrollment.toString().contains('timestamp')) {
+        return _formatTimestamp(enrollment.toString());
+      }
+      return 'Recently';
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  String _formatTimestamp(String? timestamp) {
+    if (timestamp == null) return 'N/A';
+
+    try {
+      final dateTime = DateTime.parse(timestamp);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inDays > 7) {
+        return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+      } else if (difference.inDays > 0) {
+        return '${difference.inDays} days ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hours ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} minutes ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return 'N/A';
+    }
+  }
+
+  IconData _getFallbackActivityIcon(String activityName) {
     final name = activityName.toLowerCase();
     if (name.contains('swim')) return Icons.pool;
     if (name.contains('dance')) return Icons.music_video;
@@ -579,6 +869,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
     if (name.contains('yoga') || name.contains('fitness'))
       return Icons.self_improvement;
     if (name.contains('drama')) return Icons.theater_comedy;
+    if (name.contains('chess')) return Icons.extension;
     return Icons.school;
   }
 }
