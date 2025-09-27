@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/home_screen.dart';
 
-import '../../services/activity/activities_batchServices/deleteEnrollmentService.dart';
-import '../../services/activity/activities_batchServices/enrollementModel.dart';
-import '../../services/activity/activities_batchServices/get_enrolled_service.dart';
+import '../../services/Enrollments/deleteEnrollmentService.dart';
+import '../../services/Enrollments/enrollementModel.dart';
+import '../../services/Enrollments/get_enrolled_service.dart';
 import '../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
 

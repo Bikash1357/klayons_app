@@ -5,7 +5,7 @@ import 'package:klayons/screens/notification.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/UserProfileServices/userProfileModels.dart';
-import '../services/activity/activities_batchServices/allActivityServices.dart';
+import '../services/activity/allActivityServices.dart';
 import '../services/UserProfileServices/get_userprofile_service.dart';
 import '../services/notification/announcementService.dart';
 import '../services/notification/modelAnnouncement.dart' hide Activity;

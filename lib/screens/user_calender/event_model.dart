@@ -9,6 +9,8 @@ class Event {
   final RecurrenceRule? recurrence;
   final Color color;
   final String? childName;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Event({
     required this.id,
@@ -19,6 +21,8 @@ class Event {
     this.recurrence,
     this.color = Colors.orange,
     this.childName,
+    this.createdAt,
+    this.updatedAt,
   });
 
   Map<String, dynamic> toJson() {
@@ -31,12 +35,29 @@ class Event {
       'recurrence': recurrence?.toJson(),
       'color': color.value,
       'childName': childName,
+      if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
     };
   }
 
   static Event fromJson(Map<String, dynamic> json) {
+    // Handle color conversion from hex string to Color
+    Color eventColor = Colors.orange;
+    if (json['color'] != null) {
+      if (json['color'] is String) {
+        // Convert hex string to Color
+        String hex = json['color'].toString().replaceFirst('#', '');
+        if (hex.length == 6) {
+          hex = 'FF$hex'; // Add full opacity
+        }
+        eventColor = Color(int.parse(hex, radix: 16));
+      } else if (json['color'] is int) {
+        eventColor = Color(json['color']);
+      }
+    }
+
     return Event(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '', // Convert int to string
       title: json['title'] ?? '',
       address: json['address'] ?? '',
       startTime: DateTime.parse(json['startTime']),
@@ -44,10 +65,14 @@ class Event {
       recurrence: json['recurrence'] != null
           ? RecurrenceRule.fromJson(json['recurrence'])
           : null,
-      color: json.containsKey('color') && json['color'] != null
-          ? Color(json['color'])
-          : Colors.orange,
+      color: eventColor,
       childName: json['childName'],
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
     );
   }
 }
@@ -111,14 +136,11 @@ class RecurrenceRule {
   static RecurrenceRule fromJson(Map<String, dynamic> json) {
     return RecurrenceRule(
       type: _recurrenceTypeFromString(json['type']),
-      interval: json['interval'],
-      daysOfWeek: List<int>.from(json['daysOfWeek']),
+      interval: json['interval'] ?? 1,
+      daysOfWeek: List<int>.from(json['daysOfWeek'] ?? []),
       endRule: _recurrenceEndFromString(json['endRule']),
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
-      occurrences:
-          json.containsKey('occurrences') && json['occurrences'] != null
-          ? json['occurrences']
-          : null,
+      occurrences: json['occurrences'],
     );
   }
 }

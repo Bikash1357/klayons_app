@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import '../../services/calander/CustomCalander/post_custome_child_calender_services.dart';
 import '../../services/calander/children_calendar_service.dart';
 import '../../services/calander/society_activity_calander.dart';
 import '../../services/user_child/get_ChildServices.dart';
@@ -26,7 +27,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  List<Event> _events = [];
 
   // Filter state
   bool _showAllActivities = true; // "All Activities" selected by default
@@ -52,7 +52,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.initState();
     _selectedDay = DateTime.now();
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay!));
-    _loadEvents();
     _loadChildren();
     _loadSocietyBatches();
   }
@@ -61,6 +60,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void dispose() {
     _selectedEvents.dispose();
     super.dispose();
+  }
+
+  // Pull to refresh functionality
+  // Pull to refresh functionality
+  Future<void> _onRefresh() async {
+    try {
+      // Clear available caches
+      SocietyActivitiesService.clearCache();
+      ChildrenCalendarService.clearCache();
+      // Note: GetChildservices doesn't have clearCache method
+
+      // Reset state variables
+      setState(() {
+        _batchEvents.clear();
+        _childrenCalendarEvents.clear();
+        _isLoadingBatches = true;
+        _isLoadingChildren = true;
+        if (_selectedChildIds.isNotEmpty) {
+          _isLoadingChildrenCalendar = true;
+        }
+      });
+
+      // Reload all data
+      await Future.wait([_loadChildren(), _loadSocietyBatches()]);
+
+      // Reload children calendar if any child is selected
+      if (_selectedChildIds.isNotEmpty) {
+        await _loadChildrenCalendar();
+      }
+
+      // Update selected events
+      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Calendar refreshed successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to refresh calendar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // Load society batches
@@ -154,9 +200,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
         _generateChildrenCalendarEvents(cachedCalendar);
       }
 
+      DateTime startDate = DateTime.now().subtract(Duration(days: 30));
+      DateTime endDate = DateTime.now().add(Duration(days: 90));
+
       ChildrenCalendarResponse calendarResponse =
           await ChildrenCalendarService.fetchChildrenCalendar(
             _selectedChildIds,
+            startDate: startDate,
+            endDate: endDate,
           );
       _generateChildrenCalendarEvents(calendarResponse);
 
@@ -194,68 +245,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  Future<void> _loadEvents() async {
-    final prefs = await SharedPreferences.getInstance();
-    final eventsJson = prefs.getString('calendar_events');
-    if (eventsJson != null) {
-      final eventsList = json.decode(eventsJson) as List;
-      setState(() {
-        _events = eventsList.map((e) => Event.fromJson(e)).toList();
-        _selectedEvents.value = _getEventsForDay(_selectedDay!);
-      });
-    }
-  }
-
-  Future<void> _saveEvents() async {
-    final prefs = await SharedPreferences.getInstance();
-    final eventsJson = json.encode(_events.map((e) => e.toJson()).toList());
-    await prefs.setString('calendar_events', eventsJson);
-  }
-
   List<dynamic> _getEventsForDay(DateTime day) {
     List<dynamic> eventsForDay = [];
-
-    // Always add custom events
-    for (Event event in _events) {
-      if (isSameDay(event.startTime, day)) {
-        eventsForDay.add(event);
-      }
-
-      if (event.recurrence != null) {
-        List<DateTime> occurrences = _calculateRecurrenceOccurrences(
-          event,
-          day,
-        );
-        for (DateTime occurrence in occurrences) {
-          if (isSameDay(occurrence, day)) {
-            eventsForDay.add(
-              Event(
-                id: '${event.id}_${occurrence.millisecondsSinceEpoch}',
-                title: event.title,
-                address: event.address,
-                startTime: DateTime(
-                  occurrence.year,
-                  occurrence.month,
-                  occurrence.day,
-                  event.startTime.hour,
-                  event.startTime.minute,
-                ),
-                endTime: DateTime(
-                  occurrence.year,
-                  occurrence.month,
-                  occurrence.day,
-                  event.endTime.hour,
-                  event.endTime.minute,
-                ),
-                color: event.color,
-                childName: event.childName,
-              ),
-            );
-            break;
-          }
-        }
-      }
-    }
 
     // Add society batch events if "All Activities" is selected
     if (_showAllActivities) {
@@ -278,79 +269,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return eventsForDay;
   }
 
-  List<DateTime> _calculateRecurrenceOccurrences(
-    Event event,
-    DateTime targetDay,
-  ) {
-    List<DateTime> occurrences = [];
-    if (event.recurrence == null) return occurrences;
-
-    DateTime current = event.startTime;
-    DateTime endLimit = targetDay.add(Duration(days: 365));
-
-    if (event.recurrence!.endRule == RecurrenceEnd.onDate &&
-        event.recurrence!.endDate != null) {
-      endLimit = event.recurrence!.endDate!;
-    }
-
-    int count = 0;
-    int maxOccurrences = event.recurrence!.occurrences ?? 1000;
-
-    while (current.isBefore(endLimit) && count < maxOccurrences) {
-      if (current.isAfter(event.startTime) ||
-          isSameDay(current, event.startTime)) {
-        bool shouldInclude = false;
-
-        switch (event.recurrence!.type) {
-          case RecurrenceType.weekly:
-            if (event.recurrence!.daysOfWeek.contains(current.weekday)) {
-              shouldInclude = true;
-            }
-            break;
-          case RecurrenceType.daily:
-          case RecurrenceType.monthly:
-          case RecurrenceType.yearly:
-            shouldInclude = true;
-            break;
-        }
-
-        if (shouldInclude) {
-          occurrences.add(current);
-          count++;
-        }
-      }
-
-      switch (event.recurrence!.type) {
-        case RecurrenceType.daily:
-          current = current.add(Duration(days: event.recurrence!.interval));
-          break;
-        case RecurrenceType.weekly:
-          current = current.add(Duration(days: 1));
-          break;
-        case RecurrenceType.monthly:
-          current = DateTime(
-            current.year,
-            current.month + event.recurrence!.interval,
-            current.day,
-            current.hour,
-            current.minute,
-          );
-          break;
-        case RecurrenceType.yearly:
-          current = DateTime(
-            current.year + event.recurrence!.interval,
-            current.month,
-            current.day,
-            current.hour,
-            current.minute,
-          );
-          break;
-      }
-    }
-
-    return occurrences;
-  }
-
   void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
     if (!isSameDay(_selectedDay, selectedDay)) {
       setState(() {
@@ -361,7 +279,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  // Custom event marker builder for dots + plus
+  // Updated event marker builder to handle different event types
   Widget _eventMarkerBuilder(
     BuildContext context,
     DateTime day,
@@ -380,9 +298,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: events.take(2).map((event) {
             Color dotColor = AppColors.primaryOrange;
             if (event is ActivityCalendarEvent) {
-              dotColor = event.color;
+              dotColor = event.isCancelled
+                  ? Colors.grey
+                  : (event.isRescheduled
+                        ? event.color.withOpacity(0.7)
+                        : event.color);
             } else if (event is ChildCalendarEvent) {
-              dotColor = event.color;
+              dotColor = event.isCancelled ? Colors.grey : event.color;
             }
 
             return Container(
@@ -562,6 +484,111 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  // Helper method to get status badge text
+  String _getEventStatusText(dynamic event) {
+    if (event is ActivityCalendarEvent) {
+      if (event.isCancelled) return 'CANCELLED';
+      if (event.isRescheduled) return 'RESCHEDULED';
+      if (event.isFromRDate) return 'SPECIAL';
+    } else if (event is ChildCalendarEvent) {
+      if (event.isCancelled) return 'CANCELLED';
+      if (event.isRescheduled) return 'RESCHEDULED';
+      if (event.isCustomActivity) return 'CUSTOM';
+      if (event.isFromRDate) return 'SPECIAL';
+    }
+    return '';
+  }
+
+  // Helper method to get status badge color
+  Color _getEventStatusColor(String status) {
+    switch (status) {
+      case 'CANCELLED':
+        return Colors.red;
+      case 'RESCHEDULED':
+        return Colors.orange;
+      case 'CUSTOM':
+        return Colors.blue;
+      case 'SPECIAL':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Helper method to convert ChildCustomActivity to Event for editing
+  Event _convertCustomActivityToEvent(ChildCustomActivity customActivity) {
+    // Convert custom recurrence to RecurrenceRule if present
+    RecurrenceRule? recurrence;
+    if (customActivity.recurrence != null) {
+      var customRec = customActivity.recurrence!;
+
+      RecurrenceType recType;
+      switch (customRec.type.toLowerCase()) {
+        case 'daily':
+          recType = RecurrenceType.daily;
+          break;
+        case 'weekly':
+          recType = RecurrenceType.weekly;
+          break;
+        case 'monthly':
+          recType = RecurrenceType.monthly;
+          break;
+        case 'yearly':
+          recType = RecurrenceType.yearly;
+          break;
+        default:
+          recType = RecurrenceType.weekly;
+      }
+
+      RecurrenceEnd recEnd;
+      switch (customRec.endRule.toLowerCase()) {
+        case 'never':
+          recEnd = RecurrenceEnd.never;
+          break;
+        case 'ondate':
+          recEnd = RecurrenceEnd.onDate;
+          break;
+        case 'after':
+          recEnd = RecurrenceEnd.after;
+          break;
+        default:
+          recEnd = RecurrenceEnd.never;
+      }
+
+      recurrence = RecurrenceRule(
+        type: recType,
+        interval: customRec.interval,
+        daysOfWeek: customRec.daysOfWeek,
+        endRule: recEnd,
+        endDate: customRec.endDate,
+        occurrences: customRec.occurrences,
+      );
+    }
+
+    // Convert hex color to Flutter Color
+    Color eventColor = AppColors.primaryOrange;
+    try {
+      String hex = customActivity.color.replaceFirst('#', '');
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      eventColor = Color(int.parse(hex, radix: 16));
+    } catch (e) {
+      print('Error converting color: $e');
+    }
+
+    return Event(
+      id: customActivity.id.toString(),
+      title: customActivity.title,
+      address: customActivity.address,
+      startTime: customActivity.startTime,
+      endTime: customActivity.endTime,
+      recurrence: recurrence,
+      color: eventColor,
+      childName: customActivity.childName,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -607,385 +634,478 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // MMYYYY and filter chips OUTSIDE card container
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    DateFormat('MMMM yyyy').format(_focusedDay),
-                    style: AppTextStyles.titleLarge(context).copyWith(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryOrange,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.primaryOrange,
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // MMYYYY and filter chips OUTSIDE card container
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        DateFormat('MMMM yyyy').format(_focusedDay),
+                        style: AppTextStyles.titleLarge(context).copyWith(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryOrange,
+                        ),
+                      ),
                     ),
+                    if (_isLoadingBatches || _isLoadingChildrenCalendar)
+                      Container(
+                        margin: EdgeInsets.only(left: 8),
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.primaryOrange,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: _buildFilterChips(),
+              ),
+
+              // Card container with shadow wrapping calendar ONLY
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        offset: Offset(4, 0), // Side shadow on the right
+                        blurRadius: 16,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(height: 15),
+                      TableCalendar<dynamic>(
+                        firstDay: DateTime.utc(2020, 1, 1),
+                        lastDay: DateTime.utc(2030, 12, 31),
+                        focusedDay: _focusedDay,
+                        calendarFormat: _calendarFormat,
+                        eventLoader: _getEventsForDay,
+                        startingDayOfWeek: StartingDayOfWeek.monday,
+                        selectedDayPredicate: (day) =>
+                            isSameDay(_selectedDay, day),
+                        onDaySelected: _onDaySelected,
+                        onFormatChanged: (format) {
+                          if (_calendarFormat != format) {
+                            setState(() {
+                              _calendarFormat = format;
+                            });
+                          }
+                        },
+                        onPageChanged: (focusedDay) {
+                          setState(() {
+                            _focusedDay = focusedDay;
+                          });
+                        },
+                        calendarBuilders: CalendarBuilders(
+                          markerBuilder: _eventMarkerBuilder,
+                        ),
+                        calendarStyle: CalendarStyle(
+                          outsideDaysVisible: false,
+                          weekendTextStyle: AppTextStyles.bodyMedium(
+                            context,
+                          ).copyWith(color: Colors.black),
+                          defaultTextStyle: AppTextStyles.bodyMedium(
+                            context,
+                          ).copyWith(color: Colors.black),
+                          selectedDecoration: BoxDecoration(
+                            color: AppColors.primaryOrange,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          selectedTextStyle: AppTextStyles.bodyMedium(context)
+                              .copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                          todayDecoration: BoxDecoration(
+                            color: AppColors.highlight2,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          todayTextStyle: AppTextStyles.bodyMedium(context)
+                              .copyWith(
+                                color: AppColors.primaryOrange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                          markersMaxCount: 0,
+                          canMarkersOverflow: false,
+
+                          // Remove animations
+                        ),
+                        headerStyle: HeaderStyle(
+                          formatButtonVisible: false,
+                          titleCentered: false,
+                          leftChevronVisible: false,
+                          rightChevronVisible: false,
+                          headerPadding: EdgeInsets.zero,
+                          titleTextStyle: AppTextStyles.bodySmall(
+                            context,
+                          ).copyWith(fontSize: 0),
+                        ),
+                        daysOfWeekStyle: DaysOfWeekStyle(
+                          weekdayStyle: AppTextStyles.bodySmall(
+                            context,
+                          ).copyWith(color: Colors.grey.shade600),
+                          weekendStyle: AppTextStyles.bodySmall(
+                            context,
+                          ).copyWith(color: Colors.grey.shade600),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                if (_isLoadingBatches || _isLoadingChildrenCalendar)
-                  Container(
-                    margin: EdgeInsets.only(left: 8),
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.primaryOrange,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: _buildFilterChips(),
-          ),
-
-          // Card container with shadow wrapping calendar ONLY
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    offset: Offset(4, 0), // Side shadow on the right
-                    blurRadius: 16,
-                    spreadRadius: 2,
-                  ),
-                ],
               ),
-              child: Column(
-                children: [
-                  SizedBox(height: 15),
-                  TableCalendar<dynamic>(
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: _focusedDay,
-                    calendarFormat: _calendarFormat,
-                    eventLoader: _getEventsForDay,
-                    startingDayOfWeek: StartingDayOfWeek.monday,
-                    selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-                    onDaySelected: _onDaySelected,
-                    onFormatChanged: (format) {
-                      if (_calendarFormat != format) {
-                        setState(() {
-                          _calendarFormat = format;
-                        });
-                      }
-                    },
-                    onPageChanged: (focusedDay) {
-                      setState(() {
-                        _focusedDay = focusedDay;
-                      });
-                    },
-                    calendarBuilders: CalendarBuilders(
-                      markerBuilder: _eventMarkerBuilder,
-                    ),
-                    calendarStyle: CalendarStyle(
-                      outsideDaysVisible: false,
-                      weekendTextStyle: AppTextStyles.bodyMedium(
-                        context,
-                      ).copyWith(color: Colors.black),
-                      defaultTextStyle: AppTextStyles.bodyMedium(
-                        context,
-                      ).copyWith(color: Colors.black),
-                      selectedDecoration: BoxDecoration(
-                        color: AppColors.primaryOrange,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      selectedTextStyle: AppTextStyles.bodyMedium(context)
-                          .copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+
+              const SizedBox(height: 8.0),
+
+              // Event List with minimum height for RefreshIndicator
+              Container(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
+                child: ValueListenableBuilder<List<dynamic>>(
+                  valueListenable: _selectedEvents,
+                  builder: (context, value, _) {
+                    if (value.isEmpty) {
+                      String emptyMessage = _showAllActivities
+                          ? 'No activities for this day'
+                          : _selectedChildIds.isEmpty
+                          ? 'Select a child to see their activities'
+                          : 'No activities for selected children on this day';
+
+                      String subMessage = _showAllActivities
+                          ? 'Select different activity filters above to see more events'
+                          : 'Try selecting different children or "All Activities"';
+
+                      return Container(
+                        padding: EdgeInsets.all(20),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                emptyMessage,
+                                style: AppTextStyles.bodyLargeEmphasized(
+                                  context,
+                                ).copyWith(color: Colors.grey.shade600),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                subMessage,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySmall(
+                                  context,
+                                ).copyWith(color: Colors.grey.shade500),
+                              ),
+                              SizedBox(height: 16),
+                              Text(
+                                'Pull down to refresh',
+                                style: AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                      color: AppColors.primaryOrange,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                              ),
+                            ],
                           ),
-                      todayDecoration: BoxDecoration(
-                        color: AppColors.highlight2,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      todayTextStyle: AppTextStyles.bodyMedium(context)
-                          .copyWith(
-                            color: AppColors.primaryOrange,
-                            fontWeight: FontWeight.bold,
-                          ),
-                      markersMaxCount: 0,
-                      canMarkersOverflow: false,
-                    ),
-                    headerStyle: HeaderStyle(
-                      formatButtonVisible: false,
-                      titleCentered: false,
-                      leftChevronVisible: false,
-                      rightChevronVisible: false,
-                      headerPadding: EdgeInsets.zero,
-                      titleTextStyle: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(fontSize: 0),
-                    ),
-                    daysOfWeekStyle: DaysOfWeekStyle(
-                      weekdayStyle: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(color: Colors.grey.shade600),
-                      weekendStyle: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(color: Colors.grey.shade600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 8.0),
-
-          // Event List unchanged from before...
-          Expanded(
-            child: ValueListenableBuilder<List<dynamic>>(
-              valueListenable: _selectedEvents,
-              builder: (context, value, _) {
-                if (value.isEmpty) {
-                  return Container(
-                    padding: EdgeInsets.all(20),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'No activities for this day',
-                            style: AppTextStyles.bodyLargeEmphasized(
-                              context,
-                            ).copyWith(color: Colors.grey.shade600),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Select different activity filters above to see more events',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.bodySmall(
-                              context,
-                            ).copyWith(color: Colors.grey.shade500),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: EdgeInsets.all(16),
-                  itemCount: value.length,
-                  itemBuilder: (context, index) {
-                    // Event item build logic unchanged
-                    final event = value[index];
-
-                    String title;
-                    String timeText;
-                    String? venue;
-                    Color iconColor;
-                    String? childInfo;
-                    bool isCancelled = false;
-
-                    if (event is ChildCalendarEvent) {
-                      title = event.title;
-                      timeText =
-                          '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
-                      venue = event.venue;
-                      iconColor = event.color;
-                      childInfo =
-                          event.childName != null && event.childName!.isNotEmpty
-                          ? 'for ${event.childName!.split(' ').first}'
-                          : null;
-                      isCancelled = event.isCancelled;
-                    } else if (event is ActivityCalendarEvent) {
-                      title = event.title;
-                      timeText =
-                          '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
-                      venue = event.venue;
-                      iconColor = event.color;
-                      isCancelled = event.isCancelled;
-                    } else if (event is Event) {
-                      title = event.title;
-                      timeText =
-                          '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
-                      venue = event.address;
-                      iconColor = Colors.orange;
-                      if (event.childName != null &&
-                          event.childName!.isNotEmpty) {
-                        childInfo = 'for ${event.childName!.split(' ').first}';
-                      }
-                    } else {
-                      return SizedBox.shrink();
+                        ),
+                      );
                     }
 
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 12),
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isCancelled
-                            ? Colors.grey.shade100
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: Offset(0, 1),
+                    return ListView.builder(
+                      padding: EdgeInsets.all(16),
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: value.length,
+                      itemBuilder: (context, index) {
+                        final event = value[index];
+
+                        String title;
+                        String timeText;
+                        String? venue;
+                        Color iconColor;
+                        String? childInfo;
+                        bool isCancelled = false;
+                        bool isRescheduled = false;
+                        bool isCustomActivity = false;
+                        String? statusText;
+                        String? cancelReason;
+
+                        if (event is ChildCalendarEvent) {
+                          title = event.title;
+                          timeText =
+                              '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
+                          venue = event.venue;
+                          iconColor = event.color;
+                          childInfo = 'for ${event.childName.split(' ').first}';
+                          isCancelled = event.isCancelled;
+                          isRescheduled = event.isRescheduled;
+                          isCustomActivity = event.isCustomActivity;
+                          cancelReason = event.cancelReason;
+                          statusText = _getEventStatusText(event);
+                        } else if (event is ActivityCalendarEvent) {
+                          title = event.title;
+                          timeText =
+                              '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
+                          venue = event.venue;
+                          iconColor = event.color;
+                          isCancelled = event.isCancelled;
+                          isRescheduled = event.isRescheduled;
+                          cancelReason = event.cancelReason;
+                          statusText = _getEventStatusText(event);
+                        } else {
+                          return SizedBox.shrink();
+                        }
+
+                        // In the ListView.builder itemBuilder section, update the Container for custom activities:
+                        return Container(
+                          margin: EdgeInsets.only(bottom: 12),
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isCancelled
+                                ? Colors.grey.shade100
+                                : (isRescheduled
+                                      ? Colors.orange.shade50
+                                      : Colors.white),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: Offset(0, 1),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: isCancelled ? Colors.grey : iconColor,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                          child: Row(
+                            children: [
+                              // Keep color bar for all activities (including custom)
+                              Container(
+                                width: 4,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: isCancelled
+                                      ? Colors.grey
+                                      : (isRescheduled
+                                            ? iconColor.withOpacity(0.7)
+                                            : iconColor),
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        title,
-                                        style:
-                                            AppTextStyles.bodyLargeEmphasized(
-                                              context,
-                                            ).copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              decoration: isCancelled
-                                                  ? TextDecoration.lineThrough
-                                                  : null,
-                                              color: isCancelled
-                                                  ? Colors.grey
-                                                  : Colors.black,
-                                            ),
-                                      ),
-                                    ),
-                                    if (isCancelled)
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade100,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            title,
+                                            style:
+                                                AppTextStyles.bodyLargeEmphasized(
+                                                  context,
+                                                ).copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                  decoration: isCancelled
+                                                      ? TextDecoration
+                                                            .lineThrough
+                                                      : null,
+                                                  color: isCancelled
+                                                      ? Colors.grey
+                                                      : Colors.black,
+                                                ),
                                           ),
                                         ),
-                                        child: Text(
-                                          'CANCELLED',
-                                          style:
-                                              AppTextStyles.bodySmall(
-                                                context,
-                                              ).copyWith(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                                color: Colors.red.shade700,
+                                        if (statusText != null &&
+                                            statusText.isNotEmpty)
+                                          Container(
+                                            margin: EdgeInsets.only(
+                                              right: 8,
+                                            ), // Add margin to separate from menu
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: _getEventStatusColor(
+                                                statusText,
                                               ),
-                                        ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              statusText,
+                                              style:
+                                                  AppTextStyles.bodySmall(
+                                                    context,
+                                                  ).copyWith(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: _getEventStatusColor(
+                                                      statusText,
+                                                    ),
+                                                  ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      timeText,
+                                      style: AppTextStyles.bodyMedium(context)
+                                          .copyWith(
+                                            color: isCancelled
+                                                ? Colors.grey.shade500
+                                                : Colors.grey.shade600,
+                                          ),
+                                    ),
+                                    if (venue != null && venue.isNotEmpty) ...[
+                                      SizedBox(height: 2),
+                                      Text(
+                                        venue,
+                                        style: AppTextStyles.bodySmall(context)
+                                            .copyWith(
+                                              color: isCancelled
+                                                  ? Colors.grey.shade400
+                                                  : Colors.grey.shade500,
+                                            ),
                                       ),
+                                    ],
+                                    if (childInfo != null) ...[
+                                      SizedBox(height: 2),
+                                      // Remove color from child info text for custom activities
+                                      Text(
+                                        childInfo,
+                                        style: AppTextStyles.bodySmall(context)
+                                            .copyWith(
+                                              fontWeight: FontWeight.w500,
+                                              color: isCancelled
+                                                  ? Colors.grey.shade400
+                                                  : (isCustomActivity
+                                                        ? Colors
+                                                              .grey
+                                                              .shade600 // Use grey instead of blue for custom activities
+                                                        : Colors.blue.shade600),
+                                            ),
+                                      ),
+                                    ],
+                                    if (cancelReason != null &&
+                                        cancelReason.isNotEmpty) ...[
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'Reason: $cancelReason',
+                                        style: AppTextStyles.bodySmall(context)
+                                            .copyWith(
+                                              fontStyle: FontStyle.italic,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                      ),
+                                    ],
                                   ],
                                 ),
-                                SizedBox(height: 4),
-                                Text(
-                                  timeText,
-                                  style: AppTextStyles.bodyMedium(context)
-                                      .copyWith(
-                                        color: isCancelled
-                                            ? Colors.grey.shade500
-                                            : Colors.grey.shade600,
+                              ),
+                              // Show three dots menu only for custom activities
+                              if (isCustomActivity &&
+                                  event is ChildCalendarEvent)
+                                // In the ListView.builder where you show the PopupMenuButton
+                                PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: Colors.grey,
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      // Get the original custom activity
+                                      if (event.originalActivity
+                                          is ChildCustomActivity) {
+                                        ChildCustomActivity customActivity =
+                                            event.originalActivity
+                                                as ChildCustomActivity;
+                                        Event editableEvent =
+                                            _convertCustomActivityToEvent(
+                                              customActivity,
+                                            );
+                                        _showEditEventDialog(
+                                          context,
+                                          editableEvent,
+                                        );
+                                      }
+                                    } else if (value == 'delete') {
+                                      _showDeleteCustomActivityDialog(
+                                        context,
+                                        event,
+                                      );
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) {
+                                    return [
+                                      PopupMenuItem<String>(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.edit,
+                                              size: 18,
+                                              color: Colors.blue,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text('Edit'),
+                                          ],
+                                        ),
                                       ),
+                                      PopupMenuItem<String>(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.delete,
+                                              size: 18,
+                                              color: Colors.red,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Delete',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ];
+                                  },
                                 ),
-                                if (venue != null && venue.isNotEmpty) ...[
-                                  SizedBox(height: 2),
-                                  Text(
-                                    venue,
-                                    style: AppTextStyles.bodySmall(context)
-                                        .copyWith(
-                                          color: isCancelled
-                                              ? Colors.grey.shade400
-                                              : Colors.grey.shade500,
-                                        ),
-                                  ),
-                                ],
-                                if (childInfo != null) ...[
-                                  SizedBox(height: 2),
-                                  Text(
-                                    childInfo,
-                                    style: AppTextStyles.bodySmall(context)
-                                        .copyWith(
-                                          fontWeight: FontWeight.w500,
-                                          color: isCancelled
-                                              ? Colors.grey.shade400
-                                              : Colors.blue.shade600,
-                                        ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                            ],
                           ),
-                          if (event is Event)
-                            PopupMenuButton<String>(
-                              icon: Icon(Icons.more_vert, color: Colors.grey),
-                              onSelected: (value) {
-                                if (value == 'edit') {
-                                  _editEvent(event);
-                                } else if (value == 'delete') {
-                                  _deleteEvent(event);
-                                }
-                              },
-                              itemBuilder: (BuildContext context) {
-                                return [
-                                  PopupMenuItem<String>(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit, size: 18),
-                                        SizedBox(width: 8),
-                                        Text('Edit'),
-                                      ],
-                                    ),
-                                  ),
-                                  PopupMenuItem<String>(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete,
-                                          size: 18,
-                                          color: Colors.red,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Delete',
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ];
-                              },
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEventDialog(context),
@@ -996,45 +1116,93 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  void _showCreateEventDialog(BuildContext context, {Event? eventToEdit}) {
+  void _showCreateEventDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => CreateEventDialog(
         selectedDate: _selectedDay ?? DateTime.now(),
-        eventToEdit: eventToEdit,
+        eventToEdit: null,
         children: _children,
         onEventCreated: (event) {
-          setState(() {
-            if (eventToEdit != null) {
-              int index = _events.indexWhere((e) => e.id == eventToEdit.id);
-              if (index != -1) {
-                _events[index] = event;
-              }
-            } else {
-              _events.add(event);
-            }
-            _selectedEvents.value = _getEventsForDay(_selectedDay!);
-            _saveEvents();
-          });
+          // After creating a custom event, refresh the children calendar
+          // if any child is selected to show the new custom activity
+          if (_selectedChildIds.isNotEmpty) {
+            _loadChildrenCalendar();
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Custom activity created successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
         },
       ),
     );
   }
 
-  void _editEvent(Event event) {
-    _showCreateEventDialog(context, eventToEdit: event);
+  void _showEditEventDialog(BuildContext context, Event eventToEdit) {
+    showDialog(
+      context: context,
+      builder: (context) => CreateEventDialog(
+        selectedDate: eventToEdit.startTime,
+        eventToEdit: eventToEdit,
+        children: _children,
+        onEventCreated: (updatedEvent) async {
+          // Show loading dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => Center(child: CircularProgressIndicator()),
+          );
+
+          try {
+            // Call update API
+            await CustomActivityService.updateCustomActivity(
+              eventToEdit.id,
+              updatedEvent,
+            );
+
+            Navigator.of(context).pop(); // Remove loading dialog
+
+            // After editing a custom event, refresh the children calendar
+            if (_selectedChildIds.isNotEmpty) {
+              await _loadChildrenCalendar();
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Custom activity updated successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } catch (e) {
+            Navigator.of(context).pop(); // Remove loading dialog
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to update activity: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 
-  void _deleteEvent(Event event) {
+  void _showDeleteCustomActivityDialog(
+    BuildContext context,
+    ChildCalendarEvent event,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'Delete Activity',
+          'Delete Custom Activity',
           style: AppTextStyles.titleMedium(context),
         ),
         content: Text(
-          'Are you sure you want to delete "${event.title}"?',
+          'Are you sure you want to delete "${event.title}"? This action cannot be undone.',
           style: AppTextStyles.bodyMedium(context),
         ),
         actions: [
@@ -1043,13 +1211,66 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: Text('Cancel', style: AppTextStyles.bodyMedium(context)),
           ),
           ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _events.removeWhere((e) => e.id == event.id);
-                _selectedEvents.value = _getEventsForDay(_selectedDay!);
-                _saveEvents();
-              });
-              Navigator.of(context).pop();
+            onPressed: () async {
+              Navigator.of(context).pop(); // Close confirmation dialog
+
+              // Show loading dialog
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  content: Row(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('Deleting activity...'),
+                    ],
+                  ),
+                ),
+              );
+
+              try {
+                // Get the original custom activity ID
+                String activityId = '';
+                if (event.originalActivity is ChildCustomActivity) {
+                  ChildCustomActivity customActivity =
+                      event.originalActivity as ChildCustomActivity;
+                  activityId = customActivity.id.toString();
+                }
+
+                if (activityId.isEmpty) {
+                  throw Exception('Activity ID not found');
+                }
+
+                // Call delete API
+                bool deleted = await CustomActivityService.deleteCustomActivity(
+                  activityId,
+                );
+
+                Navigator.of(context).pop(); // Remove loading dialog
+
+                if (deleted) {
+                  // Refresh the children calendar to remove the deleted activity
+                  if (_selectedChildIds.isNotEmpty) {
+                    await _loadChildrenCalendar();
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Custom activity deleted successfully!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                Navigator.of(context).pop(); // Remove loading dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to delete activity: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text(

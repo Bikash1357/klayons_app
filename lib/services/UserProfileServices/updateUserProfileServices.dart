@@ -7,7 +7,8 @@ import 'package:klayons/services/auth/login_service.dart';
 import 'get_userprofile_service.dart';
 
 class UpdateUserProfileService {
-  static const String _baseUrl = 'https://dev-klayonsapi.vercel.app/';
+  static const String _baseUrl =
+      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/';
   static const String _profileEndpoint = 'api/profiles/';
 
   /// Updates the user's profile based on residence type

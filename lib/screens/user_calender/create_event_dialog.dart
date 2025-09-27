@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:klayons/utils/colour.dart';
 
-import '../../services/calander/post_custome_child_calender_services.dart';
+import '../../services/calander/CustomCalander/post_custome_child_calender_services.dart';
 import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
 import 'event_model.dart';
@@ -87,7 +87,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
             children: [
               Text(
                 'Add Custom Activity',
-                style: AppTextStyles.titleLarge(context).copyWith(          
+                style: AppTextStyles.titleLarge(context).copyWith(
                   color: AppColors.primaryOrange,
                   fontWeight: FontWeight.bold,
                 ),
@@ -749,13 +749,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
     );
 
     try {
-      // You need to get the current access token for the API.
-      // Replace this with your actual token retrieval logic.
-      String accessToken = await getAccessToken();
-
+      // Remove the accessToken parameter - service handles token internally
       final createdEvent = await CustomActivityService.createCustomActivity(
         event,
-        accessToken: accessToken,
       );
 
       Navigator.of(context).pop(); // Remove loading dialog
@@ -763,6 +759,14 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       // Pass the created event back
       widget.onEventCreated(createdEvent);
       Navigator.of(context).pop(); // Close the create dialog
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Activity created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       Navigator.of(context).pop(); // Remove loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
@@ -775,8 +779,12 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   }
 
   /// Dummy function for access token
+  /// Get the actual authentication token from SharedPreferences
   Future<String> getAccessToken() async {
-    // Replace with your actual SharedPreferences/JWT fetch logic.
-    return 'auth_token';
+    final token = await CustomActivityService.getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('No authentication token found. Please login first.');
+    }
+    return token;
   }
 }

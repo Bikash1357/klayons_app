@@ -11,12 +11,18 @@ class ActivityOverride {
   final String action;
   final String status;
   final String remarks;
+  final String? newDate;
+  final String? newStartTime;
+  final String? newEndTime;
 
   ActivityOverride({
     required this.originalDate,
     required this.action,
     required this.status,
     required this.remarks,
+    this.newDate,
+    this.newStartTime,
+    this.newEndTime,
   });
 
   factory ActivityOverride.fromJson(Map<String, dynamic> json) {
@@ -25,6 +31,9 @@ class ActivityOverride {
       action: json['action'] ?? '',
       status: json['status'] ?? '',
       remarks: json['remarks'] ?? '',
+      newDate: json['new_date'],
+      newStartTime: json['new_start_time'],
+      newEndTime: json['new_end_time'],
     );
   }
 
@@ -33,6 +42,15 @@ class ActivityOverride {
       return DateTime.parse(originalDate);
     } catch (e) {
       return DateTime.now();
+    }
+  }
+
+  DateTime? get newDateTime {
+    if (newDate == null) return null;
+    try {
+      return DateTime.parse(newDate!);
+    } catch (e) {
+      return null;
     }
   }
 }
@@ -131,6 +149,7 @@ class ActivityCalendarEvent {
   final DateTime endTime;
   final Color color;
   final bool isCancelled;
+  final bool isRescheduled;
   final String? cancelReason;
   final SocietyActivity originalActivity;
   final bool isFromRDate;
@@ -143,6 +162,7 @@ class ActivityCalendarEvent {
     required this.endTime,
     required this.color,
     this.isCancelled = false,
+    this.isRescheduled = false,
     this.cancelReason,
     required this.originalActivity,
     this.isFromRDate = false,
@@ -151,7 +171,8 @@ class ActivityCalendarEvent {
 
 // API Service for Society Activities
 class SocietyActivitiesService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
+  static const String baseUrl =
+      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/api';
   static const String _tokenKey = 'auth_token';
 
   // Cache variables
@@ -318,48 +339,99 @@ class SocietyActivitiesService {
         List<DateTime> exdates = _parseExDatePatterns(schedule.exdatePatterns);
         allEvents = _filterExdates(allEvents, exdates);
 
-        // Step 5: Apply overrides (cancellations)
+        // Step 5: Process overrides and create events
         for (DateTime eventDate in allEvents) {
           if (eventDate.isAfter(startDate.subtract(Duration(days: 1))) &&
               eventDate.isBefore(endDate.add(Duration(days: 1)))) {
-            // Check if this date is cancelled in overrides
-            bool isCancelled = false;
-            String? cancelReason;
-
+            // Check for overrides
+            ActivityOverride? matchingOverride;
             for (ActivityOverride override in schedule.overrides) {
-              if (_isSameDay(override.originalDateTime, eventDate) &&
-                  override.action == 'cancel') {
-                isCancelled = true;
-                cancelReason = override.remarks;
+              if (_isSameDay(override.originalDateTime, eventDate)) {
+                matchingOverride = override;
                 break;
               }
             }
 
-            // Create end time
-            DateTime endTime = _parseTimeToDateTime(
-              eventDate,
-              schedule.endTime,
-            );
+            if (matchingOverride != null) {
+              if (matchingOverride.action == 'cancel') {
+                // Create cancelled event
+                DateTime endTime = _parseTimeToDateTime(
+                  eventDate,
+                  schedule.endTime,
+                );
 
-            // Check if it's from RDATE
-            bool isFromRDate = rdateEvents.any(
-              (rdate) => _isSameDateTime(rdate, eventDate),
-            );
+                events.add(
+                  ActivityCalendarEvent(
+                    id: '${activity.id}_${schedule.id}_${eventDate.millisecondsSinceEpoch}_cancelled',
+                    title: '${activity.name} (Cancelled)',
+                    venue: activity.venue,
+                    startTime: eventDate,
+                    endTime: endTime,
+                    color: Colors.grey,
+                    isCancelled: true,
+                    cancelReason: matchingOverride.remarks,
+                    originalActivity: activity,
+                  ),
+                );
+              } else if (matchingOverride.action == 'reschedule' &&
+                  matchingOverride.newDate != null &&
+                  matchingOverride.newStartTime != null &&
+                  matchingOverride.newEndTime != null) {
+                // Create rescheduled event at new date/time
+                DateTime? newDate = matchingOverride.newDateTime;
+                if (newDate != null) {
+                  DateTime rescheduledStartTime =
+                      _parseTimeToDateTimeWithCustomTime(
+                        newDate,
+                        matchingOverride.newStartTime!,
+                      );
+                  DateTime rescheduledEndTime =
+                      _parseTimeToDateTimeWithCustomTime(
+                        newDate,
+                        matchingOverride.newEndTime!,
+                      );
 
-            events.add(
-              ActivityCalendarEvent(
-                id: '${activity.id}_${schedule.id}_${eventDate.millisecondsSinceEpoch}',
-                title: activity.name,
-                venue: activity.venue,
-                startTime: eventDate,
-                endTime: endTime,
-                color: _getColorForActivity(activity.activityId),
-                isCancelled: isCancelled,
-                cancelReason: cancelReason,
-                originalActivity: activity,
-                isFromRDate: isFromRDate,
-              ),
-            );
+                  events.add(
+                    ActivityCalendarEvent(
+                      id: '${activity.id}_${schedule.id}_${eventDate.millisecondsSinceEpoch}_rescheduled',
+                      title: '${activity.name} (Rescheduled)',
+                      venue: activity.venue,
+                      startTime: rescheduledStartTime,
+                      endTime: rescheduledEndTime,
+                      color: _getColorForActivity(
+                        activity.activityId,
+                      ).withOpacity(0.7),
+                      isRescheduled: true,
+                      cancelReason: matchingOverride.remarks,
+                      originalActivity: activity,
+                    ),
+                  );
+                }
+              }
+            } else {
+              // Normal event (no overrides)
+              DateTime endTime = _parseTimeToDateTime(
+                eventDate,
+                schedule.endTime,
+              );
+
+              bool isFromRDate = rdateEvents.any(
+                (rdate) => _isSameDateTime(rdate, eventDate),
+              );
+
+              events.add(
+                ActivityCalendarEvent(
+                  id: '${activity.id}_${schedule.id}_${eventDate.millisecondsSinceEpoch}',
+                  title: activity.name,
+                  venue: activity.venue,
+                  startTime: eventDate,
+                  endTime: endTime,
+                  color: _getColorForActivity(activity.activityId),
+                  originalActivity: activity,
+                  isFromRDate: isFromRDate,
+                ),
+              );
+            }
           }
         }
       }
@@ -486,6 +558,7 @@ class SocietyActivitiesService {
     return events;
   }
 
+  // Updated RDATE parsing to handle UTC format properly
   static List<DateTime> _parseRDatePatterns(
     List<String> rdatePatterns,
     String defaultStartTime,
@@ -505,6 +578,7 @@ class SocietyActivitiesService {
     return events;
   }
 
+  // Updated EXDATE parsing to handle UTC format properly
   static List<DateTime> _parseExDatePatterns(List<String> exdatePatterns) {
     List<DateTime> exdates = [];
 
@@ -530,8 +604,10 @@ class SocietyActivitiesService {
     }).toList();
   }
 
+  // Improved UTC datetime parsing for RFC 5545 format (YYYYMMDDTHHMMSSZ)
   static DateTime _parseUtcDateTime(String utcString) {
     try {
+      // Remove Z suffix if present
       String cleaned = utcString.replaceAll('Z', '');
 
       if (cleaned.contains('T')) {
@@ -539,15 +615,33 @@ class SocietyActivitiesService {
         String datePart = parts[0];
         String timePart = parts[1];
 
+        // Parse date part (YYYYMMDD)
         int year = int.parse(datePart.substring(0, 4));
         int month = int.parse(datePart.substring(4, 6));
         int day = int.parse(datePart.substring(6, 8));
 
+        // Parse time part (HHMMSS)
         int hour = int.parse(timePart.substring(0, 2));
         int minute = int.parse(timePart.substring(2, 4));
-        int second = int.parse(timePart.substring(4, 6));
+        int second = timePart.length >= 6
+            ? int.parse(timePart.substring(4, 6))
+            : 0;
 
-        return DateTime.utc(year, month, day, hour, minute, second);
+        // Create UTC datetime
+        DateTime utcDateTime = DateTime.utc(
+          year,
+          month,
+          day,
+          hour,
+          minute,
+          second,
+        );
+
+        // Convert to local time
+        DateTime localDateTime = utcDateTime.toLocal();
+
+        print('Converted UTC $utcString to local time: $localDateTime');
+        return localDateTime;
       } else {
         throw FormatException('Invalid UTC datetime format: $utcString');
       }
@@ -587,6 +681,30 @@ class SocietyActivitiesService {
     } catch (e) {
       print('Error parsing time "$timeString": $e');
       return date;
+    }
+  }
+
+  // Helper method for parsing custom time formats like "00:00:00" or "13:00:00"
+  static DateTime _parseTimeToDateTimeWithCustomTime(
+    DateTime date,
+    String timeString,
+  ) {
+    try {
+      // Handle HH:MM:SS format
+      List<String> timeParts = timeString.split(':');
+      if (timeParts.length >= 2) {
+        int hour = int.parse(timeParts[0]);
+        int minute = int.parse(timeParts[1]);
+        int second = timeParts.length >= 3 ? int.parse(timeParts[2]) : 0;
+
+        return DateTime(date.year, date.month, date.day, hour, minute, second);
+      } else {
+        // Fallback to regular time parsing
+        return _parseTimeToDateTime(date, timeString);
+      }
+    } catch (e) {
+      print('Error parsing custom time "$timeString": $e');
+      return _parseTimeToDateTime(date, timeString);
     }
   }
 

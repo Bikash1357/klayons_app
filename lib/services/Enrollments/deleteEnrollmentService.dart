@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../auth/signup_service.dart';
+import '../auth/signup_service.dart';
 
 // Data Models
 class Child {
@@ -141,7 +141,8 @@ class ApiResponse<T> {
 
 // Main Service Class
 class EnrollmentService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app';
+  static const String baseUrl =
+      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev';
 
   // You should store these securely (e.g., in secure storage)
   static String? _authToken;

@@ -5,11 +5,11 @@ import 'package:klayons/screens/InstructorDetailsPage.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import 'package:klayons/utils/styles/errorMessage.dart';
-import '../services/activity/activities_batchServices/activityDetailsService.dart';
-import '../services/activity/activities_batchServices/get_enrolled_service.dart';
-import '../services/activity/activities_batchServices/post_enrollment_service.dart';
+import '../services/activity/activityDetailsService.dart';
+import '../services/Enrollments/get_enrolled_service.dart';
+import '../services/Enrollments/post_enrollment_service.dart';
 import '../services/user_child/get_ChildServices.dart' as ChildService;
-import '../services/activity/activities_batchServices/enrollementModel.dart';
+import '../services/Enrollments/enrollementModel.dart';
 import 'package:klayons/utils/colour.dart';
 
 /// Production-ready Activity Booking Page with comprehensive error handling,

@@ -5,7 +5,8 @@ import 'package:klayons/services/UserProfileServices/userProfileModels.dart';
 import 'package:klayons/services/auth/login_service.dart';
 
 class GetUserProfileService {
-  static const String _baseUrl = 'https://dev-klayonsapi.vercel.app/';
+  static const String _baseUrl =
+      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/';
   static const String _profileEndpoint = 'api/profiles/';
 
   // Cache variables
