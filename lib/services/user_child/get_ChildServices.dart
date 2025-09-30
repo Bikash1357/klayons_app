@@ -82,7 +82,8 @@ class EditChildRequest {
 
 // API Service with Caching
 class GetChildservices {
-  static const String _baseUrl = 'https://dev-klayons.onrender.com/api/';
+  // FIXED: Removed trailing slash from base URL
+  static const String _baseUrl = 'https://dev-klayons.onrender.com';
   static const String _tokenKey = 'auth_token';
   static const Duration _cacheExpiration = Duration(minutes: 20);
   static const Duration _individualCacheExpiration = Duration(minutes: 30);
@@ -176,8 +177,9 @@ class GetChildservices {
     try {
       _isLoadingChildren = true;
 
+      // FIXED: Correct endpoint path
       final response = await http.get(
-        Uri.parse('$_baseUrl/profiles/children/'),
+        Uri.parse('$_baseUrl/api/profiles/children/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -207,6 +209,8 @@ class GetChildservices {
         clearAllCache();
         rethrow;
       }
+      // Added more detailed error logging
+      debugPrint('Error fetching children: $e');
       throw Exception('Failed to load data. Check your connection.');
     } finally {
       _isLoadingChildren = false;
@@ -233,8 +237,9 @@ class GetChildservices {
     try {
       _updatingChildIds.add(childId);
 
+      // FIXED: Correct endpoint path
       final response = await http.put(
-        Uri.parse('$_baseUrl/profiles/children/$childId/'),
+        Uri.parse('$_baseUrl/api/profiles/children/$childId/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -263,6 +268,7 @@ class GetChildservices {
       }
     } catch (e) {
       if (e is Exception) rethrow;
+      debugPrint('Error editing child: $e');
       throw Exception('Failed to update child. Check your connection.');
     } finally {
       _updatingChildIds.remove(childId);
