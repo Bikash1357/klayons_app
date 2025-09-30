@@ -29,7 +29,7 @@ class Society {
 }
 
 class SocietyService {
-  static const String _baseUrl = 'https://klayons-backend.onrender.com';
+  static const String _baseUrl = 'https://dev-klayons.onrender.com';
   static const String _societiesEndpoint = '/api/societies/';
 
   /// Fetches all societies from the backend

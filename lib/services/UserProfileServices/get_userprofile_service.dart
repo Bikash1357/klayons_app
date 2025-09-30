@@ -5,7 +5,7 @@ import 'package:klayons/services/UserProfileServices/userProfileModels.dart';
 import 'package:klayons/services/auth/login_service.dart';
 
 class GetUserProfileService {
-  static const String _baseUrl = 'https://klayons-backend.onrender.com/';
+  static const String _baseUrl = 'https://dev-klayons.onrender.com/';
   static const String _profileEndpoint = 'api/profiles/';
 
   // Cache variables

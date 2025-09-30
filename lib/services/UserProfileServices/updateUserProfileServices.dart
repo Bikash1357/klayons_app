@@ -7,7 +7,7 @@ import 'package:klayons/services/auth/login_service.dart';
 import 'get_userprofile_service.dart';
 
 class UpdateUserProfileService {
-  static const String _baseUrl = 'https://klayons-backend.onrender.com/';
+  static const String _baseUrl = 'https://dev-klayons.onrender.com/';
   static const String _profileEndpoint = 'api/profiles/';
 
   /// Updates the user's profile based on residence type

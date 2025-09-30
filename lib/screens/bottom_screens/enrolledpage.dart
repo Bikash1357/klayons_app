@@ -277,7 +277,15 @@ class _EnrolledPageState extends State<EnrolledPage> {
       backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black87, size: 20),
+          icon: SvgPicture.asset(
+            'assets/App_icons/iconBack.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              AppColors.darkElements,
+              BlendMode.srcIn,
+            ),
+          ),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => KlayonsHomePage()),
@@ -294,12 +302,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
         automaticallyImplyLeading: false,
         backgroundColor: Color(0xFFF5F5F5),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.black87),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(

@@ -171,7 +171,7 @@ class ActivityCalendarEvent {
 
 // API Service for Society Activities
 class SocietyActivitiesService {
-  static const String baseUrl = 'https://klayons-backend.onrender.com/api';
+  static const String baseUrl = 'https://dev-klayons.onrender.com/api';
   static const String _tokenKey = 'auth_token';
 
   // Cache variables

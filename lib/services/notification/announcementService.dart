@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'modelAnnouncement.dart';
 
 class AnnouncementService {
-  static const String baseUrl = 'https://klayons-backend.onrender.com';
+  static const String baseUrl = 'https://dev-klayons.onrender.com';
   static const String announcementsEndpoint = '/api/announcements/';
 
   // Get stored auth token

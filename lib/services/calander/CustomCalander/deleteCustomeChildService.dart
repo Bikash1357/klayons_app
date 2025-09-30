@@ -17,7 +17,7 @@ class CalendarService {
   Future<http.Response> deleteCustomActivity(String activityId) async {
     final token = await getToken();
     final url = Uri.parse(
-      'https://klayons-backend.onrender.com/api/calendar/custom-activities/$activityId/',
+      'https://dev-klayons.onrender.com/api/calendar/custom-activities/$activityId/',
     );
     final headers = {if (token != null) 'Authorization': 'Bearer $token'};
 

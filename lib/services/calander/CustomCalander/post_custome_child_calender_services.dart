@@ -16,7 +16,7 @@ class CustomActivityException implements Exception {
 
 class CustomActivityService {
   static const String _baseUrl =
-      'https://klayons-backend.onrender.com/api/calendar/custom-activities';
+      'https://dev-klayons.onrender.com/api/calendar/custom-activities';
   static const String _tokenKey = 'auth_token';
 
   static Future<String?> getToken() async {

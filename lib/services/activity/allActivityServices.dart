@@ -133,7 +133,7 @@ class ActivityListResponse {
 // SERVICE
 
 class ActivityService {
-  static const String baseUrl = 'https://klayons-backend.onrender.com';
+  static const String baseUrl = 'https://dev-klayons.onrender.com';
 
   static Future<String?> getAuthToken() async {
     try {

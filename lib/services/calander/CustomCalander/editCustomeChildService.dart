@@ -21,7 +21,7 @@ class CalendarService {
   ) async {
     final token = await getToken();
     final url = Uri.parse(
-      'https://klayons-backend.onrender.com/api/calendar/custom-activities/$activityId/',
+      'https://dev-klayons.onrender.com/api/calendar/custom-activities/$activityId/',
     );
     final headers = {
       'Content-Type': 'application/json',
