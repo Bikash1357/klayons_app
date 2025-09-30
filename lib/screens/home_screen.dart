@@ -389,7 +389,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                 backgroundColor: AppColors.background,
                 automaticallyImplyLeading: false,
                 elevation: 0,
-                title: _isLoadingUserProfile
+                leading: _isLoadingUserProfile
                     ? Container(
                         width: 80,
                         height: 16,
@@ -398,12 +398,18 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                           borderRadius: BorderRadius.circular(8),
                         ),
                       )
-                    : Text(
-                        'Hi, $_userName!',
-                        style: GoogleFonts.poetsenOne(
-                          textStyle: AppTextStyles.titleLarge(
-                            context,
-                          ).copyWith(color: AppColors.primaryOrange),
+                    : Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Hi, $_userName!',
+                            style: GoogleFonts.poetsenOne(
+                              textStyle: AppTextStyles.titleLarge(
+                                context,
+                              ).copyWith(color: AppColors.primaryOrange),
+                            ),
+                          ),
                         ),
                       ),
                 actions: [

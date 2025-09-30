@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "532899171937",
+    "project_id": "klayons123",
+    "storage_bucket": "klayons123.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:532899171937:android:30aac97daeb19ae20e2420",
+        "android_client_info": {
+          "package_name": "com.klayons.klayons"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLTs-FcfSoKZ2qNBjDo1Z-PoUZ3LiYSdo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

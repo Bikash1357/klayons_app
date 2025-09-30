@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:klayons/auth/login_screen.dart';
@@ -13,7 +14,7 @@ import 'package:klayons/services/get_societyname.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp();
   runApp(KlayonsApp());
 }
 
