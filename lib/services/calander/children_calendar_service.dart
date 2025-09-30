@@ -264,7 +264,7 @@ class ChildCalendarEvent {
 
 // API Service for Children Calendar
 class ChildrenCalendarService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
+  static const String baseUrl = 'https://klayons-backend.onrender.com/api';
   static const String _tokenKey = 'auth_token';
 
   // Cache variables

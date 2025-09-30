@@ -189,8 +189,7 @@ class EnrollmentHistory {
 }
 
 class EnrollmentService {
-  static const String _baseUrl =
-      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/api';
+  static const String _baseUrl = 'https://klayons-backend.onrender.com/api';
   static const String _enrollEndpoint = '/enrollment/enroll/';
 
   /// Get authentication token using TokenStorage

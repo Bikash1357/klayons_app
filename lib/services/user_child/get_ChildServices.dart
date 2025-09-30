@@ -82,8 +82,7 @@ class EditChildRequest {
 
 // API Service with Caching
 class GetChildservices {
-  static const String _baseUrl =
-      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/api';
+  static const String _baseUrl = 'https://klayons-backend.onrender.com/api';
   static const String _tokenKey = 'auth_token';
   static const Duration _cacheExpiration = Duration(minutes: 20);
   static const Duration _individualCacheExpiration = Duration(minutes: 30);

@@ -77,8 +77,7 @@ class OTPVerificationResponse {
 }
 
 class AuthService {
-  static const String baseUrl =
-      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/api';
+  static const String baseUrl = 'https://klayons-backend.onrender.com/api';
 
   // Send OTP (Signup) - with already registered check
   static Future<SignupResponse> sendOTP({

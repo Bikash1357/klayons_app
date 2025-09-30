@@ -7,8 +7,7 @@ class LoginAuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'user_data';
   static const String _isLoggedInKey = 'is_logged_in';
-  static const String baseUrl =
-      'https://dce6c40c-1aee-4939-b9fa-cf0144c03e80-00-awz9qsmkv8d2.pike.replit.dev/api';
+  static const String baseUrl = 'hhttps://klayons-backend.onrender.com/api';
 
   // Save authentication data with optional user data
   static Future<void> saveAuthData({
