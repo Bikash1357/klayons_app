@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:klayons/screens/InstructorDetailsPage.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import 'package:klayons/utils/styles/errorMessage.dart';
@@ -682,50 +681,106 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
   }
 
   /// Build child selection widget with age validation
+  /// Build child selection and enrollment button in same container
+  /// Build child selection and enrollment button in same container
   Widget _buildChildSelectionWidget() {
+    // Get total capacity directly from backend
+    final totalCapacity = activityData?.capacity ?? 0;
+
     if (children.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        width: double.infinity,
+
         decoration: BoxDecoration(
-          color: Colors.orange[50],
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange[200]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.child_care, size: 48, color: Colors.orange[600]),
-            const SizedBox(height: 12),
-            Text(
-              'No Children Added',
-              style: AppTextStyles.titleMedium(context).copyWith(
-                fontWeight: FontWeight.w600,
-                color: Colors.orange[800],
+            // Book for section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  'Book for:',
+                  style: AppTextStyles.bodyMedium(context).copyWith(
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  "  No Child Profiles Added",
+                  style: AppTextStyles.bodySmall(
+                    context,
+                  ).copyWith(letterSpacing: 0.01, color: Colors.grey[700]),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddChildPage(),
+                      ),
+                    ).then((_) {
+                      _loadChildren();
+                    });
+                  },
+                  child: const Text(
+                    'Add now?',
+                    style: TextStyle(
+                      color: Colors.deepOrange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+
+            // Total spots text
+            Center(
+              child: Text(
+                '$totalCapacity ${totalCapacity == 1 ? 'spot' : 'spots'} remaining',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: totalCapacity <= 5
+                      ? Colors.red[600]
+                      : AppColors.primaryOrange,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'You need to add a child profile before enrolling in activities.',
-              style: AppTextStyles.bodySmall(
-                context,
-              ).copyWith(color: Colors.orange[700]),
-              textAlign: TextAlign.center,
-            ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddChildPage()),
-                ).then((_) {
-                  _loadChildren(); // Refresh children list
-                });
-              },
-              child: Text(
-                'Add Child Profile →',
-                style: TextStyle(
-                  color: Colors.orange[800],
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
+
+            // Enroll button
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: null, // Disabled when no children
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey,
+                  disabledBackgroundColor: Colors.grey[300],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'Enroll Now',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -734,205 +789,320 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Book for: ',
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(color: Colors.grey[700], fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(width: 5),
-            Expanded(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: children.map((child) {
-                  final isSelected = selectedChildId == child.id.toString();
-                  final childAge = _calculateAge(child.dob);
-                  final ageInt = int.tryParse(childAge) ?? 0;
-                  final isAgeWarning = ageInt < 4;
-                  final isChildEnrolled = userEnrollments.any(
-                    (enrollment) =>
-                        enrollment.child?.id == child.id &&
-                        enrollment.activity?.id == widget.activityId &&
-                        (enrollment.status.toLowerCase() == 'enrolled' ||
-                            enrollment.status.toLowerCase() == 'reenrolled' ||
-                            enrollment.status.toLowerCase() == 'waitlist'),
-                  );
-
-                  return GestureDetector(
-                    onTap: () => _selectChild(child),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? (isChildEnrolled
-                                  ? Colors.green
-                                  : (isAgeWarning
-                                        ? Colors.orange
-                                        : Colors.deepOrange))
-                            : (isChildEnrolled
-                                  ? Colors.green[50]
-                                  : (isAgeWarning
-                                        ? Colors.orange[50]
-                                        : Colors.grey[100])),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected
-                              ? (isChildEnrolled
-                                    ? Colors.green[300]!
-                                    : (isAgeWarning
-                                          ? Colors.orange[300]!
-                                          : AppColors.highlight2))
-                              : (isChildEnrolled
-                                    ? Colors.green[200]!
-                                    : (isAgeWarning
-                                          ? Colors.orange[200]!
-                                          : Colors.grey[300]!)),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${child.name.split(' ').first} ($childAge)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isChildEnrolled
-                                        ? Colors.green[800]
-                                        : (isAgeWarning
-                                              ? Colors.orange[800]
-                                              : Colors.grey[700])),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          if (isChildEnrolled) ...[
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.check_circle,
-                              size: 12,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.green[600],
-                            ),
-                          ] else if (isAgeWarning) ...[
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.warning,
-                              size: 12,
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.orange[600],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Book for section with Add Child option
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Book for: ',
+                style: AppTextStyles.bodyMedium(context).copyWith(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
-        ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddChildPage(),
+                    ),
+                  ).then((_) {
+                    _loadChildren();
+                  });
+                },
+                child: const Text(
+                  'Add Child',
+                  style: TextStyle(
+                    color: Colors.deepOrange,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
 
-        // Show enrollment status or age warning
-        if (selectedChild != null) ...[
-          const SizedBox(height: 8),
-          Builder(
-            builder: (context) {
+          // Children chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: children.map((child) {
+              final isSelected = selectedChildId == child.id.toString();
+              final childAge = _calculateAge(child.dob);
+              final ageInt = int.tryParse(childAge) ?? 0;
+              final isAgeWarning = ageInt < 4;
               final isChildEnrolled = userEnrollments.any(
                 (enrollment) =>
-                    enrollment.child?.id == selectedChild!.id &&
+                    enrollment.child?.id == child.id &&
                     enrollment.activity?.id == widget.activityId &&
                     (enrollment.status.toLowerCase() == 'enrolled' ||
                         enrollment.status.toLowerCase() == 'reenrolled' ||
                         enrollment.status.toLowerCase() == 'waitlist'),
               );
 
-              if (isChildEnrolled) {
-                final enrollment = userEnrollments.firstWhere(
+              return GestureDetector(
+                onTap: () => _selectChild(child),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? (isChildEnrolled
+                              ? Colors.green
+                              : (isAgeWarning
+                                    ? Colors.orange
+                                    : Colors.deepOrange))
+                        : (isChildEnrolled
+                              ? Colors.green[50]
+                              : (isAgeWarning
+                                    ? Colors.orange[50]
+                                    : Colors.grey[100])),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSelected
+                          ? (isChildEnrolled
+                                ? Colors.green[300]!
+                                : (isAgeWarning
+                                      ? Colors.orange[300]!
+                                      : AppColors.highlight2))
+                          : (isChildEnrolled
+                                ? Colors.green[200]!
+                                : (isAgeWarning
+                                      ? Colors.orange[200]!
+                                      : Colors.grey[300]!)),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${child.name.split(' ').first} ($childAge)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected
+                              ? Colors.white
+                              : (isChildEnrolled
+                                    ? Colors.green[800]
+                                    : (isAgeWarning
+                                          ? Colors.orange[800]
+                                          : Colors.grey[700])),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      if (isChildEnrolled) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.check_circle,
+                          size: 12,
+                          color: isSelected ? Colors.white : Colors.green[600],
+                        ),
+                      ] else if (isAgeWarning) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.warning,
+                          size: 12,
+                          color: isSelected ? Colors.white : Colors.orange[600],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          // Show enrollment status or age warning
+          if (selectedChild != null) ...[
+            const SizedBox(height: 12),
+            Builder(
+              builder: (context) {
+                final isChildEnrolled = userEnrollments.any(
                   (enrollment) =>
                       enrollment.child?.id == selectedChild!.id &&
-                      enrollment.activity?.id == widget.activityId,
+                      enrollment.activity?.id == widget.activityId &&
+                      (enrollment.status.toLowerCase() == 'enrolled' ||
+                          enrollment.status.toLowerCase() == 'reenrolled' ||
+                          enrollment.status.toLowerCase() == 'waitlist'),
                 );
 
-                return Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.green[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        size: 16,
-                        color: Colors.green[600],
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'This child is already ${enrollment.status.toLowerCase()} in this activity.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green[800],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                if (isChildEnrolled) {
+                  final enrollment = userEnrollments.firstWhere(
+                    (enrollment) =>
+                        enrollment.child?.id == selectedChild!.id &&
+                        enrollment.activity?.id == widget.activityId,
+                  );
 
-              final childAge = _calculateAge(selectedChild!.dob);
-              final ageInt = int.tryParse(childAge) ?? 0;
-              if (ageInt < 4) {
-                return Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.orange[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: Colors.orange[600],
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'This child may not meet the minimum age requirement for this activity.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange[800],
-                            fontWeight: FontWeight.w500,
+                  return Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.green[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: Colors.green[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This child is already ${enrollment.status.toLowerCase()} in this activity.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green[800],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                  );
+                }
+
+                final childAge = _calculateAge(selectedChild!.dob);
+                final ageInt = int.tryParse(childAge) ?? 0;
+                if (ageInt < 4) {
+                  return Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.orange[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This child may not meet the minimum age requirement for this activity.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[800],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+
+          // Total spots text (from backend capacity field)
+          const SizedBox(height: 12),
+          Text(
+            '$totalCapacity ${totalCapacity == 1 ? 'spot' : 'spots'} remaining',
+            style: TextStyle(
+              fontSize: 14,
+              color: totalCapacity <= 5
+                  ? Colors.red[600]
+                  : AppColors.primaryOrange,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          // Enroll button
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _isEnrollmentButtonEnabled ? _handleEnrollment : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    activityData?.isActive == true &&
+                        !(_isChildAlreadyEnrolled || _hasAnyChildEnrolled)
+                    ? Colors.deepOrange
+                    : Colors.grey,
+                disabledBackgroundColor: Colors.grey[300],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: _isEnrolling
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          'Enrolling...',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      _enrollmentButtonText,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
+                    ),
+            ),
           ),
         ],
-      ],
+      ),
     );
+  }
+
+  String _getPaymentTypeDisplay(String paymentType) {
+    switch (paymentType.toLowerCase()) {
+      case 'monthly':
+        return '/month';
+      case 'annual':
+        return '/year';
+      case 'quarterly':
+        return '/quarter';
+      case 'one-time':
+        return '';
+      default:
+        return '';
+    }
   }
 
   /// Get activity icon based on category
@@ -1084,44 +1254,59 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
     return FadeTransition(
       opacity: _fadeAnimation,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header image with overlay buttons
-            _buildHeaderImage(activity),
-
-            // Activity details
-            Padding(
-              padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildActivityHeader(activity),
-                  const SizedBox(height: 16),
-                  _buildPriceSection(activity),
-                  const SizedBox(height: 16),
-                  _buildScheduleInfo(activity),
-                  const SizedBox(height: 20),
-                  _buildDescriptionSection(activity),
-                  const SizedBox(height: 20),
+                  // Header image with overlay buttons
+                  _buildHeaderImage(activity),
 
-                  // Child selection or no children message
-                  _buildChildSelectionWidget(),
-                  const SizedBox(height: 16),
-
-                  // Enrollment button
-                  _buildEnrollmentButton(activity),
-                  const SizedBox(height: 30),
-
-                  // Instructor section
-                  _buildInstructorSection(activity),
-                  const SizedBox(height: 20),
+                  // Activity details
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildActivityHeader(activity),
+                        const SizedBox(height: 16),
+                        _buildPriceSection(activity),
+                        const SizedBox(height: 16),
+                        _buildScheduleInfo(activity),
+                        const SizedBox(height: 20),
+                        _buildDescriptionSection(activity),
+                        const SizedBox(height: 20),
+                        _buildInstructorSection(activity),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          // Fixed child selection widget at bottom
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildChildSelectionWidget(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1252,7 +1437,8 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryOrange,
+                  border: Border.all(color: AppColors.primaryOrange),
+                  color: AppColors.primaryOrange.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1291,10 +1477,17 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          '/${activity.paymentType}',
-          style: const TextStyle(fontSize: 16, color: Color(0xFFFF6D00)),
-        ),
+        if (_getPaymentTypeDisplay(activity.paymentType).isNotEmpty)
+          Flexible(
+            child: Text(
+              _getPaymentTypeDisplay(activity.paymentType),
+              style: AppTextStyles.bodyMedium(
+                context,
+              ).copyWith(color: AppColors.primaryOrange),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
       ],
     );
   }
@@ -1506,100 +1699,81 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           ).copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         const SizedBox(height: 16),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const InstructorDetailsPage(),
-              ),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: Row(
-              children: [
-                // Instructor Avatar
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.deepOrange.withOpacity(0.1),
-                  backgroundImage: activity.instructor.avatarUrl != null
-                      ? NetworkImage(activity.instructor.avatarUrl!)
-                      : null,
-                  child: activity.instructor.avatarUrl == null
-                      ? Text(
-                          activity.instructor.name.isNotEmpty
-                              ? activity.instructor.name
-                                    .substring(0, 1)
-                                    .toUpperCase()
-                              : 'I',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepOrange,
-                          ),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[100]!),
+          ),
+          child: Row(
+            children: [
+              // Instructor Avatar
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.deepOrange.withOpacity(0.1),
+                backgroundImage: activity.instructor.avatarUrl != null
+                    ? NetworkImage(activity.instructor.avatarUrl!)
+                    : null,
+                child: activity.instructor.avatarUrl == null
+                    ? Text(
                         activity.instructor.name.isNotEmpty
                             ? activity.instructor.name
-                            : 'Instructor Name',
-                        style: AppTextStyles.titleMedium(context).copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                                  .substring(0, 1)
+                                  .toUpperCase()
+                            : 'I',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepOrange,
                         ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      activity.instructor.name.isNotEmpty
+                          ? activity.instructor.name
+                          : 'Instructor Name',
+                      style: AppTextStyles.titleMedium(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
-                      if (activity.instructor.profile.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          activity.instructor.profile,
-                          style: AppTextStyles.bodySmall(
-                            context,
-                          ).copyWith(color: Colors.grey[600]),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      if (activity.instructor.phone.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.phone,
-                              size: 12,
-                              color: Colors.grey[500],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              activity.instructor.phone,
-                              style: AppTextStyles.bodySmall(
-                                context,
-                              ).copyWith(color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                      ],
+                    ),
+                    if (activity.instructor.profile.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        activity.instructor.profile,
+                        style: AppTextStyles.bodySmall(
+                          context,
+                        ).copyWith(color: Colors.grey[600]),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  ),
+                    if (activity.instructor.phone.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.phone, size: 12, color: Colors.grey[500]),
+                          const SizedBox(width: 4),
+                          Text(
+                            activity.instructor.phone,
+                            style: AppTextStyles.bodySmall(
+                              context,
+                            ).copyWith(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16,
-                  color: Colors.grey[400],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ],

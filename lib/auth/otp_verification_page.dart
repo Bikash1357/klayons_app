@@ -4,10 +4,10 @@ import 'package:flutter_svg/svg.dart';
 import 'package:klayons/services/auth/signup_service.dart';
 import 'package:klayons/services/auth/login_service.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import '../services/notification/fcmService.dart';
 import '../utils/colour.dart';
 import '../screens/home_screen.dart';
 import 'dart:async';
-
 import '../utils/styles/button.dart';
 
 class OTPVerificationPage extends StatefulWidget {
@@ -35,7 +35,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   bool _isResending = false;
   int _currentFocusIndex = 0;
 
-  // Timer for resend functionality
   Timer? _resendTimer;
   int _resendCountdown = 0;
   bool _canResend = true;
@@ -47,13 +46,11 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   @override
   void initState() {
     super.initState();
-    // Auto focus on first field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNodes[0].requestFocus();
       _currentFocusIndex = 0;
     });
 
-    // Add focus listeners to track current focus
     for (int i = 0; i < _focusNodes.length; i++) {
       _focusNodes[i].addListener(() {
         if (_focusNodes[i].hasFocus) {
@@ -64,7 +61,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       });
     }
 
-    // Start resend timer
     _startResendTimer();
   }
 
@@ -92,11 +88,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Main scrollable content
           SingleChildScrollView(
             child: Column(
               children: [
-                // Header with background image
                 Stack(
                   children: [
                     Container(
@@ -111,7 +105,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                         ),
                       ),
                     ),
-                    // Rounded overlay to blend with form section
                     Positioned(
                       bottom: 0,
                       left: 0,
@@ -129,8 +122,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     ),
                   ],
                 ),
-
-                // Title
                 Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(
@@ -145,8 +136,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                     ),
                   ),
                 ),
-
-                // OTP Form Section
                 Container(
                   width: double.infinity,
                   color: Colors.white,
@@ -157,7 +146,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Description Text
                       Text(
                         '6-digit code sent on ${_isEmail(widget.email) ? 'email' : 'WhatsApp'} at',
                         style: AppTextStyles.titleMedium(
@@ -166,8 +154,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 8),
-
-                      // Email/Phone display
                       Text(
                         _isEmail(widget.email)
                             ? widget.email
@@ -178,13 +164,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                         textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 40),
-
-                      // OTP Input Boxes with timer and resend
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 10.0),
                         child: Column(
                           children: [
-                            // OTP Boxes
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: List.generate(
@@ -193,12 +176,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                               ),
                             ),
                             SizedBox(height: 12),
-
-                            // Timer and Resend Code aligned with OTP boxes
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Timer display on left - aligned with first OTP box
                                 Padding(
                                   padding: EdgeInsets.only(left: 4),
                                   child: Text(
@@ -208,8 +188,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                                     ).copyWith(color: AppColors.textSecondary),
                                   ),
                                 ),
-
-                                // Resend Code on right - aligned with last OTP box
                                 TextButton(
                                   onPressed: (_canResend && !_isResending)
                                       ? _resendOTP
@@ -240,10 +218,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                           ],
                         ),
                       ),
-
                       SizedBox(height: 60),
-
-                      // Submit Button using OrangeButton
                       OrangeButton(
                         onPressed: _verifyOTP,
                         isDisabled: _isLoading || !_isOTPComplete(),
@@ -288,12 +263,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
               ],
             ),
           ),
-
-          // Fixed Back Button - positioned outside ScrollView
           Positioned(
-            top:
-                MediaQuery.of(context).padding.top +
-                16, // Accounts for status bar
+            top: MediaQuery.of(context).padding.top + 16,
             left: 16,
             child: Container(
               width: 40,
@@ -341,10 +312,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(
-            color: isCurrentFocus
-                ? AppColors
-                      .primaryOrange // Orange border only for focused field
-                : Colors.grey[300]!, // Grey border for unfocused fields
+            color: isCurrentFocus ? AppColors.primaryOrange : Colors.grey[300]!,
             width: isCurrentFocus ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -364,14 +332,12 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             if (event is RawKeyDownEvent) {
               if (event.logicalKey == LogicalKeyboardKey.backspace) {
                 if (_otpControllers[index].text.isEmpty && index > 0) {
-                  // Move to previous field and clear it
                   _focusNodes[index - 1].requestFocus();
                   _otpControllers[index - 1].clear();
                   setState(() {
                     _currentFocusIndex = index - 1;
                   });
                 } else if (_otpControllers[index].text.isNotEmpty) {
-                  // Clear current field
                   _otpControllers[index].clear();
                   setState(() {});
                 }
@@ -396,22 +362,17 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             ),
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             onChanged: (value) {
-              setState(() {}); // Refresh to update border color
-
+              setState(() {});
               if (value.isNotEmpty) {
-                // If user types a new digit, replace existing and move to next
                 if (value.length > 1) {
                   _otpControllers[index].text = value.substring(
                     value.length - 1,
                   );
                 }
-
-                // Move to next field
                 if (index < 5) {
                   _focusNodes[index + 1].requestFocus();
                   _currentFocusIndex = index + 1;
                 } else {
-                  // Last field, remove focus
                   _focusNodes[index].unfocus();
                 }
               }
@@ -420,7 +381,6 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
               setState(() {
                 _currentFocusIndex = index;
               });
-              // Select all text when tapped, so typing replaces it
               _otpControllers[index].selection = TextSelection(
                 baseOffset: 0,
                 extentOffset: _otpControllers[index].text.length,
@@ -440,6 +400,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     return _getOTPCode().length == 6;
   }
 
+  // ============= UPDATED: OTP VERIFICATION WITH FCM INTEGRATION =============
   Future<void> _verifyOTP() async {
     if (!_isOTPComplete()) {
       _showErrorMessage('Please enter complete 6-digit OTP');
@@ -455,35 +416,46 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       print('🎯 Purpose: ${widget.purpose}');
       print('🔢 OTP Code: ${_getOTPCode()}');
 
-      // Use AuthService for OTP verification
       final result = await AuthService.verifyOTP(
         email: widget.email,
         otpCode: _getOTPCode(),
         purpose: widget.purpose,
       );
 
-      print('📋 OTP verification result: $result');
-      print('✅ Success: ${result.isSuccess}');
+      print('📋 OTP verification result: ${result.isSuccess}');
       print('💬 Message: ${result.message}');
-      print('🔑 Token: ${result.token}');
 
       if (result.isSuccess) {
         print('🎉 OTP verification successful!');
-        _showSuccessMessage(
-          result.message.isNotEmpty
-              ? result.message
-              : 'Verification successful!',
-        );
 
         // Save the authentication token
         if (result.token != null && result.token!.isNotEmpty) {
           await TokenStorage.saveToken(result.token!);
-          print('💾 Token saved successfully: ${result.token}');
+          print('💾 Token saved successfully');
 
-          // Navigate to home screen
+          // ========== FCM TOKEN INTEGRATION ==========
+          print('🔔 Starting FCM token process...');
+
+          // Get FCM token and send to backend
+          bool fcmSuccess = await FCMService.getFCMTokenAndSendToBackend();
+
+          if (fcmSuccess) {
+            print('✅ FCM token successfully registered');
+          } else {
+            print('⚠️ FCM token registration failed, but continuing login');
+            // Don't block user login if FCM fails
+          }
+          // =========================================
+
+          _showSuccessMessage(
+            result.message.isNotEmpty
+                ? result.message
+                : 'Verification successful!',
+          );
+
           await Future.delayed(Duration(seconds: 1));
+
           if (mounted) {
-            // Use direct navigation instead of named routes
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => KlayonsHomePage()),
@@ -524,31 +496,22 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     });
 
     try {
-      print('Resending OTP to: ${widget.email} for purpose: ${widget.purpose}');
+      print('Resending OTP to: ${widget.email}');
 
-      // Use AuthService for consistent API handling
       final result = await AuthService.resendOTP(
         email: widget.email,
         purpose: widget.purpose,
       );
 
-      print('Resend OTP result: $result');
-
       if (result.isSuccess) {
-        print('OTP resent successfully');
         _showSuccessMessage(
-          result.message.isNotEmpty
-              ? result.message
-              : 'OTP has been resent to your ${_isEmail(widget.email) ? 'email' : 'WhatsApp'}.',
+          result.message.isNotEmpty ? result.message : 'OTP has been resent.',
         );
         _clearOTPFields();
         _focusNodes[0].requestFocus();
         _currentFocusIndex = 0;
-
-        // Restart the timer
         _startResendTimer();
       } else {
-        print('Failed to resend OTP: ${result.message}');
         _showErrorMessage(
           result.message.isNotEmpty ? result.message : 'Failed to resend OTP.',
         );
@@ -569,7 +532,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     for (var controller in _otpControllers) {
       controller.clear();
     }
-    setState(() {}); // Refresh UI
+    setState(() {});
   }
 
   void _showSuccessMessage(String message) {

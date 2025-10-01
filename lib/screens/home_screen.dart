@@ -386,6 +386,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                 floating: true,
                 snap: true,
                 pinned: false,
+                leadingWidth: 200,
                 backgroundColor: AppColors.background,
                 automaticallyImplyLeading: false,
                 elevation: 0,
@@ -393,23 +394,28 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                     ? Container(
                         width: 80,
                         height: 16,
+                        margin: const EdgeInsets.only(left: 16),
                         decoration: BoxDecoration(
                           color: Colors.white60,
                           borderRadius: BorderRadius.circular(8),
                         ),
                       )
-                    : Padding(
+                    : Container(
                         padding: const EdgeInsets.only(left: 16),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Hi, $_userName!',
-                            style: GoogleFonts.poetsenOne(
-                              textStyle: AppTextStyles.titleLarge(
-                                context,
-                              ).copyWith(color: AppColors.primaryOrange),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Hi, $_userName!',
+                              style: GoogleFonts.poetsenOne(
+                                textStyle: AppTextStyles.titleLarge(
+                                  context,
+                                ).copyWith(color: AppColors.primaryOrange),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
+                          ],
                         ),
                       ),
                 actions: [

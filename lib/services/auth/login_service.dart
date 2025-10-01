@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../config/api_config.dart';
+import '../notification/fcmService.dart'; // Import FCM service
 
 class LoginAuthService {
   static const String _tokenKey = 'auth_token';
@@ -96,20 +96,19 @@ class LoginAuthService {
   }
 
   // Check authentication status
-  // Check authentication status
   static Future<bool> isAuthenticated() async {
     try {
-      print('🔍 Starting authentication check...');
+      print('Starting authentication check...');
 
       final token = await getToken();
 
       if (token == null || token.isEmpty) {
-        print('❌ No token found, navigating to login');
+        print('No token found, navigating to login');
         return false;
       }
 
       if (!_isValidTokenFormat(token)) {
-        print('❌ Invalid token format');
+        print('Invalid token format');
         return false;
       }
 
@@ -117,10 +116,10 @@ class LoginAuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_isLoggedInKey, true);
 
-      print('✅ Authentication successful');
+      print('Authentication successful');
       return true;
     } catch (e) {
-      print('❌ Authentication check error: $e');
+      print('Authentication check error: $e');
       return false;
     }
   }
@@ -141,8 +140,8 @@ class LoginAuthService {
       // Remove null values
       requestBody.removeWhere((key, value) => value == null);
 
-      print('🌐 Sending login OTP with URL: $url');
-      print('📝 Request body: ${jsonEncode(requestBody)}');
+      print('Sending login OTP with URL: $url');
+      print('Request body: ${jsonEncode(requestBody)}');
 
       final response = await http.post(
         url,
@@ -153,13 +152,13 @@ class LoginAuthService {
         body: jsonEncode(requestBody),
       );
 
-      print('📡 Send login OTP response status: ${response.statusCode}');
-      print('📄 Send login OTP response body: ${response.body}');
+      print('Send login OTP response status: ${response.statusCode}');
+      print('Send login OTP response body: ${response.body}');
 
       final Map<String, dynamic> responseData = jsonDecode(response.body);
       return SigninResponse.fromJson(responseData, response.statusCode);
     } catch (e) {
-      print('❌ Send login OTP error: $e');
+      print('Send login OTP error: $e');
       throw Exception('Network error: ${e.toString()}');
     }
   }
@@ -170,7 +169,7 @@ class LoginAuthService {
     required String otp,
   }) async {
     try {
-      print('🔄 Verifying login OTP for: $emailOrPhone');
+      print('Verifying login OTP for: $emailOrPhone');
 
       final url = Uri.parse('$baseUrl/auth/verify-otp/');
 
@@ -184,8 +183,8 @@ class LoginAuthService {
       // Remove null values
       requestBody.removeWhere((key, value) => value == null);
 
-      print('🌐 Verifying login OTP with URL: $url');
-      print('📝 Request body: ${jsonEncode(requestBody)}');
+      print('Verifying login OTP with URL: $url');
+      print('Request body: ${jsonEncode(requestBody)}');
 
       final response = await http.post(
         url,
@@ -196,10 +195,8 @@ class LoginAuthService {
         body: jsonEncode(requestBody),
       );
 
-      print(
-        '📡 Login OTP verification response status: ${response.statusCode}',
-      );
-      print('📄 Login OTP verification response body: ${response.body}');
+      print('Login OTP verification response status: ${response.statusCode}');
+      print('Login OTP verification response body: ${response.body}');
 
       final Map<String, dynamic> responseData = jsonDecode(response.body);
 
@@ -208,7 +205,7 @@ class LoginAuthService {
         final accessToken = responseData['access'];
         if (accessToken != null) {
           await saveToken(accessToken);
-          print('✅ Login OTP verified and token saved successfully');
+          print('Login OTP verified and token saved successfully');
         }
 
         return OTPVerificationResponse(
@@ -229,7 +226,7 @@ class LoginAuthService {
         );
       }
     } catch (e) {
-      print('❌ Login OTP verification error: $e');
+      print('Login OTP verification error: $e');
       throw Exception('Network error: ${e.toString()}');
     }
   }
@@ -241,9 +238,7 @@ class LoginAuthService {
     required String otp,
   }) async {
     try {
-      print(
-        '⚠️ Using deprecated verifyOTP method. Use verifyLoginOTP instead.',
-      );
+      print('Using deprecated verifyOTP method. Use verifyLoginOTP instead.');
 
       final result = await verifyLoginOTP(emailOrPhone: email, otp: otp);
 
@@ -257,7 +252,7 @@ class LoginAuthService {
         return {'success': false, 'message': result.message};
       }
     } catch (e) {
-      print('❌ Deprecated verifyOTP error: $e');
+      print('Deprecated verifyOTP error: $e');
       return null;
     }
   }
@@ -268,18 +263,52 @@ class LoginAuthService {
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
     await prefs.setBool(_isLoggedInKey, false);
-    print('🗑️ Auth data cleared');
+
+    // Also clear FCM token from local storage
+    await prefs.remove('fcm_token');
+
+    print('Auth data cleared');
   }
 
-  // Logout from backend and clear local data
+  // UPDATED: Logout from backend with FCM token cleanup
   static Future<bool> logout() async {
     try {
       final token = await getToken();
+
       if (token != null) {
+        // Step 1: Delete FCM token from backend
+        try {
+          final fcmToken = await FCMService.getLocalFCMToken();
+
+          if (fcmToken != null && fcmToken.isNotEmpty) {
+            print('Deleting FCM token from backend...');
+
+            final fcmResponse = await http
+                .post(
+                  Uri.parse('$baseUrl/delete-fcm-token/'),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer $token',
+                  },
+                  body: jsonEncode({'fcm_token': fcmToken}),
+                )
+                .timeout(const Duration(seconds: 5));
+
+            print('FCM token deletion response: ${fcmResponse.statusCode}');
+
+            if (fcmResponse.statusCode == 200) {
+              print('FCM token deleted from backend successfully');
+            }
+          }
+        } catch (e) {
+          print('FCM token deletion error (ignored): $e');
+        }
+
+        // Step 2: Call backend logout endpoint
         try {
           final response = await http
               .post(
-                Uri.parse('$baseUrl/auth/logout/'), // Updated to use baseUrl
+                Uri.parse('$baseUrl/auth/logout/'),
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': 'Bearer $token',
@@ -292,11 +321,21 @@ class LoginAuthService {
           print('Backend logout error (ignored): $e');
         }
       }
+
+      // Step 3: Delete FCM token from Firebase
+      try {
+        await FCMService.deleteFCMToken();
+        print('FCM token deleted from Firebase');
+      } catch (e) {
+        print('Firebase FCM token deletion error (ignored): $e');
+      }
     } catch (e) {
       print('Logout error: $e');
     } finally {
+      // Step 4: Always clear local auth data
       await clearAuthData();
     }
+
     return true;
   }
 
@@ -310,7 +349,7 @@ class LoginAuthService {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl/auth/user-profile/'), // Updated to use baseUrl
+        Uri.parse('$baseUrl/auth/user-profile/'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
