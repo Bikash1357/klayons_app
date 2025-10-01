@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'colour.dart';
 import 'styles/fonts.dart';
 
 class ConfirmationPage extends StatelessWidget {
@@ -20,7 +21,7 @@ class ConfirmationPage extends StatelessWidget {
     this.idValue,
     this.buttonText = "Back to Home",
     this.onButtonPressed,
-    this.primaryColor = const Color(0xFFFF5722),
+    this.primaryColor = AppColors.primaryOrange,
     this.backgroundColor = const Color(0xFFFFF3F0),
   }) : super(key: key);
 

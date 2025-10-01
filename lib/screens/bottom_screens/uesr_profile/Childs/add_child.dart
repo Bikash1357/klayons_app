@@ -12,7 +12,6 @@ import '../profile_page.dart';
 
 class ChildData {
   final String firstName;
-  final String lastName;
   final DateTime dateOfBirth;
   final String gender;
   final int? childId;
@@ -20,7 +19,6 @@ class ChildData {
 
   ChildData({
     required this.firstName,
-    required this.lastName,
     required this.dateOfBirth,
     required this.gender,
     this.childId,
@@ -60,13 +58,54 @@ class _AddChildPageState extends State<AddChildPage> {
     );
   }
 
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 3),
-      ),
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: AppColors.primaryOrange,
+                size: 28,
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Success',
+                style: AppTextStyles.titleLarge(
+                  context,
+                ).copyWith(color: AppColors.primaryOrange),
+              ),
+            ],
+          ),
+          content: Text(message, style: AppTextStyles.bodyMedium(context)),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close success dialog
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => UserProfilePage()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryOrange,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'OK',
+                style: AppTextStyles.bodyMedium(
+                  context,
+                ).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -164,37 +203,38 @@ class _AddChildPageState extends State<AddChildPage> {
     }
   }
 
-  Future<void> _handleDeleteChild() async {
+  Future<void> _handleDeleteChild(StateSetter dialogSetState) async {
     if (widget.childToEdit?.id == null) {
       _showErrorSnackBar('Invalid child data');
       return;
     }
 
+    dialogSetState(() => _isDeletingChild = true);
     setState(() => _isDeletingChild = true);
 
     try {
       bool isAuth = await LoginAuthService.isAuthenticated();
       if (!isAuth) {
+        dialogSetState(() => _isDeletingChild = false);
         setState(() => _isDeletingChild = false);
+        Navigator.of(context).pop(); // Close dialog
         _showErrorSnackBar('Session expired. Please login again.');
         return;
       }
 
       final success = await _deleteChild(widget.childToEdit!.id);
+      dialogSetState(() => _isDeletingChild = false);
       setState(() => _isDeletingChild = false);
 
       if (success) {
         Navigator.of(context).pop(); // Close dialog
-        _showSuccessSnackBar('Child profile deleted successfully!');
-        // Navigate back after delay
-        Future.delayed(const Duration(seconds: 2), () {
-          Navigator.of(context).pop(true);
-        });
+        _showSuccessDialog('Child profile deleted successfully!');
       } else {
         Navigator.of(context).pop(); // Close dialog
         _showErrorSnackBar('Failed to delete child profile. Please try again.');
       }
     } catch (e) {
+      dialogSetState(() => _isDeletingChild = false);
       setState(() => _isDeletingChild = false);
       Navigator.of(context).pop(); // Close dialog
 
@@ -268,7 +308,7 @@ class _AddChildPageState extends State<AddChildPage> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: _handleDeleteChild,
+                        onPressed: () => _handleDeleteChild(dialogSetState),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           shape: RoundedRectangleBorder(
@@ -312,7 +352,6 @@ class _AddChildPageState extends State<AddChildPage> {
 
     final childData = ChildData(
       firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
       dateOfBirth: _selectedDate!,
       gender: _selectedGender,
       childId: widget.isEditMode ? widget.childToEdit?.id : null,
@@ -520,7 +559,7 @@ class _AddChildPageState extends State<AddChildPage> {
                 ),
                 SizedBox(height: screenHeight * 0.01),
                 CustomTextField(
-                  hintText: 'First Name',
+                  hintText: 'Full Name',
                   controller: _firstNameController,
                   heightPercentage: 0.06, // 6% of screen height
                 ),

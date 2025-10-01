@@ -338,8 +338,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Color _getAvatarColor(String gender) {
     return gender.toLowerCase() == 'male'
-        ? const Color(0xFF4A90E2)
-        : const Color(0xFFE91E63);
+        ? AppColors.primaryOrange
+        : AppColors.primaryOrange;
   }
 
   IconData _getGenderIcon(String gender) {
@@ -684,20 +684,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildChildrenProfilesSection(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+    return Padding(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -723,12 +711,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A90E2).withOpacity(0.1),
+                    color: AppColors.primaryOrange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add,
-                    color: Color(0xFF4A90E2),
+                    color: AppColors.primaryOrange,
                     size: 20,
                   ),
                 ),
@@ -901,27 +889,31 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Widget _buildNoChildrenFound() {
     return Container(
+      width: 170,
+      height: 150,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
+
       child: const Column(
         children: [
-          Icon(Icons.child_care, size: 48, color: Color(0xFF718096)),
+          SizedBox(height: 20),
+          Icon(Icons.add, size: 48, color: Color(0xFF718096)),
           SizedBox(height: 12),
+
           Text(
-            'No children profiles found',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF4A5568),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Add your first child profile',
+            'Add child',
             style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
           ),
         ],
@@ -933,9 +925,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: Column(
         children: [

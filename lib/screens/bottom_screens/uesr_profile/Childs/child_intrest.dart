@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-
+import 'dart:math' as math;
 import 'package:klayons/utils/colour.dart';
 import 'package:klayons/utils/styles/fonts.dart';
-import 'package:klayons/utils/confermation_page.dart';
-import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart'; // if needed for route pop targets
 import '../../../../services/user_child/post_addchildservice.dart';
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../utils/styles/button.dart';
+import '../../../user_calender/calander.dart';
+import 'add_child.dart';
 
 class Interest {
   final int id;
@@ -91,7 +91,6 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
   }
 
   Color _chipColor(int index) {
-    // extend palette as needed
     const base = Colors.orange;
     return base;
   }
@@ -143,32 +142,114 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     );
   }
 
-  void _showConfirmationPopup(String childName) {
+  void _showEnrollmentSuccessDialog() {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: SizedBox.expand(
-          child: ConfirmationPage(
-            title: widget.isEditMode
-                ? 'Profile Updated!'
-                : 'Child Added Successfully!',
-            subtitle: widget.isEditMode
-                ? "Great! $childName's profile has been updated with new interests."
-                : "Welcome $childName! Let's start the learning journey together.",
-            buttonText: 'Back to Profile',
-            primaryColor: Colors.orange,
-            backgroundColor: const Color(0xFFFFF8F5),
-            onButtonPressed: () {
-              Navigator.of(context).pop(); // close dialog
-              // pop back to profile flow; adjust pops as per actual nav stack
-              Navigator.of(context).pop(true);
-            },
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-      ),
+          backgroundColor: const Color(0xFFFFF8F5),
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Orange badge with checkmark
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryOrange,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Stack(
+                    children: [
+                      // Create the wavy border effect
+                      Center(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryOrange,
+                            shape: BoxShape.circle,
+                          ),
+                          child: CustomPaint(
+                            painter: WavyBadgePainter(
+                              color: AppColors.primaryOrange,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Checkmark icon
+                      Center(
+                        child: Icon(Icons.check, color: Colors.white, size: 40),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Title
+                Text(
+                  'Thank you for enrolling',
+                  style: AppTextStyles.titleMedium(context).copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+
+                // Subtitle
+                Text(
+                  'The activity has been added to\nyour child\'s schedule',
+                  style: AppTextStyles.bodyMedium(
+                    context,
+                  ).copyWith(color: Colors.black54, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+
+                // View Schedule button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close dialog
+                      Navigator.of(context).pop(true); // Pop current page
+                      // Navigate to CalendarScreen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => CalendarScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'View Schedule',
+                      style: AppTextStyles.titleMedium(context).copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -188,26 +269,24 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     try {
       if (widget.isEditMode) {
         final req = EditChildRequest(
-          name: '${widget.childData.firstName} ${widget.childData.lastName}'
-              .trim(),
+          name: '${widget.childData.firstName} '.trim(),
           gender: _genderApi(widget.childData.gender),
           dob: _dateIso(widget.childData.dateOfBirth),
           interestIds: selectedInterestIds.toList(),
         );
 
         await GetChildservices.editChild(widget.childData.childId!, req);
-        _showConfirmationPopup(widget.childData.firstName);
+        _showEnrollmentSuccessDialog();
       } else {
         final result = await AddChildService.createChild(
           firstName: widget.childData.firstName,
-          lastName: widget.childData.lastName,
           dateOfBirth: widget.childData.dateOfBirth,
           gender: widget.childData.gender,
           interestIds: selectedInterestIds.toList(),
         );
 
         if (result['success'] == true) {
-          _showConfirmationPopup(widget.childData.firstName);
+          _showEnrollmentSuccessDialog();
         } else {
           _showErrorDialog(
             result['error']?.toString() ?? 'Failed to create child',
@@ -318,50 +397,48 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
       );
     }
 
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 3.5,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: interests.length,
-      itemBuilder: (context, index) {
-        final interest = interests[index];
-        final isSelected = selectedInterestIds.contains(interest.id);
-        final color = _chipColor(index);
-        final icon = _iconForInterest(interest.name);
+    return SingleChildScrollView(
+      child: Wrap(
+        spacing: 10, // Horizontal spacing between chips
+        runSpacing: 12, // Vertical spacing between rows
+        children: interests.map((interest) {
+          final isSelected = selectedInterestIds.contains(interest.id);
+          final color = _chipColor(
+            0,
+          ); // You can keep different colors per interest if needed
+          final icon = _iconForInterest(interest.name);
 
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(25),
-            onTap: isSubmitting
-                ? null
-                : () {
-                    setState(() {
-                      if (isSelected) {
-                        selectedInterestIds.remove(interest.id);
-                      } else {
-                        selectedInterestIds.add(interest.id);
-                      }
-                    });
-                  },
-            child: Ink(
-              decoration: BoxDecoration(
-                color: isSelected ? color.withOpacity(0.1) : Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: isSelected ? color : Colors.white!,
-                  width: isSelected ? 2 : 1,
+          return Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(25),
+              onTap: isSubmitting
+                  ? null
+                  : () {
+                      setState(() {
+                        if (isSelected) {
+                          selectedInterestIds.remove(interest.id);
+                        } else {
+                          selectedInterestIds.add(interest.id);
+                        }
+                      });
+                    },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected ? color.withOpacity(0.1) : Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: isSelected ? color : Colors.grey.shade300,
+                    width: isSelected ? 2 : 1,
+                  ),
                 ),
-              ),
-              child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 8,
+                  vertical: 12,
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize
+                      .min, // Important: This makes it shrink to content
                   children: [
                     Icon(
                       icon,
@@ -369,26 +446,22 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        interest.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.titleSmall(context).copyWith(
-                          color: isSelected ? color : Colors.grey,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w500,
-                        ),
+                    Text(
+                      interest.name,
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color: isSelected ? color : Colors.grey.shade700,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -456,4 +529,51 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
       ),
     );
   }
+}
+
+// Custom painter for wavy badge border
+class WavyBadgePainter extends CustomPainter {
+  final Color color;
+
+  WavyBadgePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    final radius = size.width / 2;
+    final center = Offset(radius, radius);
+    final waveCount = 12;
+    final waveHeight = 4.0;
+
+    for (int i = 0; i <= waveCount; i++) {
+      final angle = (i / waveCount) * 2 * math.pi;
+      final nextAngle = ((i + 1) / waveCount) * 2 * math.pi;
+
+      final x1 = center.dx + (radius - waveHeight) * math.cos(angle);
+      final y1 = center.dy + (radius - waveHeight) * math.sin(angle);
+
+      final x2 = center.dx + radius * math.cos((angle + nextAngle) / 2);
+      final y2 = center.dy + radius * math.sin((angle + nextAngle) / 2);
+
+      if (i == 0) {
+        path.moveTo(x1, y1);
+      }
+      path.quadraticBezierTo(
+        x2,
+        y2,
+        center.dx + (radius - waveHeight) * math.cos(nextAngle),
+        center.dy + (radius - waveHeight) * math.sin(nextAngle),
+      );
+    }
+
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

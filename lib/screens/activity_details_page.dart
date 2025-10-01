@@ -811,7 +811,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Book for: ',
+                'Book for:',
                 style: AppTextStyles.bodyMedium(context).copyWith(
                   color: Colors.grey[700],
                   fontWeight: FontWeight.w500,
@@ -1438,15 +1438,14 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.primaryOrange),
-                  color: AppColors.primaryOrange.withOpacity(0.6),
+                  color: AppColors.primaryOrange.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   activity.subcategory,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.primaryOrange,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -1755,21 +1754,21 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    if (activity.instructor.phone.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(Icons.phone, size: 12, color: Colors.grey[500]),
-                          const SizedBox(width: 4),
-                          Text(
-                            activity.instructor.phone,
-                            style: AppTextStyles.bodySmall(
-                              context,
-                            ).copyWith(color: Colors.grey[600]),
-                          ),
-                        ],
-                      ),
-                    ],
+                    // if (activity.instructor.phone.isNotEmpty) ...[
+                    //   const SizedBox(height: 4),
+                    //   Row(
+                    //     children: [
+                    //       Icon(Icons.phone, size: 12, color: Colors.grey[500]),
+                    //       const SizedBox(width: 4),
+                    //       Text(
+                    //         activity.instructor.phone,
+                    //         style: AppTextStyles.bodySmall(
+                    //           context,
+                    //         ).copyWith(color: Colors.grey[600]),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ],
                   ],
                 ),
               ),

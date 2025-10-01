@@ -47,7 +47,6 @@ class AddChildService {
   // Submit child data to API
   static Future<Map<String, dynamic>> createChild({
     required String firstName,
-    required String lastName,
     required DateTime dateOfBirth,
     required String gender,
     required List<int> interestIds,
@@ -65,7 +64,7 @@ class AddChildService {
 
       // Prepare data for API with correct field names and formats
       final Map<String, dynamic> childData = {
-        'name': '$firstName ${lastName.isNotEmpty ? lastName : ''}'.trim(),
+        'name': '$firstName'.trim(),
         'gender': _formatGenderForAPI(gender),
         'dob': _formatDateForAPI(dateOfBirth),
         'interest_ids': interestIds,

@@ -1,7 +1,7 @@
 // lib/config/api_config.dart
 class ApiConfig {
   // Base URL for the API
-  static const String baseUrl = 'https://klayons-backend.onrender.com';
+  static const String baseUrl = 'https://dev-klayons.onrender.com';
 
   // API endpoints
   static const String _apiPrefix = '/api';
