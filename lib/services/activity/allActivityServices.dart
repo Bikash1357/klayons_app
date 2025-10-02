@@ -167,7 +167,8 @@ class ActivityService {
         throw Exception('No authentication token found. Please login again.');
       }
 
-      String url = '$baseUrl/api/activities/';
+      String url =
+          'https://dev-klayons.onrender.com/api/activities/?ordering=created_at';
       List<String> queryParams = [];
 
       if (activityName != null && activityName.isNotEmpty) {

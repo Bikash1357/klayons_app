@@ -682,7 +682,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
   /// Build child selection widget with age validation
   /// Build child selection and enrollment button in same container
-  /// Build child selection and enrollment button in same container
   Widget _buildChildSelectionWidget() {
     // Get total capacity directly from backend
     final totalCapacity = activityData?.capacity ?? 0;
@@ -694,13 +693,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -808,7 +800,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         children: [
           // Book for section with Add Child option
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Book for:',
@@ -817,118 +808,124 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddChildPage(),
-                    ),
-                  ).then((_) {
-                    _loadChildren();
-                  });
-                },
-                child: const Text(
-                  'Add Child',
-                  style: TextStyle(
-                    color: Colors.deepOrange,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
+              SizedBox(width: 10),
+              // Children chips
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: children.map((child) {
+                  final isSelected = selectedChildId == child.id.toString();
+                  final childAge = _calculateAge(child.dob);
+                  final ageInt = int.tryParse(childAge) ?? 0;
+                  final isAgeWarning = ageInt < 4;
+                  final isChildEnrolled = userEnrollments.any(
+                    (enrollment) =>
+                        enrollment.child?.id == child.id &&
+                        enrollment.activity?.id == widget.activityId &&
+                        (enrollment.status.toLowerCase() == 'enrolled' ||
+                            enrollment.status.toLowerCase() == 'reenrolled' ||
+                            enrollment.status.toLowerCase() == 'waitlist'),
+                  );
 
-          // Children chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: children.map((child) {
-              final isSelected = selectedChildId == child.id.toString();
-              final childAge = _calculateAge(child.dob);
-              final ageInt = int.tryParse(childAge) ?? 0;
-              final isAgeWarning = ageInt < 4;
-              final isChildEnrolled = userEnrollments.any(
-                (enrollment) =>
-                    enrollment.child?.id == child.id &&
-                    enrollment.activity?.id == widget.activityId &&
-                    (enrollment.status.toLowerCase() == 'enrolled' ||
-                        enrollment.status.toLowerCase() == 'reenrolled' ||
-                        enrollment.status.toLowerCase() == 'waitlist'),
-              );
-
-              return GestureDetector(
-                onTap: () => _selectChild(child),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? (isChildEnrolled
-                              ? Colors.green
-                              : (isAgeWarning
-                                    ? Colors.orange
-                                    : Colors.deepOrange))
-                        : (isChildEnrolled
-                              ? Colors.green[50]
-                              : (isAgeWarning
-                                    ? Colors.orange[50]
-                                    : Colors.grey[100])),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected
-                          ? (isChildEnrolled
-                                ? Colors.green[300]!
-                                : (isAgeWarning
-                                      ? Colors.orange[300]!
-                                      : AppColors.highlight2))
-                          : (isChildEnrolled
-                                ? Colors.green[200]!
-                                : (isAgeWarning
-                                      ? Colors.orange[200]!
-                                      : Colors.grey[300]!)),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${child.name.split(' ').first} ($childAge)',
-                        style: TextStyle(
-                          fontSize: 12,
+                  return GestureDetector(
+                    onTap: () => _selectChild(child),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (isChildEnrolled
+                                  ? Colors.green
+                                  : (isAgeWarning
+                                        ? Colors.orange
+                                        : Colors.deepOrange))
+                            : (isChildEnrolled
+                                  ? Colors.green[50]
+                                  : (isAgeWarning
+                                        ? Colors.orange[50]
+                                        : Colors.grey[100])),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
                           color: isSelected
-                              ? Colors.white
-                              : (isChildEnrolled
-                                    ? Colors.green[800]
+                              ? (isChildEnrolled
+                                    ? Colors.green[300]!
                                     : (isAgeWarning
-                                          ? Colors.orange[800]
-                                          : Colors.grey[700])),
-                          fontWeight: FontWeight.w500,
+                                          ? Colors.orange[300]!
+                                          : AppColors.highlight2))
+                              : (isChildEnrolled
+                                    ? Colors.green[200]!
+                                    : (isAgeWarning
+                                          ? Colors.orange[200]!
+                                          : Colors.grey[300]!)),
                         ),
                       ),
-                      if (isChildEnrolled) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.check_circle,
-                          size: 12,
-                          color: isSelected ? Colors.white : Colors.green[600],
-                        ),
-                      ] else if (isAgeWarning) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.warning,
-                          size: 12,
-                          color: isSelected ? Colors.white : Colors.orange[600],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${child.name.split(' ').first} ',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isChildEnrolled
+                                        ? Colors.green[800]
+                                        : (isAgeWarning
+                                              ? Colors.orange[800]
+                                              : Colors.grey[700])),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (isChildEnrolled) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.check_circle,
+                              size: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.primaryOrange,
+                            ),
+                          ] else if (isAgeWarning) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.warning,
+                              size: 12,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.orange[600],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) => const AddChildPage(),
+              //       ),
+              //     ).then((_) {
+              //       _loadChildren();
+              //     });
+              //   },
+              //   child: const Text(
+              //     'Add Child',
+              //     style: TextStyle(
+              //       color: Colors.deepOrange,
+              //       fontWeight: FontWeight.w600,
+              //       fontSize: 12,
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(width: 10),
+            ],
           ),
 
           // Show enrollment status or age warning
@@ -1021,14 +1018,16 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
           // Total spots text (from backend capacity field)
           const SizedBox(height: 12),
-          Text(
-            '$totalCapacity ${totalCapacity == 1 ? 'spot' : 'spots'} remaining',
-            style: TextStyle(
-              fontSize: 14,
-              color: totalCapacity <= 5
-                  ? Colors.red[600]
-                  : AppColors.primaryOrange,
-              fontWeight: FontWeight.w500,
+          Center(
+            child: Text(
+              '$totalCapacity ${totalCapacity == 1 ? 'spot' : 'spots'} remaining',
+              style: TextStyle(
+                fontSize: 14,
+                color: totalCapacity <= 5
+                    ? Colors.red[600]
+                    : AppColors.primaryOrange,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
 
@@ -1297,12 +1296,13 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 8,
-                  offset: const Offset(0, -2),
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
+
               child: _buildChildSelectionWidget(),
             ),
           ),
@@ -1445,7 +1445,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                   activity.subcategory,
                   style: AppTextStyles.bodySmall(context).copyWith(
                     color: AppColors.primaryOrange,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),

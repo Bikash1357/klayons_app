@@ -274,8 +274,9 @@ class _EnrolledPageState extends State<EnrolledPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F5F5),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
+        backgroundColor: AppColors.background,
         leading: IconButton(
           icon: SvgPicture.asset(
             'assets/App_icons/iconBack.svg',
@@ -300,7 +301,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
           ),
         ),
         automaticallyImplyLeading: false,
-        backgroundColor: Color(0xFFF5F5F5),
         elevation: 0,
       ),
       body: SafeArea(

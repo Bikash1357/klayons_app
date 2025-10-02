@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
+import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'dart:math' as math;
 import 'package:klayons/utils/colour.dart';
 import 'package:klayons/utils/styles/fonts.dart';
@@ -194,21 +195,11 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
 
                 // Title
                 Text(
-                  'Thank you for enrolling',
+                  'Child Added Sucessfully',
                   style: AppTextStyles.titleMedium(context).copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-
-                // Subtitle
-                Text(
-                  'The activity has been added to\nyour child\'s schedule',
-                  style: AppTextStyles.bodyMedium(
-                    context,
-                  ).copyWith(color: Colors.black54, height: 1.5),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -223,7 +214,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                       // Navigate to CalendarScreen
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => CalendarScreen(),
+                          builder: (context) => UserProfilePage(),
                         ),
                       );
                     },
@@ -237,7 +228,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                       elevation: 0,
                     ),
                     child: Text(
-                      'View Schedule',
+                      'View Child ',
                       style: AppTextStyles.titleMedium(context).copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,

@@ -507,6 +507,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   // Build search field
+  // Build search field
   Widget _buildSearchField() {
     String hintText = 'Find Activities';
     if (_userProfile?.societyName.isNotEmpty == true) {

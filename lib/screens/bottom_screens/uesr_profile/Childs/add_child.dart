@@ -151,6 +151,23 @@ class _AddChildPageState extends State<AddChildPage> {
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primaryOrange, // Header background color
+              onPrimary: Colors.white, // Header text color
+              onSurface: Colors.black, // Body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryOrange, // Button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _selectedDate) {
       setState(() {
@@ -391,7 +408,9 @@ class _AddChildPageState extends State<AddChildPage> {
       child: Container(
         height: screenHeight * 0.06, // 6% of screen height
         decoration: BoxDecoration(
-          color: isSelected ? Colors.orange[100] : Colors.white,
+          color: isSelected
+              ? AppColors.primaryOrange.withOpacity(0.2)
+              : Colors.white,
           border: Border.all(
             color: isSelected ? Colors.orange : Colors.grey[300]!,
           ),
@@ -479,6 +498,7 @@ class _AddChildPageState extends State<AddChildPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -523,109 +543,143 @@ class _AddChildPageState extends State<AddChildPage> {
               ]
             : null,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(screenHeight * 0.025),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: screenHeight * 0.025),
-
-                // Title
-                Center(
-                  child: Text(
-                    widget.isEditMode
-                        ? 'UPDATE YOUR CHILD\'S INFO'
-                        : 'TELL US ABOUT YOUR CHILD',
-                    style: AppTextStyles.titleMedium(
-                      context,
-                    ).copyWith(color: Colors.black87, letterSpacing: 0.5),
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.05),
-
-                // Profile Image
-                _buildProfileImageSection(),
-                SizedBox(height: screenHeight * 0.05),
-
-                // First Name Field
-                Text(
-                  'What do we call your child? *',
-                  style: AppTextStyles.bodyMedium(context).copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.01),
-                CustomTextField(
-                  hintText: 'Full Name',
-                  controller: _firstNameController,
-                  heightPercentage: 0.06, // 6% of screen height
-                ),
-                SizedBox(height: screenHeight * 0.03),
-
-                // Birthday Field
-                Text(
-                  'When is the Birthday? *',
-                  style: AppTextStyles.bodyMedium(context).copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.01),
-                GestureDetector(
-                  onTap: _isLoading ? null : () => _selectDate(context),
-                  child: AbsorbPointer(
-                    child: CustomTextField(
-                      hintText: 'Date',
-                      controller: _birthdayController,
-                      heightPercentage: 0.06, // 6% of screen height
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: screenHeight * 0.020,
+                right: screenHeight * 0.020,
+                top: screenHeight * 0.020,
+                bottom: 80, // Space for the fixed button
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.03),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: screenHeight * 0.025),
 
-                // Gender Selection
-                Text(
-                  'Gender? *',
-                  style: AppTextStyles.bodyMedium(context).copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: screenHeight * 0.015),
-                _buildGenderSelection(),
-                SizedBox(height: screenHeight * 0.05),
-
-                // Next Button
-                OrangeButton(
-                  onPressed: _navigateToInterests,
-                  isDisabled: _isLoading,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                        // Title
+                        Center(
+                          child: Text(
+                            widget.isEditMode
+                                ? 'UPDATE YOUR CHILD\'S INFO'
+                                : 'TELL US ABOUT YOUR CHILD',
+                            style: AppTextStyles.titleMedium(context).copyWith(
+                              color: Colors.black87,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                        )
-                      : Text(
-                          'Next',
+                        ),
+                        SizedBox(height: screenHeight * 0.05),
+
+                        // Profile Image
+                        _buildProfileImageSection(),
+                        SizedBox(height: screenHeight * 0.01),
+
+                        // First Name Field
+                        Text(
+                          'What do we call your child? *',
                           style: AppTextStyles.bodyMedium(context).copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
                           ),
                         ),
-                ),
-                SizedBox(height: screenHeight * 0.025),
-              ],
+                        SizedBox(height: screenHeight * 0.01),
+                        CustomTextField(
+                          hintText: 'Full Name',
+                          controller: _firstNameController,
+                          heightPercentage: 0.06, // 6% of screen height
+                          showDynamicBorders: false,
+                        ),
+                        SizedBox(height: screenHeight * 0.03),
+
+                        // Birthday Field
+                        Text(
+                          'When is the Birthday? *',
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.01),
+                        GestureDetector(
+                          onTap: _isLoading ? null : () => _selectDate(context),
+                          child: AbsorbPointer(
+                            child: CustomTextField(
+                              hintText: 'Date',
+                              controller: _birthdayController,
+                              heightPercentage: 0.06, // 6% of screen height
+                              showDynamicBorders: false,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.03),
+
+                        // Gender Selection
+                        Text(
+                          'Gender? *',
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: screenHeight * 0.015),
+                        _buildGenderSelection(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+          // Fixed button at bottom
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.020),
+              child: OrangeButton(
+                onPressed: _navigateToInterests,
+                isDisabled: _isLoading,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        'Next',
+                        style: AppTextStyles.bodyMedium(context).copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -87,14 +87,12 @@ class ChildCalendarSchedule {
 class ChildEnrolledActivity {
   final int id;
   final String name;
-  final String batchName;
   final String venue;
   final List<ChildCalendarSchedule> schedules;
 
   ChildEnrolledActivity({
     required this.id,
     required this.name,
-    required this.batchName,
     required this.venue,
     required this.schedules,
   });
@@ -103,7 +101,6 @@ class ChildEnrolledActivity {
     return ChildEnrolledActivity(
       id: json['id'],
       name: json['name'],
-      batchName: json['batch_name'],
       venue: json['venue'],
       schedules: (json['schedules'] as List)
           .map((e) => ChildCalendarSchedule.fromJson(e))

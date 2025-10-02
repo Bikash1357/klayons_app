@@ -63,7 +63,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // Pull to refresh functionality
-  // Pull to refresh functionality
   Future<void> _onRefresh() async {
     try {
       // Clear available caches
@@ -728,6 +727,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           defaultTextStyle: AppTextStyles.bodyMedium(
                             context,
                           ).copyWith(color: Colors.black),
+
                           selectedDecoration: BoxDecoration(
                             color: AppColors.primaryOrange,
                             borderRadius: BorderRadius.circular(8),
@@ -737,6 +737,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
+
                           todayDecoration: BoxDecoration(
                             color: AppColors.highlight2,
                             borderRadius: BorderRadius.circular(8),
@@ -746,10 +747,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 color: AppColors.primaryOrange,
                                 fontWeight: FontWeight.bold,
                               ),
+
+                          // Add these to prevent circle shape animations
+                          defaultDecoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          weekendDecoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          outsideDecoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          disabledDecoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+
                           markersMaxCount: 0,
                           canMarkersOverflow: false,
-
-                          // Remove animations
                         ),
                         headerStyle: HeaderStyle(
                           formatButtonVisible: false,
