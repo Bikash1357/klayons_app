@@ -957,7 +957,6 @@ class CompactActivityCard extends StatelessWidget {
                 color: AppColors.primaryOrange,
               ),
             ),
-            const SizedBox(width: 5),
             if (_getPaymentTypeDisplay(activity.paymentType).isNotEmpty)
               Flexible(
                 child: Text(

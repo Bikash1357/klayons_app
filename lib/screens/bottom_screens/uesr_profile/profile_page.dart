@@ -906,17 +906,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ],
       ),
 
-      child: const Column(
-        children: [
-          SizedBox(height: 20),
-          Icon(Icons.add, size: 48, color: Color(0xFF718096)),
-          SizedBox(height: 12),
+      child: Flexible(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            IconButton(
+              iconSize: 50.0,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddChildPage()),
+                );
+              },
+              icon: const Icon(Icons.add, color: Color(0xFF718096)),
+            ),
+            const SizedBox(height: 8),
 
-          Text(
-            'Add child',
-            style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
-          ),
-        ],
+            Flexible(
+              child: const Text(
+                'Add child',
+                style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

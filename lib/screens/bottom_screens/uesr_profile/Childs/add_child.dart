@@ -519,7 +519,7 @@ class _AddChildPageState extends State<AddChildPage> {
           ),
         ),
         title: Text(
-          widget.isEditMode ? 'EDIT CHILD' : 'ADD CHILD',
+          widget.isEditMode ? 'Edit Child' : 'Add Child',
           style: AppTextStyles.titleMedium(
             context,
           ).copyWith(color: Colors.black54, letterSpacing: 1.0),
@@ -560,12 +560,11 @@ class _AddChildPageState extends State<AddChildPage> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withOpacity(0.08),
                           blurRadius: 8,
-                          offset: const Offset(0, -2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -578,11 +577,12 @@ class _AddChildPageState extends State<AddChildPage> {
                         Center(
                           child: Text(
                             widget.isEditMode
-                                ? 'UPDATE YOUR CHILD\'S INFO'
-                                : 'TELL US ABOUT YOUR CHILD',
+                                ? 'Update Your Child\'S Info'
+                                : 'Tell Us About Your Child',
                             style: AppTextStyles.titleMedium(context).copyWith(
                               color: Colors.black87,
-                              letterSpacing: 0.5,
+                              letterSpacing: 0.1,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
@@ -594,7 +594,7 @@ class _AddChildPageState extends State<AddChildPage> {
 
                         // First Name Field
                         Text(
-                          'What do we call your child? *',
+                          'Your Child\'s name *',
                           style: AppTextStyles.bodyMedium(context).copyWith(
                             fontWeight: FontWeight.w500,
                             color: Colors.black87,
@@ -611,7 +611,7 @@ class _AddChildPageState extends State<AddChildPage> {
 
                         // Birthday Field
                         Text(
-                          'When is the Birthday? *',
+                          'Date of Birth *',
                           style: AppTextStyles.bodyMedium(context).copyWith(
                             fontWeight: FontWeight.w500,
                             color: Colors.black87,
