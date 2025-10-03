@@ -34,6 +34,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   String _searchQuery = '';
   int _selectedIndex = 0;
   bool _isAppBarVisible = true;
+  bool _isScrolled = false;
 
   // Activity data
   List<Activity> _activityData = [];
@@ -78,13 +79,16 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   // Setup scroll listener for AppBar hide/show behavior
+  // Update the _setupScrollListener method (around line 95)
   void _setupScrollListener() {
     _scrollController.addListener(() {
-      final isVisible =
-          _scrollController.offset < 100; // Hide after 100px scroll
-      if (isVisible != _isAppBarVisible) {
+      final isVisible = _scrollController.offset < 100;
+      final hasScrolled = _scrollController.offset > 0; // Check if scrolled
+
+      if (isVisible != _isAppBarVisible || hasScrolled != _isScrolled) {
         setState(() {
           _isAppBarVisible = isVisible;
+          _isScrolled = hasScrolled; // Update scroll state
         });
       }
     });
@@ -478,11 +482,13 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
               ),
 
               // Pinned search bar
+              // Update the SliverPersistentHeader delegate (around line 485)
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _SearchBarDelegate(
                   child: _buildSearchField(),
                   height: 80,
+                  isScrolled: _isScrolled, // Pass scroll state
                 ),
               ),
               // Section title
@@ -515,7 +521,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -581,7 +587,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       children: _filteredActivities
           .map(
             (activity) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 8),
               child: CompactActivityCard(
                 activity: activity,
                 onTap: () => _navigateToActivityDetail(activity),
@@ -775,8 +781,13 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;
+  final bool isScrolled;
 
-  _SearchBarDelegate({required this.child, required this.height});
+  _SearchBarDelegate({
+    required this.child,
+    required this.height,
+    this.isScrolled = false,
+  });
 
   @override
   Widget build(
@@ -784,20 +795,34 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(color: AppColors.background, child: child);
+    return Container(
+      color: AppColors.background,
+      child: Column(
+        children: [
+          // Add spacing when scrolled
+          if (isScrolled) const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
   }
 
   @override
-  double get maxExtent => height;
+  double get maxExtent => height + (isScrolled ? 20 : 0);
 
   @override
-  double get minExtent => height;
+  double get minExtent => height + (isScrolled ? 20 : 0);
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      false;
+  bool shouldRebuild(covariant _SearchBarDelegate oldDelegate) {
+    // CRITICAL: Must rebuild when scroll state changes to update the layout
+    return oldDelegate.isScrolled != isScrolled ||
+        oldDelegate.height != height ||
+        oldDelegate.child != child;
+  }
 }
 
+// Compact Activity Card Widget
 // Compact Activity Card Widget
 class CompactActivityCard extends StatelessWidget {
   final Activity activity;
