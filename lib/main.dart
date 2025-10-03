@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:klayons/services/notification/fcmService.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:klayons/auth/login_screen.dart';
 import 'package:klayons/auth/signupPage.dart';
@@ -38,14 +39,40 @@ void main() async {
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Initialize FCM
+    // Initialize FCM (permissions and handlers only)
     await FCMService.initialize();
     print('✅ FCM initialized');
+
+    // Check if user is already logged in and get FCM token
+    await _initializeFCMTokenIfLoggedIn();
   } catch (e) {
     print('❌ Firebase/FCM initialization error: $e');
   }
 
   runApp(KlayonsApp());
+}
+
+/// Check if user is authenticated and get FCM token
+Future<void> _initializeFCMTokenIfLoggedIn() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final authToken = prefs.getString('auth_token');
+
+    if (authToken != null && authToken.isNotEmpty) {
+      print('✅ User already authenticated, getting FCM token...');
+      bool success = await FCMService.getFCMTokenAndSendToBackend();
+
+      if (success) {
+        print('🎉 FCM token retrieved and sent to backend');
+      } else {
+        print('⚠️ FCM token retrieval/sending failed');
+      }
+    } else {
+      print('ℹ️ No auth token found - FCM token will be retrieved after login');
+    }
+  } catch (e) {
+    print('❌ Error checking auth status for FCM: $e');
+  }
 }
 
 class KlayonsApp extends StatefulWidget {

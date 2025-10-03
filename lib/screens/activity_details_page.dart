@@ -1280,14 +1280,15 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
-
-              child: _buildChildSelectionWidget(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                children: [_buildChildSelectionWidget(), SizedBox(height: 8)],
+              ),
             ),
           ),
         ],
@@ -1428,6 +1429,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 child: Text(
                   activity.subcategory,
                   style: AppTextStyles.bodySmall(context).copyWith(
+                    fontSize: 12,
                     color: AppColors.primaryOrange,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1550,26 +1552,26 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           const SizedBox(height: 8),
 
           // Status
-          Row(
-            children: [
-              Icon(
-                activity.isActive ? Icons.schedule : Icons.pause_circle,
-                size: 16,
-                color: activity.isActive ? Colors.green[600] : Colors.red[600],
-              ),
-              const SizedBox(width: 6),
-              Text(
-                activity.isActive ? 'Enrollment Open!' : 'Currently Inactive',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: activity.isActive
-                      ? Colors.green[700]
-                      : Colors.red[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+          // Row(
+          //   children: [
+          //     Icon(
+          //       activity.isActive ? Icons.schedule : Icons.pause_circle,
+          //       size: 16,
+          //       color: activity.isActive ? Colors.green[600] : Colors.red[600],
+          //     ),
+          //     const SizedBox(width: 6),
+          //     Text(
+          //       activity.isActive ? 'Enrollment Open!' : 'Currently Inactive',
+          //       style: TextStyle(
+          //         fontSize: 12,
+          //         color: activity.isActive
+          //             ? Colors.green[700]
+          //             : Colors.red[700],
+          //         fontWeight: FontWeight.w500,
+          //       ),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );
@@ -1616,79 +1618,25 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     );
   }
 
-  /// Build enrollment button
-  Widget _buildEnrollmentButton(ActivityDetail activity) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: _isEnrollmentButtonEnabled ? _handleEnrollment : null,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: children.isEmpty
-              ? Colors.blue[600] // Different color for "Add Child" action
-              : (activity.isActive &&
-                        !(_isChildAlreadyEnrolled || _hasAnyChildEnrolled)
-                    ? Colors.deepOrange
-                    : Colors.grey),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: _isEnrolling
-            ? const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    'Enrolling...',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                _enrollmentButtonText,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-      ),
-    );
-  }
-
   /// Build instructor section
   Widget _buildInstructorSection(ActivityDetail activity) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Meet the instructor',
-          style: AppTextStyles.titleMedium(
-            context,
-          ).copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[100]!),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[100]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Meet the instructor',
+            style: AppTextStyles.titleMedium(
+              context,
+            ).copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
           ),
-          child: Row(
+          Row(
             children: [
               // Instructor Avatar
               CircleAvatar(
@@ -1757,8 +1705,8 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

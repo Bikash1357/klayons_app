@@ -47,16 +47,20 @@ class FCMService {
       String? fcmToken = await _firebaseMessaging.getToken();
 
       if (fcmToken == null || fcmToken.isEmpty) {
-        print('❌ Failed to get FCM token');
+        print('❌ Failed to get FCM token - token is null or empty');
         return false;
       }
 
-      print('✅ FCM Token obtained: ${fcmToken.substring(0, 20)}...');
+      // Print FULL FCM token for debugging
+      print('✅ FCM Token obtained successfully!');
+      print('📋 FULL FCM TOKEN: $fcmToken');
+      print('📏 Token length: ${fcmToken.length} characters');
 
       // Save token locally for reference
       await _saveFCMTokenLocally(fcmToken);
 
       // Send token to Django backend
+      print('🚀 Sending FCM token to backend...');
       bool success = await sendFCMTokenToBackend(fcmToken);
 
       if (success) {
@@ -66,8 +70,9 @@ class FCMService {
       }
 
       return success;
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ Error getting/sending FCM token: $e');
+      print('📍 Stack trace: $stackTrace');
       return false;
     }
   }
@@ -81,12 +86,16 @@ class FCMService {
 
       if (authToken == null || authToken.isEmpty) {
         print('❌ No auth token found. Cannot send FCM token.');
+        print('💡 Make sure user is logged in before registering FCM token');
         return false;
       }
 
-      final url = Uri.parse('$baseUrl/save-fcm-token/');
+      print('✅ Auth token found');
+
+      final url = Uri.parse('$baseUrl/notifications/devices/register/');
 
       print('🌐 Sending FCM token to: $url');
+      print('📦 Request body: {"device_token": "$fcmToken"}');
 
       final response = await http.post(
         url,
@@ -94,24 +103,24 @@ class FCMService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
         },
-        body: jsonEncode({
-          'fcm_token': fcmToken,
-          'device_type': 'android', // or 'ios' - you can detect this
-        }),
+        body: jsonEncode({'device_token': fcmToken}),
       );
 
-      print('📡 FCM token save response status: ${response.statusCode}');
-      print('📄 FCM token save response body: ${response.body}');
+      print('📡 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('✅ FCM token saved successfully on backend');
         return true;
       } else {
-        print('❌ Failed to save FCM token: ${response.body}');
+        print('❌ Failed to save FCM token on backend');
+        print('❌ Status code: ${response.statusCode}');
+        print('❌ Error message: ${response.body}');
         return false;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ Error sending FCM token to backend: $e');
+      print('📍 Stack trace: $stackTrace');
       return false;
     }
   }
@@ -121,7 +130,7 @@ class FCMService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('fcm_token', token);
-      print('💾 FCM token saved locally');
+      print('💾 FCM token saved locally in SharedPreferences');
     } catch (e) {
       print('❌ Error saving FCM token locally: $e');
     }
@@ -131,7 +140,13 @@ class FCMService {
   static Future<String?> getLocalFCMToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('fcm_token');
+      final token = prefs.getString('fcm_token');
+      if (token != null) {
+        print('📋 Retrieved local FCM token: $token');
+      } else {
+        print('⚠️ No FCM token found in local storage');
+      }
+      return token;
     } catch (e) {
       print('❌ Error getting local FCM token: $e');
       return null;
@@ -161,7 +176,8 @@ class FCMService {
 
     // Handle token refresh
     _firebaseMessaging.onTokenRefresh.listen((newToken) {
-      print('🔄 FCM Token refreshed: ${newToken.substring(0, 20)}...');
+      print('🔄 FCM Token refreshed!');
+      print('📋 NEW FCM TOKEN: $newToken');
       sendFCMTokenToBackend(newToken);
     });
   }
@@ -172,7 +188,7 @@ class FCMService {
       await _firebaseMessaging.deleteToken();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('fcm_token');
-      print('🗑️ FCM token deleted');
+      print('🗑️ FCM token deleted from Firebase and local storage');
     } catch (e) {
       print('❌ Error deleting FCM token: $e');
     }

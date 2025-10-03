@@ -163,7 +163,7 @@ class LoginAuthService {
     }
   }
 
-  // UPDATED: Verify OTP for Login - Updated to match API schema
+  // UPDATED: Verify OTP for Login - With automatic FCM token registration
   static Future<OTPVerificationResponse> verifyLoginOTP({
     required String emailOrPhone,
     required String otp,
@@ -206,6 +206,19 @@ class LoginAuthService {
         if (accessToken != null) {
           await saveToken(accessToken);
           print('Login OTP verified and token saved successfully');
+
+          // NEW: Register FCM token after successful login
+          print('🚀 Attempting to register FCM token after login...');
+          try {
+            bool fcmSuccess = await FCMService.getFCMTokenAndSendToBackend();
+            if (fcmSuccess) {
+              print('✅ FCM token registered successfully after login');
+            } else {
+              print('⚠️ FCM token registration failed (non-blocking)');
+            }
+          } catch (fcmError) {
+            print('⚠️ FCM registration error (non-blocking): $fcmError');
+          }
         }
 
         return OTPVerificationResponse(
@@ -285,7 +298,7 @@ class LoginAuthService {
 
             final fcmResponse = await http
                 .post(
-                  Uri.parse('$baseUrl/delete-fcm-token/'),
+                  Uri.parse('$baseUrl/notifications/devices/unregister/'),
                   headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer $token',
