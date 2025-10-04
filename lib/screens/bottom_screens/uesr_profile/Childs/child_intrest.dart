@@ -195,7 +195,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
 
                 // Title
                 Text(
-                  'Child Added Sucessfully',
+                  'Profile Added Sucessfully',
                   style: AppTextStyles.titleMedium(context).copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -228,7 +228,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                       elevation: 0,
                     ),
                     child: Text(
-                      'View Child ',
+                      'Continue ',
                       style: AppTextStyles.titleMedium(context).copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -297,6 +297,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     return AppBar(
       backgroundColor: AppColors.background,
       elevation: 0,
+      titleSpacing: 0,
       leading: IconButton(
         icon: SvgPicture.asset(
           'assets/App_icons/iconBack.svg',
@@ -310,10 +311,10 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         onPressed: () => Navigator.of(context).pop(),
       ),
       title: Text(
-        widget.isEditMode ? 'EDIT CHILD' : 'ADD CHILD',
-        style: AppTextStyles.titleMedium(
+        widget.isEditMode ? 'Edit Child' : 'Add Child',
+        style: AppTextStyles.titleLarge(
           context,
-        ).copyWith(color: Colors.black, letterSpacing: 1.2),
+        ).copyWith(color: AppColors.darkElements),
       ),
       centerTitle: false,
     );
@@ -471,7 +472,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
           children: [
             const SizedBox(height: 20),
             Text(
-              'WHAT INTERESTS YOUR CHILD?',
+              'What Interests Your Child?',
               style: AppTextStyles.titleMedium(
                 context,
               ).copyWith(color: Colors.black87, letterSpacing: 0.5),

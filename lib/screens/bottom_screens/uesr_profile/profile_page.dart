@@ -373,6 +373,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
+        titleSpacing: 0,
         leading: IconButton(
           icon: SvgPicture.asset(
             'assets/App_icons/iconBack.svg',
@@ -390,13 +391,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Your Profile',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF2D3748),
-          ),
+          style: AppTextStyles.titleLarge(
+            context,
+          ).copyWith(color: AppColors.darkElements),
         ),
         centerTitle: false,
         actions: [

@@ -10,6 +10,7 @@ import '../../../services/UserProfileServices/updateUserProfileServices.dart';
 import '../../../services/UserProfileServices/userProfileModels.dart';
 import '../../../services/auth/login_service.dart';
 import '../../../services/UserProfileServices/get_userprofile_service.dart';
+import '../../../utils/styles/fonts.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -764,15 +765,14 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
-        title: const Text(
+        title: Text(
           'Settings',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTextStyles.titleLarge(
+            context,
+          ).copyWith(color: AppColors.darkElements),
         ),
         elevation: 0,
+        titleSpacing: 0,
         leading: IconButton(
           icon: SvgPicture.asset(
             'assets/App_icons/iconBack.svg',

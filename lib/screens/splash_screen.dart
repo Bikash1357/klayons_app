@@ -3,7 +3,6 @@ import '../services/auth/signup_service.dart';
 import '../utils/colour.dart';
 import '../utils/styles/klayonsFont.dart';
 import '../utils/styles/fonts.dart';
-import 'package:klayons/utils/colour.dart';
 
 class KlayonsSplashScreen extends StatefulWidget {
   const KlayonsSplashScreen({super.key});
@@ -12,10 +11,40 @@ class KlayonsSplashScreen extends StatefulWidget {
   State<KlayonsSplashScreen> createState() => _KlayonsSplashScreenState();
 }
 
-class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
+class _KlayonsSplashScreenState extends State<KlayonsSplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    // Fade animation for the tagline
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    // Slide animation for the tagline (from bottom to top)
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+
+    // Start the tagline animation after a short delay
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) {
+        _animationController.forward();
+      }
+    });
+
     _checkAuthAndNavigate();
   }
 
@@ -51,6 +80,12 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -58,52 +93,31 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(color: AppColors.primaryOrange),
         child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      KlayonsText(),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Fun and Engaging Activities for Kids',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.titleMedium(context).copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w300,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 60),
-                child: Column(
-                  children: [
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        strokeWidth: 2.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Loading...',
-                      style: AppTextStyles.titleSmall(context).copyWith(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Klayons logo (appears immediately)
+                KlayonsText(),
+                const SizedBox(height: 12),
+                // Animated tagline
+                SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Text(
+                      'Growing Curious, Creative, and Confident Kids',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.titleMedium(context).copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w300,
+                        letterSpacing: 0.2,
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

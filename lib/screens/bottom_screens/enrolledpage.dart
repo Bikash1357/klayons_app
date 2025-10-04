@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/home_screen.dart';
-
+import '../../utils/styles/fonts.dart';
 import '../../services/Enrollments/deleteEnrollmentService.dart';
 import '../../services/Enrollments/enrollementModel.dart';
 import '../../services/Enrollments/get_enrolled_service.dart';
@@ -56,7 +56,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
   }
 
   Future<void> _handleUnenrollment(GetEnrollment enrollment) async {
-    final bool? shouldUnenroll = await _showUnenrollConfirmationDialog(
+    final bool? shouldUnenroll = await showUnenrollConfirmationDialog(
       enrollment,
     );
 
@@ -124,104 +124,119 @@ class _EnrolledPageState extends State<EnrolledPage> {
     }
   }
 
-  Future<bool?> _showUnenrollConfirmationDialog(
-    GetEnrollment enrollment,
-  ) async {
+  Future<bool?> showUnenrollConfirmationDialog(GetEnrollment enrollment) async {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
+          contentPadding: EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.warning_amber, color: Colors.orange, size: 28),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Confirm Unenrollment',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    fontSize: 18,
+              // Orange circle with exclamation icon
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOrange,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () {},
+                  icon: SvgPicture.asset(
+                    'assets/App_icons/Exclamation_mark.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+              SizedBox(height: 24),
+
+              // "Are you sure?" text
               Text(
-                'Are you sure you want to unenroll from this activity?',
-                style: TextStyle(fontSize: 16, color: Colors.black87),
+                'Are you sure?',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  fontSize: 20,
+                ),
               ),
               SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Enrollment Details:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: Colors.red[800],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text('Child: ${enrollment.child?.name ?? 'N/A'}'),
-                    Text('Activity: ${enrollment.activity?.name ?? 'N/A'}'),
-                    Text(
-                      'Price: ₹${enrollment.activity?.price ?? '0'}/${enrollment.activity?.paymentType ?? 'month'}',
-                    ),
-                    Text('Status: ${_getStatusDisplay(enrollment.status)}'),
-                    if (enrollment.activity?.batchName != null)
-                      Text('Batch: ${enrollment.activity!.batchName}'),
-                  ],
+
+              // Description text
+              Text(
+                'Deleting this profile will unenroll from all the activities booked for the child!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.black87,
+                  height: 1.4,
                 ),
               ),
-              SizedBox(height: 12),
-              Text(
-                'This action will remove the child from the activity. You can re-enroll later if needed.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
-                ),
+              SizedBox(height: 24),
+
+              // Buttons in a row
+              Row(
+                children: [
+                  // Cancel button
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+
+                  // Delete Profile button
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryOrange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Yes, Unenroll',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
         );
       },
     );
@@ -277,6 +292,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
+        titleSpacing: 0,
         leading: IconButton(
           icon: SvgPicture.asset(
             'assets/App_icons/iconBack.svg',
@@ -292,13 +308,11 @@ class _EnrolledPageState extends State<EnrolledPage> {
             MaterialPageRoute(builder: (context) => KlayonsHomePage()),
           ),
         ),
-        title: const Text(
+        title: Text(
           "Activity Tracker",
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppTextStyles.titleLarge(
+            context,
+          ).copyWith(color: AppColors.darkElements),
         ),
         automaticallyImplyLeading: false,
         elevation: 0,
@@ -501,7 +515,9 @@ class _EnrolledPageState extends State<EnrolledPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      enrollment.activity?.name ?? 'Activity Name',
+                      enrollment.batchName.isNotEmpty
+                          ? '${enrollment.activityName} - ${enrollment.batchName}'
+                          : enrollment.activityName,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,

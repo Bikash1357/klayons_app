@@ -908,7 +908,9 @@ class CompactActivityCard extends StatelessWidget {
                 activity.batchName.isNotEmpty
                     ? '${activity.name} - ${activity.batchName}'
                     : activity.name,
-                style: AppTextStyles.titleSmall(context),
+                style: AppTextStyles.titleSmall(
+                  context,
+                ).copyWith(letterSpacing: -0.1),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),

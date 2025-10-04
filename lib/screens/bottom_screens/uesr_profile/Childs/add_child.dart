@@ -503,6 +503,7 @@ class _AddChildPageState extends State<AddChildPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         automaticallyImplyLeading: false,
+        titleSpacing: 0,
         leading: IconButton(
           icon: SvgPicture.asset(
             'assets/App_icons/iconBack.svg',
@@ -520,9 +521,9 @@ class _AddChildPageState extends State<AddChildPage> {
         ),
         title: Text(
           widget.isEditMode ? 'Edit Child' : 'Add Child',
-          style: AppTextStyles.titleMedium(
+          style: AppTextStyles.titleLarge(
             context,
-          ).copyWith(color: Colors.black54, letterSpacing: 1.0),
+          ).copyWith(color: AppColors.darkElements),
         ),
         centerTitle: false,
         actions: widget.isEditMode
