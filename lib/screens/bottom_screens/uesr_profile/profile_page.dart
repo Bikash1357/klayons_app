@@ -348,8 +348,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () =>
-              Navigator.pop(context), // Fixed: proper back navigation
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
+          ),
         ),
         backgroundColor: AppColors.background,
         elevation: 0,

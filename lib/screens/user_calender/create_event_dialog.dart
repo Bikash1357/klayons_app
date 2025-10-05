@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/utils/colour.dart';
 import '../../services/calendar/CustomCalander/post_custome_child_calender_services.dart';
 import '../../services/user_child/get_ChildServices.dart';
@@ -115,11 +116,12 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            // Handle navigation to add child profile
-                            // You can navigate to add child screen here
-                            Navigator.of(context).pop();
-                            // Add your navigation logic here
-                            // Navigator.pushNamed(context, '/add-child');
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (contex) => AddChildPage(),
+                              ),
+                            );
                           },
                           child: Text(
                             'Add Now?',

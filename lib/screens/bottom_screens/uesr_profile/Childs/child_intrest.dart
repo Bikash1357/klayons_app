@@ -21,7 +21,7 @@ class Interest {
 }
 
 class InterestService {
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
+  static const String baseUrl = 'https://dev-klayons.onrender.com/api';
 
   static Future<List<Interest>> getInterests() async {
     final uri = Uri.parse('$baseUrl/profiles/interests/');
