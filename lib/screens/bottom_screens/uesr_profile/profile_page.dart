@@ -22,7 +22,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   List<Child>? children;
   bool isLoading = true;
   bool isLoadingChildren = true;
-  bool isLoggingOut = false; // Add loading state for logout
+  bool isLoggingOut = false;
   String? errorMessage;
   String? childrenErrorMessage;
 
@@ -44,18 +44,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
         forceRefresh: forceRefresh,
       );
 
-      setState(() {
-        userProfile = profile;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-
-      // Show error snackbar
       if (mounted) {
+        setState(() {
+          userProfile = profile;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString();
+          isLoading = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage ?? 'Failed to load profile'),
@@ -71,50 +72,39 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-  Future<void> _loadChildren({bool clearCache = false}) async {
+  Future<void> _loadChildren({bool forceRefresh = false}) async {
     try {
       setState(() {
         isLoadingChildren = true;
         childrenErrorMessage = null;
       });
 
-      // Clear cache if requested
-      if (clearCache) {
+      if (forceRefresh) {
         GetChildservices.clearAllCache();
-        print('🗑️ Children cache cleared');
+        print('🗑️ Children cache cleared for refresh');
       }
 
-      // First try to get cached data (unless we just cleared cache)
-      if (!clearCache) {
-        final cachedChildren = GetChildservices.getCachedChildren();
-        if (cachedChildren != null) {
-          setState(() {
-            children = cachedChildren;
-            isLoadingChildren = false;
-          });
-          print(
-            '✅ Children loaded from cache (${cachedChildren.length} items)',
-          );
-          return;
-        }
+      final childrenData = await GetChildservices.fetchChildren(
+        forceRefresh: forceRefresh,
+      );
+
+      if (mounted) {
+        setState(() {
+          children = childrenData;
+          isLoadingChildren = false;
+        });
+
+        print('✅ Children loaded (${childrenData.length} items)');
       }
-
-      // If no valid cache, fetch from server
-      final childrenData = await GetChildservices.fetchChildren();
-
-      setState(() {
-        children = childrenData;
-        isLoadingChildren = false;
-      });
-
-      print('✅ Children loaded from server (${childrenData.length} items)');
     } catch (e) {
-      setState(() {
-        childrenErrorMessage = e.toString();
-        isLoadingChildren = false;
-      });
+      if (mounted) {
+        setState(() {
+          childrenErrorMessage = e.toString();
+          isLoadingChildren = false;
+        });
 
-      print('❌ Error loading children: $e');
+        print('❌ Error loading children: $e');
+      }
     }
   }
 
@@ -129,11 +119,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
         childrenErrorMessage = null;
       });
 
-      // Clear the children cache before refreshing
       GetChildservices.clearAllCache();
 
-      // Fetch fresh data from both services
-      await Future.wait([_loadUserProfile(), _loadChildren(clearCache: true)]);
+      await Future.wait([
+        _loadUserProfile(forceRefresh: true),
+        _loadChildren(forceRefresh: true),
+      ]);
 
       print('✅ All data refreshed successfully');
     } catch (e) {
@@ -141,7 +132,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-  // Add logout confirmation dialog
   Future<void> _showLogoutConfirmation() async {
     final result = await showDialog<bool>(
       context: context,
@@ -192,7 +182,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-  // Add logout functionality
   Future<void> _performLogout() async {
     try {
       setState(() {
@@ -201,16 +190,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       print('🔄 Starting logout process...');
 
-      // Call the logout service
       final success = await LoginAuthService.logout();
 
       if (success) {
         print('✅ Logout successful');
 
-        // Clear any other local caches
         GetChildservices.clearAllCache();
 
-        // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -219,15 +205,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
               duration: Duration(seconds: 2),
             ),
           );
-        }
 
-        // Navigate to login screen and clear navigation stack
-        if (mounted) {
-          // Replace with your actual login screen route
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/login', // Replace with your login route
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       } else {
         throw Exception('Logout failed');
@@ -258,7 +239,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   String _getUserName() {
     if (userProfile?.name.isNotEmpty == true) {
-      // Capitalize each word in the name
       return userProfile!.name
           .split(' ')
           .map(
@@ -274,12 +254,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
   String _getAddress() {
     if (userProfile == null) return 'SOCIETY NAME';
 
-    // Handle different residence types
     switch (userProfile!.residenceType) {
       case 'society':
-        // If society name is available, use it; otherwise fallback to society ID info
         if (userProfile!.societyName.isNotEmpty) {
-          return _capitalizeWords(userProfile!.societyName);
+          return userProfile!.societyName;
         } else if (userProfile!.societyId != null &&
             userProfile!.societyId! > 0) {
           return 'Society ID: ${userProfile!.societyId}';
@@ -288,37 +266,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       case 'society_other':
         if (userProfile!.societyName.isNotEmpty) {
-          return _capitalizeWords(userProfile!.societyName);
+          return userProfile!.societyName;
         }
         return 'Other Society';
 
       case 'individual':
         if (userProfile!.address?.isNotEmpty == true) {
-          return _capitalizeWords(userProfile!.address!);
+          return userProfile!.address!;
         }
         return 'Individual Residence';
 
       default:
         if (userProfile!.societyName.isNotEmpty) {
-          return _capitalizeWords(userProfile!.societyName);
+          return userProfile!.societyName;
         } else if (userProfile!.address?.isNotEmpty == true) {
-          return _capitalizeWords(userProfile!.address!);
+          return userProfile!.address!;
         }
         return 'Location not set';
     }
-  }
-
-  String _capitalizeWords(String text) {
-    if (text.isEmpty) return text;
-
-    return text
-        .split(' ')
-        .map(
-          (word) => word.isNotEmpty
-              ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-              : '',
-        )
-        .join(' ');
   }
 
   String _formatDate(String dateString) {
@@ -346,7 +311,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return gender.toLowerCase() == 'male' ? Icons.boy : Icons.girl;
   }
 
-  // Helper methods for email/phone handling
   String _getDisplayEmail() {
     if (userProfile?.userEmail == null ||
         userProfile!.userEmail.trim().isEmpty) {
@@ -384,10 +348,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
-          ),
+          onPressed: () =>
+              Navigator.pop(context), // Fixed: proper back navigation
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
@@ -423,20 +385,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
-                  // User Profile Section
                   _buildUserProfileSection(context),
-
-                  // Children Profiles Section
                   _buildChildrenProfilesSection(context),
-
-                  // Menu Items Section
                   _buildMenuSection(context),
                 ],
               ),
             ),
           ),
-
-          // Add loading overlay for logout
           if (isLoggingOut)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -571,7 +526,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
         const SizedBox(height: 8),
         ElevatedButton(
-          onPressed: _loadUserProfile,
+          onPressed: () => _loadUserProfile(forceRefresh: true),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF4A90E2),
             foregroundColor: Colors.white,
@@ -589,7 +544,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget _buildUserProfileContent() {
     return Row(
       children: [
-        // Profile Image with background image
         Container(
           width: 64,
           height: 64,
@@ -602,9 +556,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             child: Container(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(
-                    'assets/images/profile_bg.png',
-                  ), // Add this asset
+                  image: AssetImage('assets/images/profile_bg.png'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -616,8 +568,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         const SizedBox(width: 16),
-
-        // User Details
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -631,8 +581,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Phone Row
               Row(
                 children: [
                   const Icon(Icons.phone, size: 16, color: Color(0xFF718096)),
@@ -652,8 +600,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ],
               ),
               const SizedBox(height: 6),
-
-              // Location Row
               Row(
                 children: [
                   const Icon(
@@ -688,7 +634,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -701,11 +646,28 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
               InkWell(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  print('🔄 Navigating to Add Child screen...');
+
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AddChildPage()),
                   );
+
+                  if (result == true && mounted) {
+                    print('✅ Child added successfully, refreshing profile...');
+
+                    await _loadChildren(forceRefresh: true);
+                    await _loadUserProfile(forceRefresh: true);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Child profile added successfully!'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.all(6),
@@ -723,8 +685,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Children Cards
           _buildChildrenCards(),
         ],
       ),
@@ -744,29 +704,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
       return _buildNoChildrenFound();
     }
 
-    // Display children in a grid layout (2 columns)
     List<Widget> childCards = [];
     for (int i = 0; i < children!.length; i += 2) {
       List<Widget> rowChildren = [];
 
-      // Add first child in the row
       rowChildren.add(Expanded(child: _buildChildCard(child: children![i])));
 
-      // Add second child in the row if exists
       if (i + 1 < children!.length) {
         rowChildren.add(const SizedBox(width: 16));
         rowChildren.add(
           Expanded(child: _buildChildCard(child: children![i + 1])),
         );
       } else {
-        // Add empty expanded widget to maintain layout
         rowChildren.add(const SizedBox(width: 16));
         rowChildren.add(const Expanded(child: SizedBox()));
       }
 
       childCards.add(Row(children: rowChildren));
 
-      // Add spacing between rows
       if (i + 2 < children!.length) {
         childCards.add(const SizedBox(height: 16));
       }
@@ -870,7 +825,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
           const SizedBox(height: 8),
           ElevatedButton(
-            onPressed: _loadChildren,
+            onPressed: () => _loadChildren(forceRefresh: true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4A90E2),
               foregroundColor: Colors.white,
@@ -895,7 +850,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -904,31 +858,40 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ],
       ),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          IconButton(
+            iconSize: 50.0,
+            onPressed: () async {
+              print('🔄 Adding first child...');
 
-      child: Flexible(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            IconButton(
-              iconSize: 50.0,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AddChildPage()),
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddChildPage()),
+              );
+
+              if (result == true && mounted) {
+                print('✅ First child added, refreshing...');
+                await _loadChildren(forceRefresh: true);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Child profile added successfully!'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
                 );
-              },
-              icon: const Icon(Icons.add, color: Color(0xFF718096)),
-            ),
-            const SizedBox(height: 8),
-
-            Flexible(
-              child: const Text(
-                'Add child',
-                style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
-              ),
-            ),
-          ],
-        ),
+              }
+            },
+            icon: const Icon(Icons.add, color: Color(0xFF718096)),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Add child',
+            style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
+          ),
+        ],
       ),
     );
   }
@@ -940,7 +903,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -951,7 +913,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
       child: Column(
         children: [
-          // Avatar and Edit Icon Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -970,7 +931,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
               InkWell(
                 onTap: () async {
-                  print('Editing child with ID: ${child.id}');
+                  print('✏️ Editing child with ID: ${child.id}');
 
                   try {
                     final result = await Navigator.push(
@@ -981,34 +942,27 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       ),
                     );
 
-                    // If changes were made, clear cache and refresh
-                    if (result == true) {
-                      print('Child updated, clearing cache and refreshing...');
+                    if (result == true && mounted) {
+                      print('✅ Child updated, refreshing...');
 
-                      // Clear cache and reload with fresh data
-                      GetChildservices.clearAllCache();
-                      await _loadChildren();
+                      await _loadChildren(forceRefresh: true);
 
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Child profile updated successfully!',
-                            ),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Child profile updated successfully!'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
                     }
                   } catch (e) {
-                    print('Error in child edit flow: $e');
+                    print('❌ Error in child edit flow: $e');
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Error: ${e.toString()}'),
                           backgroundColor: Colors.red,
-                          duration: Duration(seconds: 3),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     }
@@ -1023,12 +977,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ],
           ),
           const SizedBox(height: 12),
-
-          // Child Details
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Child Name
               Text(
                 child.name,
                 style: const TextStyle(
@@ -1038,15 +989,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 ),
               ),
               const SizedBox(height: 6),
-
-              // Age
               Text(
                 'Age: ${_formatDate(child.dob)}',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF718096)),
               ),
               const SizedBox(height: 4),
-
-              // Gender
               Text(
                 'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
                 style: const TextStyle(fontSize: 12, color: Color(0xFF718096)),
@@ -1096,7 +1043,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           _buildMenuItem(
             'Log Out',
             Icons.logout,
-            _showLogoutConfirmation, // Updated to call logout confirmation
+            _showLogoutConfirmation,
             isLogout: true,
           ),
         ],

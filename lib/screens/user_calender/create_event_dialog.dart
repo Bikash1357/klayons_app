@@ -30,7 +30,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   TimeOfDay? _endTime;
   DateTime _selectedDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-  String _selectedChild = 'Aarav';
+  String _selectedChild = '';
   bool _neverStops = true;
   Set<int> _selectedDays = <int>{};
 
@@ -75,6 +75,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
@@ -86,7 +87,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
             children: [
               Text(
                 'Add Custom Activity',
-                style: AppTextStyles.titleLarge(context).copyWith(
+                style: AppTextStyles.titleMedium(context).copyWith(
                   color: AppColors.primaryOrange,
                   fontWeight: FontWeight.bold,
                 ),
@@ -101,68 +102,100 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                 ).copyWith(fontWeight: FontWeight.w500),
               ),
               SizedBox(height: 8),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    ...widget.children
-                        .take(2)
-                        .map(
-                          (child) => GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedChild = child.name.split(' ').first;
-                              });
-                            },
-                            child: Container(
-                              margin: EdgeInsets.only(right: 12),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    _selectedChild ==
-                                        child.name.split(' ').first
-                                    ? AppColors.primaryOrange
-                                    : Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color:
-                                      _selectedChild ==
-                                          child.name.split(' ').first
-                                      ? AppColors.primaryOrange
-                                      : Colors.grey.shade300,
-                                  width:
-                                      _selectedChild ==
-                                          child.name.split(' ').first
-                                      ? 2
-                                      : 1,
-                                ),
-                              ),
-                              child: Text(
-                                child.name.split(' ').first,
-                                style: AppTextStyles.bodyMedium(context)
-                                    .copyWith(
+
+              // Show different UI based on children availability
+              widget.children.isEmpty
+                  ? Row(
+                      children: [
+                        Text(
+                          'No child profile added  ',
+                          style: AppTextStyles.bodyMedium(
+                            context,
+                          ).copyWith(color: Colors.grey.shade700),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            // Handle navigation to add child profile
+                            // You can navigate to add child screen here
+                            Navigator.of(context).pop();
+                            // Add your navigation logic here
+                            // Navigator.pushNamed(context, '/add-child');
+                          },
+                          child: Text(
+                            'Add Now?',
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              color: AppColors.primaryOrange,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          ...widget.children
+                              .take(2)
+                              .map(
+                                (child) => GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedChild = child.name
+                                          .split(' ')
+                                          .first;
+                                    });
+                                  },
+                                  child: Container(
+                                    margin: EdgeInsets.only(right: 12),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
                                       color:
                                           _selectedChild ==
                                               child.name.split(' ').first
-                                          ? Colors.white
-                                          : Colors.grey.shade700,
-                                      fontWeight:
-                                          _selectedChild ==
-                                              child.name.split(' ').first
-                                          ? FontWeight.w600
-                                          : FontWeight.normal,
+                                          ? AppColors.primaryOrange
+                                          : Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color:
+                                            _selectedChild ==
+                                                child.name.split(' ').first
+                                            ? AppColors.primaryOrange
+                                            : Colors.grey.shade300,
+                                        width:
+                                            _selectedChild ==
+                                                child.name.split(' ').first
+                                            ? 2
+                                            : 1,
+                                      ),
                                     ),
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ],
-                ),
-              ),
+                                    child: Text(
+                                      child.name.split(' ').first,
+                                      style: AppTextStyles.bodyMedium(context)
+                                          .copyWith(
+                                            color:
+                                                _selectedChild ==
+                                                    child.name.split(' ').first
+                                                ? Colors.white
+                                                : Colors.grey.shade700,
+                                            fontWeight:
+                                                _selectedChild ==
+                                                    child.name.split(' ').first
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ],
+                      ),
+                    ),
               SizedBox(height: 20),
 
               // Activity Name
@@ -399,18 +432,28 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _createEvent,
+                      onPressed:
+                          widget.children.isEmpty || _selectedChild.isEmpty
+                          ? null
+                          : _createEvent,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryOrange,
+                        backgroundColor:
+                            widget.children.isEmpty || _selectedChild.isEmpty
+                            ? Colors.grey.shade300
+                            : AppColors.primaryOrange,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        disabledBackgroundColor: Colors.grey.shade300,
                       ),
                       child: Text(
                         'Save',
                         style: AppTextStyles.bodyMedium(context).copyWith(
-                          color: Colors.white,
+                          color:
+                              widget.children.isEmpty || _selectedChild.isEmpty
+                              ? Colors.grey.shade500
+                              : Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -688,9 +731,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   }
 
   void _createEvent() async {
-    if (_titleController.text.isEmpty ||
-        _startTime == null ||
-        _endTime == null) {
+    if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please fill all required fields'),
@@ -700,20 +741,24 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       return;
     }
 
+    // Use default times if not set
+    final startTimeToUse = _startTime ?? TimeOfDay(hour: 17, minute: 0);
+    final endTimeToUse = _endTime ?? TimeOfDay(hour: 18, minute: 0);
+
     final DateTime startDateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
       _selectedDate.day,
-      _startTime!.hour,
-      _startTime!.minute,
+      startTimeToUse.hour,
+      startTimeToUse.minute,
     );
 
     final DateTime endDateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
       _selectedDate.day,
-      _endTime!.hour,
-      _endTime!.minute,
+      endTimeToUse.hour,
+      endTimeToUse.minute,
     );
 
     RecurrenceRule? recurrence;

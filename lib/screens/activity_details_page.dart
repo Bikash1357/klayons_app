@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/utils/styles/fonts.dart';
-import 'package:klayons/utils/styles/errorMessage.dart';
+import 'package:share_plus/share_plus.dart';
 import '../services/activity/activityDetailsService.dart';
 import '../services/Enrollments/get_enrolled_service.dart';
 import '../services/Enrollments/post_enrollment_service.dart';
@@ -43,7 +43,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
   // Error states
   String? _errorMessage;
-  String? _successMessage;
 
   // Animation controller for smooth transitions
   late AnimationController _animationController;
@@ -680,16 +679,112 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     );
   }
 
-  /// Build child selection widget with age validation
+  /// Handle share functionality - allows sharing activity details via WhatsApp, SMS, Email, etc.
+  Future<void> _handleShare() async {
+    if (activityData == null) {
+      _showErrorMessage('Unable to share activity details at this time.');
+      return;
+    }
+
+    try {
+      final activity = activityData!;
+
+      // Build share message
+      final StringBuffer message = StringBuffer();
+
+      // Activity name and batch
+      message.writeln('🎯 ${activity.name}');
+      if (activity.batchName.isNotEmpty) {
+        message.writeln('Batch: ${activity.batchName}');
+      }
+      message.writeln();
+
+      // Category and subcategory
+      if (activity.subcategory.isNotEmpty) {
+        message.writeln('📚 ${activity.category} - ${activity.subcategory}');
+      } else {
+        message.writeln('📚 ${activity.category}');
+      }
+      message.writeln();
+
+      // Age range
+      message.writeln(
+        '👶 Recommended for: ${activity.ageRange.isNotEmpty ? activity.ageRange : "All ages"}',
+      );
+      message.writeln();
+
+      // Price
+      message.writeln(
+        '💰 Fee: ₹${activity.price.toStringAsFixed(0)}${_getPaymentTypeDisplay(activity.paymentType)}',
+      );
+      message.writeln();
+
+      // Schedule
+      message.writeln('📅 Schedule: ${_formatScheduleWithTime()}');
+      message.writeln();
+
+      // Location
+      if (activity.venue.isNotEmpty) {
+        message.writeln('📍 Location: ${activity.venue}, ${activity.society}');
+      } else {
+        message.writeln('📍 Location: ${activity.society}');
+      }
+      message.writeln();
+
+      // Batch size
+      message.writeln('👥 Batch Size: ${activity.capacity} children');
+      message.writeln();
+
+      // Start date
+      message.writeln('🗓️ Start Date: ${_formatDate(activity.startDate)}');
+      message.writeln();
+
+      // Instructor
+      if (activity.instructor.name.isNotEmpty) {
+        message.writeln('👨‍🏫 Instructor: ${activity.instructor.name}');
+        message.writeln();
+      }
+
+      // Description (trimmed if too long)
+      if (activity.description.isNotEmpty) {
+        String desc = activity.description;
+        if (desc.length > 150) {
+          desc = '${desc.substring(0, 150)}...';
+        }
+        message.writeln('ℹ️ About:');
+        message.writeln(desc);
+        message.writeln();
+      }
+
+      // Activity ID for reference
+      message.writeln('---');
+      message.writeln('Activity ID: ${widget.activityId}');
+      if (widget.batchId != null) {
+        message.writeln('Batch ID: ${widget.batchId}');
+      }
+
+      // Optional: Add your app link or website
+      // message.writeln();
+      // message.writeln('Download Klayons App: [your app link]');
+
+      // Share the message (simple version without result handling)
+      await Share.share(
+        message.toString(),
+        subject: '${activity.name} - Activity Details',
+      );
+    } catch (e) {
+      debugPrint('Error sharing activity: $e');
+      if (mounted) {
+        _showErrorMessage('Failed to share activity. Please try again.');
+      }
+    }
+  }
+
   /// Build child selection and enrollment button in same container
   Widget _buildChildSelectionWidget() {
-    // Get total capacity directly from backend
-    final totalCapacity = activityData?.capacity ?? 0;
-
     if (children.isEmpty) {
       return Container(
         width: double.infinity,
-
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -774,6 +869,32 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       );
     }
 
+    // ✅ FIX: Check enrollment status for the CURRENTLY SELECTED child
+    final bool isSelectedChildEnrolled =
+        selectedChild != null &&
+        userEnrollments.any(
+          (enrollment) =>
+              enrollment.child?.id == selectedChild!.id &&
+              enrollment.activity?.id == widget.activityId &&
+              (enrollment.status.toLowerCase() == 'enrolled' ||
+                  enrollment.status.toLowerCase() == 'reenrolled' ||
+                  enrollment.status.toLowerCase() == 'waitlist'),
+        );
+
+    // ✅ FIX: Determine button state based on selected child
+    final bool isButtonEnabled =
+        activityData?.isActive == true &&
+        !isSelectedChildEnrolled &&
+        !_isEnrolling;
+
+    final String buttonText = activityData?.isActive != true
+        ? 'Currently Inactive'
+        : isSelectedChildEnrolled
+        ? 'Already Enrolled'
+        : 'Enroll Now';
+
+    final Color buttonColor = isButtonEnabled ? Colors.deepOrange : Colors.grey;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -814,17 +935,13 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors
-                                .orangeHighlight // All selected children get same color
-                          : Colors
-                                .white, // All unselected children get same color
+                          ? AppColors.orangeHighlight
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isSelected
-                            ? AppColors
-                                  .primaryOrange! // All selected children get same border
-                            : Colors
-                                  .grey[300]!, // All unselected children get same border
+                            ? AppColors.primaryOrange!
+                            : Colors.grey[300]!,
                       ),
                     ),
                     child: Row(
@@ -835,10 +952,8 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                           style: TextStyle(
                             fontSize: 12,
                             color: isSelected
-                                ? AppColors
-                                      .primaryOrange // All selected children get same text color
-                                : Colors
-                                      .grey[700], // All unselected children get same text color
+                                ? AppColors.primaryOrange
+                                : Colors.grey[700],
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -875,21 +990,10 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           const SizedBox(height: 12),
           Builder(
             builder: (context) {
-              final isChildEnrolled = userEnrollments.any(
-                (enrollment) =>
-                    enrollment.child?.id == selectedChild!.id &&
-                    enrollment.activity?.id == widget.activityId &&
-                    (enrollment.status.toLowerCase() == 'enrolled' ||
-                        enrollment.status.toLowerCase() == 'reenrolled' ||
-                        enrollment.status.toLowerCase() == 'waitlist'),
-              );
-
-              if (isChildEnrolled) {
-                final enrollment = userEnrollments.firstWhere(
-                  (enrollment) =>
-                      enrollment.child?.id == selectedChild!.id &&
-                      enrollment.activity?.id == widget.activityId,
-                );
+              // ✅ Check if SELECTED child is enrolled
+              if (isSelectedChildEnrolled) {
+                // Optionally show enrollment info here
+                return const SizedBox.shrink();
               }
 
               final childAge = _calculateAge(selectedChild!.dob);
@@ -929,19 +1033,15 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           ),
         ],
 
-        // Enroll button
+        // Enroll button - ✅ Now uses computed values that update with selected child
         const SizedBox(height: 5),
         SizedBox(
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _isEnrollmentButtonEnabled ? _handleEnrollment : null,
+            onPressed: isButtonEnabled ? _handleEnrollment : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  activityData?.isActive == true &&
-                      !(_isChildAlreadyEnrolled || _hasAnyChildEnrolled)
-                  ? Colors.deepOrange
-                  : Colors.grey,
+              backgroundColor: buttonColor,
               disabledBackgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -973,7 +1073,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     ],
                   )
                 : Text(
-                    _enrollmentButtonText,
+                    buttonText,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -1022,29 +1122,132 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     }
   }
 
-  /// Format schedule display
-  String _formatScheduleDisplay() {
-    if (activityData?.schedules.isEmpty ?? true)
+  String _formatScheduleWithTime() {
+    if (activityData?.schedule.timeSlots.isEmpty ?? true) {
       return 'Schedule not available';
-
-    final schedule = activityData!.schedules.first;
-    if (schedule.nextOccurrences.isNotEmpty) {
-      final days = schedule.nextOccurrences
-          .map((occ) => occ.day)
-          .toSet()
-          .toList();
-      return 'Every ${days.join(', ')}';
     }
-    return 'Schedule available';
+
+    final timeSlots = activityData!.schedule.timeSlots;
+
+    // Group time slots by their time range
+    Map<String, List<String>> timeToDay = {};
+
+    for (var timeSlot in timeSlots) {
+      String timeRange = '${timeSlot.startTime} - ${timeSlot.endTime}';
+
+      if (!timeToDay.containsKey(timeRange)) {
+        timeToDay[timeRange] = [];
+      }
+      timeToDay[timeRange]!.addAll(timeSlot.days);
+    }
+
+    if (timeToDay.isEmpty) {
+      return 'Schedule not available';
+    }
+
+    // Check if all days have the same time
+    if (timeToDay.length == 1) {
+      // All days have same time - Format: "Every Wed & Sat | 5pm"
+      String timeRange = timeToDay.keys.first;
+      List<String> days = timeToDay[timeRange]!;
+      days.sort((a, b) => _getDayOrder(a).compareTo(_getDayOrder(b)));
+
+      String timeOnly = _extractStartTime(timeRange);
+      return 'Every ${days.join(' & ')} | $timeOnly';
+    } else {
+      // Different times - Format: "Every Sat at 10am | Sun at 12pm"
+      List<String> parts = [];
+
+      // Sort by day order
+      var sortedEntries = timeToDay.entries.toList()
+        ..sort((a, b) {
+          int dayOrderA = a.value
+              .map(_getDayOrder)
+              .reduce((a, b) => a < b ? a : b);
+          int dayOrderB = b.value
+              .map(_getDayOrder)
+              .reduce((a, b) => a < b ? a : b);
+          return dayOrderA.compareTo(dayOrderB);
+        });
+
+      for (var entry in sortedEntries) {
+        String timeRange = entry.key;
+        List<String> days = entry.value;
+        days.sort((a, b) => _getDayOrder(a).compareTo(_getDayOrder(b)));
+
+        String timeOnly = _extractStartTime(timeRange);
+
+        for (String day in days) {
+          parts.add('$day at $timeOnly');
+        }
+      }
+
+      return 'Every ${parts.join(' | ')}';
+    }
   }
 
-  /// Get time slots display
-  String _getTimeSlots() {
-    if (activityData?.schedule.timeSlots.isEmpty ?? true) {
-      return 'Time not specified';
-    }
-    final timeSlot = activityData!.schedule.timeSlots.first;
-    return '${timeSlot.startTime} - ${timeSlot.endTime}';
+  /// Get day order for sorting (MON=1, TUE=2, etc.)
+  int _getDayOrder(String day) {
+    const dayOrder = {
+      'MON': 1,
+      'MONDAY': 1,
+      'TUE': 2,
+      'TUESDAY': 2,
+      'WED': 3,
+      'WEDNESDAY': 3,
+      'THU': 4,
+      'THURSDAY': 4,
+      'FRI': 5,
+      'FRIDAY': 5,
+      'SAT': 6,
+      'SATURDAY': 6,
+      'SUN': 7,
+      'SUNDAY': 7,
+    };
+    return dayOrder[day.toUpperCase()] ?? 8;
+  }
+
+  // Updated UI widget
+  Widget _buildScheduleDisplay() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start, // ✅ Add this line
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            top: 2,
+          ), // ✅ Add small top padding to align with text
+          child: Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            _formatScheduleWithTime(),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Extract start time from time range (e.g., "05:00 PM - 07:00 PM" -> "5pm")
+  String _extractStartTime(String timeRange) {
+    // Split by '-' to get start time
+    String startTime = timeRange.split('-')[0].trim();
+
+    // Convert to lowercase and remove spaces
+    startTime = startTime.toLowerCase().replaceAll(' ', '');
+
+    // Remove leading zero (e.g., "05:00pm" -> "5:00pm")
+    startTime = startTime.replaceFirst(RegExp(r'^0'), '');
+
+    // Remove :00 if present (e.g., "5:00pm" -> "5pm")
+    startTime = startTime.replaceAll(':00', '');
+
+    return startTime;
   }
 
   @override
@@ -1305,7 +1508,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                       size: 24,
                     ),
                     onPressed: () {
-                      // Implement share functionality
+                      _handleShare();
                     },
                   ),
                 ),
@@ -1423,40 +1626,8 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Schedule
-          Row(
-            children: [
-              Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _formatScheduleDisplay(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Time slots
-          Row(
-            children: [
-              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              Text(
-                _getTimeSlots(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+          // Schedule with time (combined)
+          _buildScheduleDisplay(), // ✅ NEW METHOD
           const SizedBox(height: 8),
 
           // Location
@@ -1619,6 +1790,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         activity.instructor.profile.length > 150; // Adjust threshold as needed
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,

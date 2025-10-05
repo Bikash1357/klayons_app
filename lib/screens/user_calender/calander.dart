@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:klayons/screens/activity_details_page.dart';
 import 'package:klayons/screens/home_screen.dart';
 import 'package:klayons/screens/notification.dart';
+import 'package:klayons/services/activity/activityDetailsService.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../services/calendar/CustomCalander/post_custome_child_calender_services.dart';
 import '../../services/calendar/children_calendar_service.dart';
-import '../../services/calendar/society_activity_calander.dart';
+import '../../services/calendar/society_activity_calander_service.dart';
 import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
 import '../bottom_screens/uesr_profile/profile_page.dart';
@@ -888,226 +890,270 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           return SizedBox.shrink();
                         }
 
-                        // In the ListView.builder itemBuilder section, update the Container for custom activities:
-                        return Container(
-                          margin: EdgeInsets.only(bottom: 12),
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isCancelled
-                                ? Colors.grey.shade100
-                                : (isRescheduled
-                                      ? Colors.orange.shade50
-                                      : Colors.white),
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 3,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              // Keep color bar for all activities (including custom)
-                              Container(
-                                width: 4,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: isCancelled
-                                      ? Colors.grey
-                                      : (isRescheduled
-                                            ? iconColor.withOpacity(0.7)
-                                            : iconColor),
-                                  borderRadius: BorderRadius.circular(2),
+                        // Inside ListView.builder itemBuilder - Replace the existing Container with this:
+                        return GestureDetector(
+                          onTap: () {
+                            // Only navigate for enrolled activities (not custom activities)
+                            if (event is ActivityCalendarEvent) {
+                              // Society activity - navigate with activity ID
+                              int activityId = event.originalActivity.id;
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ActivityBookingPage(
+                                    activityId: activityId,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            title,
-                                            style:
-                                                AppTextStyles.bodyLargeEmphasized(
-                                                  context,
-                                                ).copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                  decoration: isCancelled
-                                                      ? TextDecoration
-                                                            .lineThrough
-                                                      : null,
-                                                  color: isCancelled
-                                                      ? Colors.grey
-                                                      : Colors.black,
-                                                ),
-                                          ),
-                                        ),
-                                        if (statusText != null &&
-                                            statusText.isNotEmpty)
-                                          Container(
-                                            margin: EdgeInsets.only(
-                                              right: 8,
-                                            ), // Add margin to separate from menu
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: _getEventStatusColor(
-                                                statusText,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
+                              );
+                            } else if (event is ChildCalendarEvent) {
+                              // Check if it's an enrolled activity (not custom)
+                              if (!event.isCustomActivity &&
+                                  event.originalActivity
+                                      is ChildEnrolledActivity) {
+                                // Extract activity ID from enrolled activity
+                                ChildEnrolledActivity enrolledActivity =
+                                    event.originalActivity
+                                        as ChildEnrolledActivity;
+                                int activityId = enrolledActivity.id;
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ActivityBookingPage(
+                                      activityId: activityId,
+                                    ),
+                                  ),
+                                );
+                              }
+                              // For custom activities, do nothing (no navigation)
+                            }
+                          },
+                          child: Container(
+                            margin: EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isCancelled
+                                  ? Colors.grey.shade100
+                                  : (isRescheduled
+                                        ? Colors.orange.shade50
+                                        : Colors.white),
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                // Keep color bar for all activities (including custom)
+                                Container(
+                                  width: 4,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: isCancelled
+                                        ? Colors.grey
+                                        : (isRescheduled
+                                              ? iconColor.withOpacity(0.7)
+                                              : iconColor),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
                                             child: Text(
-                                              statusText,
+                                              title,
                                               style:
-                                                  AppTextStyles.bodySmall(
+                                                  AppTextStyles.bodyLargeEmphasized(
                                                     context,
                                                   ).copyWith(
-                                                    fontSize: 10,
                                                     fontWeight: FontWeight.w600,
-                                                    color: _getEventStatusColor(
-                                                      statusText,
-                                                    ),
+                                                    decoration: isCancelled
+                                                        ? TextDecoration
+                                                              .lineThrough
+                                                        : null,
+                                                    color: isCancelled
+                                                        ? Colors.grey
+                                                        : Colors.black,
                                                   ),
                                             ),
                                           ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      timeText,
-                                      style: AppTextStyles.bodyMedium(context)
-                                          .copyWith(
-                                            color: isCancelled
-                                                ? Colors.grey.shade500
-                                                : Colors.grey.shade600,
-                                          ),
-                                    ),
-                                    if (venue != null && venue.isNotEmpty) ...[
-                                      SizedBox(height: 2),
-                                      Text(
-                                        venue,
-                                        style: AppTextStyles.bodySmall(context)
-                                            .copyWith(
-                                              color: isCancelled
-                                                  ? Colors.grey.shade400
-                                                  : Colors.grey.shade500,
-                                            ),
-                                      ),
-                                    ],
-                                    if (childInfo != null) ...[
-                                      SizedBox(height: 2),
-                                      // Remove color from child info text for custom activities
-                                      Text(
-                                        childInfo,
-                                        style: AppTextStyles.bodySmall(context)
-                                            .copyWith(
-                                              fontWeight: FontWeight.w500,
-                                              color: isCancelled
-                                                  ? Colors.grey.shade400
-                                                  : (isCustomActivity
-                                                        ? Colors
-                                                              .grey
-                                                              .shade600 // Use grey instead of blue for custom activities
-                                                        : Colors.blue.shade600),
-                                            ),
-                                      ),
-                                    ],
-                                    if (cancelReason != null &&
-                                        cancelReason.isNotEmpty) ...[
-                                      SizedBox(height: 2),
-                                      Text(
-                                        'Reason: $cancelReason',
-                                        style: AppTextStyles.bodySmall(context)
-                                            .copyWith(
-                                              fontStyle: FontStyle.italic,
-                                              color: Colors.grey.shade500,
-                                            ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              // Show three dots menu only for custom activities
-                              if (isCustomActivity &&
-                                  event is ChildCalendarEvent)
-                                // In the ListView.builder where you show the PopupMenuButton
-                                PopupMenuButton<String>(
-                                  icon: Icon(
-                                    Icons.more_vert,
-                                    color: Colors.grey,
-                                  ),
-                                  onSelected: (value) {
-                                    if (value == 'edit') {
-                                      // Get the original custom activity
-                                      if (event.originalActivity
-                                          is ChildCustomActivity) {
-                                        ChildCustomActivity customActivity =
-                                            event.originalActivity
-                                                as ChildCustomActivity;
-                                        Event editableEvent =
-                                            _convertCustomActivityToEvent(
-                                              customActivity,
-                                            );
-                                        _showEditEventDialog(
-                                          context,
-                                          editableEvent,
-                                        );
-                                      }
-                                    } else if (value == 'delete') {
-                                      _showDeleteCustomActivityDialog(
-                                        context,
-                                        event,
-                                      );
-                                    }
-                                  },
-                                  itemBuilder: (BuildContext context) {
-                                    return [
-                                      PopupMenuItem<String>(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.edit,
-                                              size: 18,
-                                              color: Colors.blue,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text('Edit'),
-                                          ],
-                                        ),
-                                      ),
-                                      PopupMenuItem<String>(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.delete,
-                                              size: 18,
-                                              color: Colors.red,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Delete',
-                                              style: TextStyle(
-                                                color: Colors.red,
+                                          if (statusText != null &&
+                                              statusText.isNotEmpty)
+                                            Container(
+                                              margin: EdgeInsets.only(right: 8),
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: _getEventStatusColor(
+                                                  statusText,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                statusText,
+                                                style:
+                                                    AppTextStyles.bodySmall(
+                                                      context,
+                                                    ).copyWith(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color:
+                                                          _getEventStatusColor(
+                                                            statusText,
+                                                          ),
+                                                    ),
                                               ),
                                             ),
-                                          ],
-                                        ),
+                                        ],
                                       ),
-                                    ];
-                                  },
+                                      SizedBox(height: 4),
+                                      Text(
+                                        timeText,
+                                        style: AppTextStyles.bodyMedium(context)
+                                            .copyWith(
+                                              color: isCancelled
+                                                  ? Colors.grey.shade500
+                                                  : Colors.grey.shade600,
+                                            ),
+                                      ),
+                                      if (venue != null &&
+                                          venue.isNotEmpty) ...[
+                                        SizedBox(height: 2),
+                                        Text(
+                                          venue,
+                                          style:
+                                              AppTextStyles.bodySmall(
+                                                context,
+                                              ).copyWith(
+                                                color: isCancelled
+                                                    ? Colors.grey.shade400
+                                                    : Colors.grey.shade500,
+                                              ),
+                                        ),
+                                      ],
+                                      if (childInfo != null) ...[
+                                        SizedBox(height: 2),
+                                        Text(
+                                          childInfo,
+                                          style:
+                                              AppTextStyles.bodySmall(
+                                                context,
+                                              ).copyWith(
+                                                fontWeight: FontWeight.w500,
+                                                color: isCancelled
+                                                    ? Colors.grey.shade400
+                                                    : (isCustomActivity
+                                                          ? Colors.grey.shade600
+                                                          : Colors
+                                                                .blue
+                                                                .shade600),
+                                              ),
+                                        ),
+                                      ],
+                                      if (cancelReason != null &&
+                                          cancelReason.isNotEmpty) ...[
+                                        SizedBox(height: 2),
+                                        Text(
+                                          'Reason: $cancelReason',
+                                          style:
+                                              AppTextStyles.bodySmall(
+                                                context,
+                                              ).copyWith(
+                                                fontStyle: FontStyle.italic,
+                                                color: Colors.grey.shade500,
+                                              ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
                                 ),
-                            ],
+                                // Show three dots menu only for custom activities
+                                if (isCustomActivity &&
+                                    event is ChildCalendarEvent)
+                                  PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: Colors.grey,
+                                    ),
+                                    onSelected: (value) {
+                                      if (value == 'edit') {
+                                        if (event.originalActivity
+                                            is ChildCustomActivity) {
+                                          ChildCustomActivity customActivity =
+                                              event.originalActivity
+                                                  as ChildCustomActivity;
+                                          Event editableEvent =
+                                              _convertCustomActivityToEvent(
+                                                customActivity,
+                                              );
+                                          _showEditEventDialog(
+                                            context,
+                                            editableEvent,
+                                          );
+                                        }
+                                      } else if (value == 'delete') {
+                                        _showDeleteCustomActivityDialog(
+                                          context,
+                                          event,
+                                        );
+                                      }
+                                    },
+                                    itemBuilder: (BuildContext context) {
+                                      return [
+                                        PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.edit,
+                                                size: 18,
+                                                color: Colors.blue,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text('Edit'),
+                                            ],
+                                          ),
+                                        ),
+                                        PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.delete,
+                                                size: 18,
+                                                color: Colors.red,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Delete',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ];
+                                    },
+                                  ),
+                              ],
+                            ),
                           ),
                         );
                       },

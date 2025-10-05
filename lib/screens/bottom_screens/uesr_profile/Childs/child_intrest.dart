@@ -2,14 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'dart:math' as math;
 import 'package:klayons/utils/colour.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import '../../../../services/user_child/post_addchildservice.dart';
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../utils/styles/button.dart';
-import '../../../user_calender/calander.dart';
 import 'add_child.dart';
 
 class Interest {
@@ -79,21 +77,24 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     });
     try {
       final loaded = await InterestService.getInterests();
-      setState(() {
-        interests = loaded;
-        isLoadingInterests = false;
-      });
+      if (mounted) {
+        setState(() {
+          interests = loaded;
+          isLoadingInterests = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoadingInterests = false;
-      });
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString();
+          isLoadingInterests = false;
+        });
+      }
     }
   }
 
   Color _chipColor(int index) {
-    const base = Colors.orange;
-    return base;
+    return Colors.orange;
   }
 
   IconData _iconForInterest(String name) {
@@ -158,7 +159,6 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Orange badge with checkmark
                 Container(
                   width: 80,
                   height: 80,
@@ -168,7 +168,6 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                   ),
                   child: Stack(
                     children: [
-                      // Create the wavy border effect
                       Center(
                         child: Container(
                           width: 80,
@@ -184,18 +183,17 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                           ),
                         ),
                       ),
-                      // Checkmark icon
-                      Center(
+                      const Center(
                         child: Icon(Icons.check, color: Colors.white, size: 40),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Title
                 Text(
-                  'Profile Added Sucessfully',
+                  widget.isEditMode
+                      ? 'Profile Updated Successfully'
+                      : 'Profile Added Successfully',
                   style: AppTextStyles.titleMedium(context).copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
@@ -203,20 +201,20 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-
-                // View Schedule button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pop(); // Close dialog
-                      Navigator.of(context).pop(true); // Pop current page
-                      // Navigate to CalendarScreen
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => UserProfilePage(),
-                        ),
-                      );
+                      print('✅ Success dialog - returning to profile...');
+
+                      // Close dialog
+                      Navigator.of(context).pop();
+
+                      // Pop AddChildInterestsPage with success result
+                      Navigator.of(context).pop(true);
+
+                      // Pop AddChildPage with success result
+                      Navigator.of(context).pop(true);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryOrange,
@@ -228,7 +226,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                       elevation: 0,
                     ),
                     child: Text(
-                      'Continue ',
+                      'Continue',
                       style: AppTextStyles.titleMedium(context).copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -257,18 +255,25 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     }
 
     setState(() => isSubmitting = true);
+
     try {
       if (widget.isEditMode) {
+        print('🔄 Updating child ID: ${widget.childData.childId}');
+
         final req = EditChildRequest(
-          name: '${widget.childData.firstName} '.trim(),
+          name: widget.childData.firstName.trim(),
           gender: _genderApi(widget.childData.gender),
           dob: _dateIso(widget.childData.dateOfBirth),
           interestIds: selectedInterestIds.toList(),
         );
 
         await GetChildservices.editChild(widget.childData.childId!, req);
+
+        print('✅ Child updated successfully');
         _showEnrollmentSuccessDialog();
       } else {
+        print('🔄 Creating new child profile...');
+
         final result = await AddChildService.createChild(
           firstName: widget.childData.firstName,
           dateOfBirth: widget.childData.dateOfBirth,
@@ -277,6 +282,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         );
 
         if (result['success'] == true) {
+          print('✅ Child created successfully');
           _showEnrollmentSuccessDialog();
         } else {
           _showErrorDialog(
@@ -285,6 +291,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         }
       }
     } catch (e) {
+      print('❌ Error: $e');
       _showErrorDialog(
         'Failed to ${widget.isEditMode ? 'update' : 'create'} child profile: $e',
       );
@@ -327,7 +334,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, color: Colors.grey, size: 64),
+            const Icon(Icons.error_outline, color: Colors.grey, size: 64),
             const SizedBox(height: 16),
             Text(
               'Failed to load interests',
@@ -391,13 +398,11 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
 
     return SingleChildScrollView(
       child: Wrap(
-        spacing: 10, // Horizontal spacing between chips
-        runSpacing: 12, // Vertical spacing between rows
+        spacing: 10,
+        runSpacing: 12,
         children: interests.map((interest) {
           final isSelected = selectedInterestIds.contains(interest.id);
-          final color = _chipColor(
-            0,
-          ); // You can keep different colors per interest if needed
+          final color = _chipColor(0);
           final icon = _iconForInterest(interest.name);
 
           return Material(
@@ -429,8 +434,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                   vertical: 12,
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize
-                      .min, // Important: This makes it shrink to content
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       icon,
@@ -499,7 +503,7 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
               isDisabled: !actionEnabled,
               onPressed: actionEnabled ? _submit : null,
               child: isSubmitting
-                  ? SizedBox(
+                  ? const SizedBox(
                       height: 22,
                       width: 22,
                       child: CircularProgressIndicator(
@@ -523,7 +527,6 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
   }
 }
 
-// Custom painter for wavy badge border
 class WavyBadgePainter extends CustomPainter {
   final Color color;
 

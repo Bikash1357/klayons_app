@@ -6,10 +6,12 @@ import '../../utils/styles/fonts.dart';
 import '../../services/Enrollments/deleteEnrollmentService.dart';
 import '../../services/Enrollments/enrollementModel.dart';
 import '../../services/Enrollments/get_enrolled_service.dart';
+import '../../services/calendar/children_calendar_service.dart';
+import '../../services/user_child/get_ChildServices.dart' as childService;
 import '../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
-
 import '../activity_details_page.dart';
+import '../user_calender/calander.dart';
 
 class EnrolledPage extends StatefulWidget {
   const EnrolledPage({super.key});
@@ -22,11 +24,62 @@ class _EnrolledPageState extends State<EnrolledPage> {
   late Future<List<GetEnrollment>> _futureEnrollments;
   bool _isRefreshing = false;
   Set<int> _deletingEnrollments = {};
+  List<ChildCustomActivity> _customActivities = [];
+  bool _isLoadingCustomActivities = false;
 
   @override
   void initState() {
     super.initState();
     _loadEnrollments(forceRefresh: false);
+    _loadCustomActivities();
+  }
+
+  // Load custom activities from ChildrenCalendarService
+  // Load custom activities from ChildrenCalendarService
+  Future<void> _loadCustomActivities() async {
+    try {
+      setState(() {
+        _isLoadingCustomActivities = true;
+      });
+
+      // Get all children first - use alias
+      List<childService.Child> children =
+          await childService.GetChildservices.fetchChildren();
+      Set<int> childIds = children.map((child) => child.id).toSet();
+
+      if (childIds.isNotEmpty) {
+        // Fetch children calendar data
+        DateTime startDate = DateTime.now().subtract(Duration(days: 30));
+        DateTime endDate = DateTime.now().add(Duration(days: 90));
+
+        ChildrenCalendarResponse calendarResponse =
+            await ChildrenCalendarService.fetchChildrenCalendar(
+              childIds,
+              startDate: startDate,
+              endDate: endDate,
+            );
+
+        // Extract all custom activities from all children
+        List<ChildCustomActivity> allCustomActivities = [];
+        for (ChildCalendarData childData in calendarResponse.children) {
+          allCustomActivities.addAll(childData.customActivities);
+        }
+
+        setState(() {
+          _customActivities = allCustomActivities;
+          _isLoadingCustomActivities = false;
+        });
+      } else {
+        setState(() {
+          _isLoadingCustomActivities = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading custom activities: $e');
+      setState(() {
+        _isLoadingCustomActivities = false;
+      });
+    }
   }
 
   void _loadEnrollments({bool forceRefresh = false}) {
@@ -46,6 +99,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
     try {
       _loadEnrollments(forceRefresh: true);
       await _futureEnrollments;
+      await _loadCustomActivities(); // Also refresh custom activities
     } finally {
       if (mounted) {
         setState(() {
@@ -136,7 +190,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Orange circle with exclamation icon
               Container(
                 width: 80,
                 height: 80,
@@ -158,8 +211,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
                 ),
               ),
               SizedBox(height: 24),
-
-              // "Are you sure?" text
               Text(
                 'Are you sure?',
                 style: TextStyle(
@@ -169,8 +220,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
                 ),
               ),
               SizedBox(height: 16),
-
-              // Description text
               Text(
                 'Deleting this profile will unenroll from all the activities booked for the child!',
                 textAlign: TextAlign.center,
@@ -181,11 +230,8 @@ class _EnrolledPageState extends State<EnrolledPage> {
                 ),
               ),
               SizedBox(height: 24),
-
-              // Buttons in a row
               Row(
                 children: [
-                  // Cancel button
                   Expanded(
                     child: SizedBox(
                       height: 50,
@@ -208,8 +254,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
                     ),
                   ),
                   SizedBox(width: 12),
-
-                  // Delete Profile button
                   Expanded(
                     child: SizedBox(
                       height: 50,
@@ -379,7 +423,8 @@ class _EnrolledPageState extends State<EnrolledPage> {
                     ),
                   ),
                 );
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              } else if (!snapshot.hasData ||
+                  (snapshot.data!.isEmpty && _customActivities.isEmpty)) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -393,7 +438,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'No Enrollments Found',
+                          'No Activities Found',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -431,6 +476,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  // Section 1: Currently Enrolled
                   if (currentlyEnrolled.isNotEmpty) ...[
                     Text(
                       'Currently Enrolled',
@@ -446,6 +492,39 @@ class _EnrolledPageState extends State<EnrolledPage> {
                     ),
                     SizedBox(height: 24),
                   ],
+
+                  // Section 2: Custom Activities
+                  if (_customActivities.isNotEmpty) ...[
+                    Text(
+                      'Custom Activities',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    ..._customActivities.map(
+                      (customActivity) =>
+                          _buildCustomActivityCard(customActivity),
+                    ),
+                    SizedBox(height: 24),
+                  ],
+
+                  // Loading indicator for custom activities
+                  if (_isLoadingCustomActivities) ...[
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(
+                          color: Colors.deepOrange,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                  ],
+
+                  // Section 3: Previously Enrolled
                   if (previouslyEnrolled.isNotEmpty) ...[
                     Text(
                       'Previously Enrolled',
@@ -463,6 +542,77 @@ class _EnrolledPageState extends State<EnrolledPage> {
                 ],
               );
             },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Build card for custom activities
+  Widget _buildCustomActivityCard(ChildCustomActivity customActivity) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          // Navigate to CalendarScreen when custom activity card is tapped
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CalendarScreen()),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Custom activity icon/color indicator
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: _hexToColor(customActivity.color),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.event_note, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 12),
+
+              // Activity Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customActivity.title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'For ${customActivity.childName}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Arrow indicator
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+            ],
           ),
         ),
       ),
@@ -491,15 +641,19 @@ class _EnrolledPageState extends State<EnrolledPage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ActivityBookingPage(
-                batchId: enrollment.activity?.id ?? 0,
-                activityId: enrollment.activity?.id ?? 0,
+          // Null-safe navigation
+          final activityId = enrollment.activity?.id;
+          if (activityId != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ActivityBookingPage(
+                  batchId: activityId,
+                  activityId: activityId,
+                ),
               ),
-            ),
-          );
+            );
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -526,12 +680,9 @@ class _EnrolledPageState extends State<EnrolledPage> {
                     ),
                     const SizedBox(height: 4),
                     if (isCurrentlyEnrolled) ...[
-                      // Show all children for currently enrolled
-                      ...?enrollment.child != null
-                          ? [_buildChildInfo(enrollment.child!.name)]
-                          : null,
+                      if (enrollment.child != null)
+                        _buildChildInfo(enrollment.child!.name),
                     ] else ...[
-                      // For previously enrolled, show unenrolled date
                       Text(
                         'Unenrolled on ${_getUnenrollmentDate(enrollment)}',
                         style: TextStyle(fontSize: 13, color: Colors.grey[600]),
@@ -644,6 +795,15 @@ class _EnrolledPageState extends State<EnrolledPage> {
     );
   }
 
+  // Helper method to convert hex color string to Flutter Color
+  Color _hexToColor(String hexString) {
+    String hex = hexString.replaceFirst('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex';
+    }
+    return Color(int.parse(hex, radix: 16));
+  }
+
   Color _getImageColor(int activityId) {
     const List<Color> colors = [
       Color(0xFF8B4513),
@@ -660,38 +820,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
     return colors[activityId % colors.length];
   }
 
-  String _getStatusDisplay(String status) {
-    switch (status.toLowerCase()) {
-      case 'enrolled':
-        return 'Enrolled';
-      case 'reenrolled':
-        return 'Re-enrolled';
-      case 'unenrolled':
-        return 'Unenrolled';
-      case 'waitlist':
-        return 'Waitlisted';
-      default:
-        return status.toUpperCase();
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'enrolled':
-        return Colors.green;
-      case 'reenrolled':
-        return Colors.blue;
-      case 'unenrolled':
-        return Colors.red;
-      case 'waitlist':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
   String _getUnenrollmentDate(GetEnrollment enrollment) {
-    // You can extract this from enrollment data if available
     return '31/8/2025';
   }
 
