@@ -221,7 +221,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'Deleting this profile will unenroll from all the activities booked for the child!',
+                'Deleting this profile will unenroll from ${response.data!.activity.name} for the ${response.data!.child.name}!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
