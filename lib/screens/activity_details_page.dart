@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
+import 'package:klayons/screens/user_calender/calander.dart';
 import 'package:klayons/utils/styles/fonts.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/activity/activityDetailsService.dart';
@@ -10,6 +11,8 @@ import '../services/Enrollments/post_enrollment_service.dart';
 import '../services/user_child/get_ChildServices.dart' as ChildService;
 import '../services/Enrollments/enrollementModel.dart';
 import 'package:klayons/utils/colour.dart';
+
+import '../utils/popup.dart';
 
 /// Production-ready Activity Booking Page with comprehensive error handling,
 /// caching, and performance optimizations
@@ -191,7 +194,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     }
   }
 
-  /// Select a child for enrollment
   void _selectChild(ChildService.Child child) {
     if (mounted) {
       setState(() {
@@ -203,6 +205,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
   /// Check if the selected child is already enrolled
   bool get _isChildAlreadyEnrolled {
+    /// Select a child for enrollment
     if (selectedChild == null) return false;
 
     return userEnrollments.any(
@@ -317,7 +320,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           await _loadEnrollments(); // Refresh enrollments
 
           // Show success dialog
-          await _showSuccessDialog(enrollmentResponse);
+          await _showSuccessWithConfirmationDialog(enrollmentResponse);
         } else {
           // Show error message
           _showErrorMessage(enrollmentResponse.error ?? 'Enrollment failed');
@@ -352,330 +355,65 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     );
   }
 
-  /// Show success dialog with new API response structure
-  Future<void> _showSuccessDialog(EnrollmentApiResponse response) async {
+  /// Show success message using ConfirmationDialog
+  /// Show success message using ConfirmationDialog
+  Future<void> _showSuccessWithConfirmationDialog(
+    EnrollmentApiResponse response,
+  ) async {
     if (!mounted || response.data == null) return;
 
     final enrollment = response.data!;
+    final statusIcon = _getStatusIcon(enrollment.status);
+    final statusColor = _getStatusColor(enrollment.status);
 
-    return showDialog<void>(
+    // Build detailed message
+    String detailMessage =
+        '${enrollment.child.name} has been ${_getStatusDisplay(enrollment.status).toLowerCase()} in ${enrollment.activity.name}!\n\n';
+    detailMessage += 'Status: ${_getStatusDisplay(enrollment.status)}\n';
+
+    if (enrollment.waitlistPosition != null) {
+      detailMessage += 'Waitlist Position: #${enrollment.waitlistPosition}\n';
+    }
+
+    final result = await ConfirmationDialog.show(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        final statusColor = _getStatusColor(enrollment.status);
-        final statusIcon = _getStatusIcon(enrollment.status);
-
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Container(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Success Icon with status-based color
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(statusIcon, color: Colors.white, size: 50),
-                ),
-                const SizedBox(height: 24),
-
-                // Title
-                Text(
-                  enrollment.status.toLowerCase() == 'waitlist'
-                      ? 'Added to Waitlist!'
-                      : 'Congratulations!',
-                  style: AppTextStyles.titleLarge(context).copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-
-                // Success Message
-                Text(
-                  '${enrollment.child.name} has been ${_getStatusDisplay(enrollment.status).toLowerCase()} in ${enrollment.activity.name}!',
-                  style: AppTextStyles.bodyMedium(
-                    context,
-                  ).copyWith(color: Colors.grey[700], height: 1.4),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-
-                // Enrollment Details
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Status:',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _getStatusDisplay(enrollment.status),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Date:',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            _formatEnrollmentDate(enrollment.timestamp),
-                            style: TextStyle(
-                              color: statusColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Show waitlist position if applicable
-                      if (enrollment.waitlistPosition != null) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Waitlist Position:',
-                              style: TextStyle(fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              '#${enrollment.waitlistPosition}',
-                              style: TextStyle(
-                                color: Colors.orange[700],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-
-                      // Show price information
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Fee:',
-                            style: TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            '₹${enrollment.activity.price}/${enrollment.activity.paymentType}',
-                            style: const TextStyle(
-                              color: Colors.deepOrange,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Show notes if available
-                if (enrollment.notes != null &&
-                    enrollment.notes!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[200]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Notes:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[800],
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          enrollment.notes!,
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                // Done Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pop(); // Go back to previous screen
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: statusColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Great!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      title: enrollment.status.toLowerCase() == 'waitlist'
+          ? 'Added to Waitlist!'
+          : 'Congratulations!',
+      message: detailMessage,
+      confirmText: 'Great! View Schedule',
+      cancelText: '', // Hide cancel button
+      confirmColor: statusColor,
+      iconColor: statusColor,
+      icon: statusIcon,
     );
+
+    if (result == true && mounted) {
+      Navigator.of(context).pop(); // Go back to previous screen
+
+      // Navigate to the schedule/enrollments page
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => CalendarScreen()),
+      );
+    }
   }
 
   /// Show enrollment confirmation dialog
+  /// Show enrollment confirmation dialog using ConfirmationDialog utility
   Future<bool?> _showEnrollmentConfirmationDialog() async {
     if (selectedChild == null || activityData == null) return false;
 
-    return showDialog<bool>(
+    return ConfirmationDialog.show(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.school, color: Colors.deepOrange, size: 28),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Confirm Enrollment',
-                  style: AppTextStyles.titleMedium(context).copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Are you sure you want to enroll ${selectedChild!.name} in ${activityData!.name}?',
-                style: AppTextStyles.bodyMedium(
-                  context,
-                ).copyWith(color: Colors.black87, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.deepOrange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.currency_rupee,
-                      size: 18,
-                      color: Color(0xFFFF6D00),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Fee: ₹${activityData!.price.toStringAsFixed(0)}/${activityData!.paymentType}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.deepOrange[800],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepOrange,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Confirm',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: 'Confirm Enrollment',
+      message:
+          'Enroll now for ${selectedChild!.name} in ${activityData!.name}?',
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      confirmColor: Colors.deepOrange,
+      iconColor: Colors.deepOrange,
+      icon: Icons.school,
     );
   }
 
@@ -1885,9 +1623,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     switch (status.toLowerCase()) {
       case 'enrolled':
       case 'reenrolled':
-        return Colors.green;
+        return AppColors.primaryOrange;
       case 'waitlist':
-        return Colors.orange;
+        return AppColors.primaryOrange;
       case 'unenrolled':
         return Colors.red;
       default:

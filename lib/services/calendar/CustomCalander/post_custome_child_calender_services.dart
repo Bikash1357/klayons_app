@@ -67,14 +67,14 @@ class CustomActivityService {
     Map<String, dynamic> requestBody = {
       "title": event.title,
       "address": event.address,
-      "startTime": event.startTime.toIso8601String(),
-      "endTime": event.endTime.toIso8601String(),
-      "childName": event.childName ?? '',
-      "color": colorToHex(event.color),
     };
 
     if (event.recurrence != null) {
       final recurrence = {
+        "startTime": event.startTime.toIso8601String(),
+        "endTime": event.endTime.toIso8601String(),
+        "childName": event.childName ?? '',
+        "color": colorToHex(event.color),
         "type": recurrenceTypeToString(event.recurrence!.type),
         "interval": event.recurrence!.interval,
         "daysOfWeek": event.recurrence!.daysOfWeek,

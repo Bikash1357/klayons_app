@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/activity_details_page.dart';
 import 'package:klayons/screens/home_screen.dart';
-import 'package:klayons/screens/notification.dart';
 import 'package:klayons/services/activity/activityDetailsService.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +10,6 @@ import '../../services/calendar/children_calendar_service.dart';
 import '../../services/calendar/society_activity_calander_service.dart';
 import '../../services/user_child/get_ChildServices.dart';
 import '../../utils/styles/fonts.dart';
-import '../bottom_screens/uesr_profile/profile_page.dart';
 import 'create_event_dialog.dart';
 import 'event_model.dart';
 import 'package:klayons/utils/colour.dart';
@@ -234,13 +232,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           startDate,
           endDate,
         );
-  }
-
-  Future<void> _notification() async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NotificationsPage()),
-    );
   }
 
   List<dynamic> _getEventsForDay(DateTime day) {
@@ -618,20 +609,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black),
-        actions: [
-          IconButton(
-            onPressed: _notification,
-            icon: SvgPicture.asset(
-              'assets/App_icons/iconBell.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.darkElements,
-                BlendMode.srcIn,
-              ),
-            ),
-          ),
-        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,

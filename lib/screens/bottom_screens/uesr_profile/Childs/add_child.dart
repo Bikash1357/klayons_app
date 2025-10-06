@@ -4,6 +4,7 @@ import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/child_intrest
 import 'package:http/http.dart' as http;
 import '../../../../services/user_child/get_ChildServices.dart';
 import '../../../../services/auth/login_service.dart';
+import '../../../../utils/popup.dart';
 import '../../../../utils/styles/button.dart';
 import '../../../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
@@ -220,40 +221,60 @@ class _AddChildPageState extends State<AddChildPage> {
     }
   }
 
-  Future<void> _handleDeleteChild(StateSetter dialogSetState) async {
+  Future<void> _performDeleteChild() async {
     if (widget.childToEdit?.id == null) {
       _showErrorSnackBar('Invalid child data');
       return;
     }
 
-    dialogSetState(() => _isDeletingChild = true);
-    setState(() => _isDeletingChild = true);
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Deleting child profile...',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
 
     try {
       bool isAuth = await LoginAuthService.isAuthenticated();
       if (!isAuth) {
-        dialogSetState(() => _isDeletingChild = false);
-        setState(() => _isDeletingChild = false);
-        Navigator.of(context).pop(); // Close dialog
+        if (mounted) Navigator.of(context).pop(); // Close loading dialog
         _showErrorSnackBar('Session expired. Please login again.');
         return;
       }
 
       final success = await _deleteChild(widget.childToEdit!.id);
-      dialogSetState(() => _isDeletingChild = false);
-      setState(() => _isDeletingChild = false);
 
-      if (success) {
-        Navigator.of(context).pop(); // Close dialog
+      if (mounted) Navigator.of(context).pop(); // Close loading dialog
+
+      if (success && mounted) {
         _showSuccessDialog('Child profile deleted successfully!');
-      } else {
-        Navigator.of(context).pop(); // Close dialog
+      } else if (mounted) {
         _showErrorSnackBar('Failed to delete child profile. Please try again.');
       }
     } catch (e) {
-      dialogSetState(() => _isDeletingChild = false);
-      setState(() => _isDeletingChild = false);
-      Navigator.of(context).pop(); // Close dialog
+      if (mounted) Navigator.of(context).pop(); // Close loading dialog
 
       String errorMessage = 'An error occurred while deleting.';
       if (e.toString().contains('authentication') ||
@@ -266,86 +287,34 @@ class _AddChildPageState extends State<AddChildPage> {
         errorMessage = 'You don\'t have permission to delete this child.';
       }
 
-      _showErrorSnackBar(errorMessage);
+      if (mounted) _showErrorSnackBar(errorMessage);
     }
   }
 
-  void _showDeleteConfirmationDialog() {
-    showDialog(
+  Future<void> _showDeleteConfirmationDialog() async {
+    final result = await ConfirmationDialog.show(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, dialogSetState) {
-            return AlertDialog(
-              title: Text(
-                'Delete Child',
-                style: AppTextStyles.titleLarge(
-                  context,
-                ).copyWith(color: Colors.red),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_isDeletingChild) ...[
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.025,
-                    ),
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                    ),
-                    SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                    Text(
-                      'Deleting child profile...',
-                      style: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(color: Colors.grey),
-                    ),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.025,
-                    ),
-                  ] else ...[
-                    Text(
-                      'Do you want to delete ${widget.childToEdit?.name}\'s profile? This action cannot be undone.',
-                      style: AppTextStyles.bodyMedium(context),
-                    ),
-                  ],
-                ],
-              ),
-              actions: _isDeletingChild
-                  ? []
-                  : [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(
-                          'Cancel',
-                          style: AppTextStyles.bodyMedium(
-                            context,
-                          ).copyWith(color: Colors.grey),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _handleDeleteChild(dialogSetState),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Delete',
-                          style: AppTextStyles.bodyMedium(context).copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-            );
-          },
-        );
-      },
+      title: 'Are you sure?',
+      message:
+          'Deleting this profile will unenroll ${widget.childToEdit?.name ?? 'the child'} from all the activities booked for the child!',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmColor: Colors.red,
+      iconColor: Colors.red,
+      customIcon: SvgPicture.asset(
+        'assets/App_icons/Exclamation_mark.svg', //your delete icon
+        width: 50,
+        height: 50,
+        colorFilter: ColorFilter.mode(
+          Colors.white, // White color to show on red background
+          BlendMode.srcIn,
+        ),
+      ),
     );
+
+    if (result == true && mounted) {
+      await _performDeleteChild();
+    }
   }
 
   bool _validateForm() {
@@ -440,52 +409,34 @@ class _AddChildPageState extends State<AddChildPage> {
             width: imageSize,
             height: imageSize,
             decoration: BoxDecoration(
-              color: widget.isEditMode
-                  ? (widget.childToEdit!.gender.toLowerCase() == 'male'
-                        ? Colors.blue[200]
-                        : Colors.pink[200])
+              color: _selectedGender == 'Boy'
+                  ? Colors.blue[200]
+                  : _selectedGender == 'Girl'
+                  ? Colors.pink[200]
                   : Colors.grey[600],
               shape: BoxShape.circle,
             ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    widget.isEditMode
-                        ? (widget.childToEdit!.gender.toLowerCase() == 'male'
-                              ? Icons.boy
-                              : Icons.girl)
-                        : Icons.person,
-                    size: imageSize * 0.5,
-                    color: Colors.white,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: imageSize * 0.3,
-                    height: imageSize * 0.3,
-                    decoration: const BoxDecoration(
-                      color: Colors.purple,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      widget.isEditMode ? Icons.edit : Icons.add,
-                      size: imageSize * 0.2,
+            child: Center(
+              child: _selectedGender == 'Boy'
+                  ? SvgPicture.asset(
+                      'assets/App_icons/Boy.svg',
+                      width: imageSize * 0.6,
+                      height: imageSize * 0.6,
+                      fit: BoxFit.contain,
+                    )
+                  : _selectedGender == 'Girl'
+                  ? SvgPicture.asset(
+                      'assets/App_icons/Girl.svg',
+                      width: imageSize * 0.6,
+                      height: imageSize * 0.6,
+                      fit: BoxFit.contain,
+                    )
+                  : Icon(
+                      Icons.person,
+                      size: imageSize * 0.5,
                       color: Colors.white,
                     ),
-                  ),
-                ),
-              ],
             ),
-          ),
-          SizedBox(height: screenHeight * 0.01),
-          Text(
-            widget.isEditMode ? 'Edit Photo' : 'Add Photo',
-            style: AppTextStyles.bodySmall(
-              context,
-            ).copyWith(color: Colors.black54),
           ),
         ],
       ),

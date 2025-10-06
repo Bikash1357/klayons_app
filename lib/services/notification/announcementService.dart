@@ -1,56 +1,35 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:klayons/services/auth/login_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'modelAnnouncement.dart';
 
-class AnnouncementService {
+class NotificationService {
   static const String baseUrl = 'https://dev-klayons.onrender.com';
-  static const String announcementsEndpoint = '/api/announcements/';
+  static const String notificationFeedEndpoint = '/api/notifications/feed/';
+  static const String markAsReadEndpoint = '/api/notifications/';
 
-  // Get stored auth token
-  Future<String?> _getAuthToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('access_token');
-  }
-
-  // Get announcements with optional filters
-  Future<List<Announcement>> getAnnouncements({
-    int? activityId,
-    String? scope,
-    String? search,
-    int? societyId,
+  // Get notification feed with pagination
+  Future<NotificationFeedResponse> getNotificationFeed({
+    int page = 1,
+    int pageSize = 20,
   }) async {
     try {
       // Build query parameters
-      Map<String, String> queryParams = {};
-
-      if (activityId != null) {
-        queryParams['activity'] = activityId.toString();
-      }
-      if (scope != null) {
-        queryParams['scope'] = scope.toUpperCase();
-      }
-      if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
-      }
-      if (societyId != null) {
-        queryParams['society'] = societyId.toString();
-      }
+      Map<String, String> queryParams = {
+        'page': page.toString(),
+        'page_size': pageSize.toString(),
+      };
 
       // Build URL with query parameters
-      Uri url = Uri.parse('$baseUrl$announcementsEndpoint');
-      if (queryParams.isNotEmpty) {
-        url = url.replace(queryParameters: queryParams);
-      }
+      Uri url = Uri.parse(
+        '$baseUrl$notificationFeedEndpoint',
+      ).replace(queryParameters: queryParams);
 
-      // Use your existing auth service method
-      String? token =
-          await LoginAuthService.getToken(); // Replace YourAuthService with actual class name
+      // Get auth token
+      String? token = await LoginAuthService.getToken();
 
       if (token == null) {
-        print('AnnouncementService: No authentication token found');
+        print('NotificationService: No authentication token found');
         throw Exception('Authentication token not found. Please login again.');
       }
 
@@ -61,58 +40,153 @@ class AnnouncementService {
         'Authorization': 'Bearer $token',
       };
 
-      print('AnnouncementService: GET $url');
-      print('AnnouncementService: Using token: ${token.substring(0, 20)}...');
+      print('NotificationService: GET $url');
+      print('NotificationService: Using token: ${token.substring(0, 20)}...');
 
       // Make HTTP request
       final response = await http.get(url, headers: headers);
 
-      print('AnnouncementService: Response status: ${response.statusCode}');
-      print('AnnouncementService: Response body: ${response.body}');
+      print('NotificationService: Response status: ${response.statusCode}');
+      print('NotificationService: Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        List<dynamic> jsonData = json.decode(response.body);
-        print('AnnouncementService: Parsed ${jsonData.length} announcements');
-        return jsonData.map((json) => Announcement.fromJson(json)).toList();
+        final jsonData = json.decode(response.body);
+
+        // Handle both array and paginated response
+        NotificationFeedResponse feedResponse;
+        if (jsonData is List) {
+          feedResponse = NotificationFeedResponse(
+            count: jsonData.length,
+            next: null,
+            previous: null,
+            results: jsonData
+                .map((item) => NotificationItem.fromJson(item))
+                .toList(),
+          );
+        } else {
+          feedResponse = NotificationFeedResponse.fromJson(jsonData);
+        }
+
+        print(
+          'NotificationService: Parsed ${feedResponse.results.length} notifications',
+        );
+        return feedResponse;
       } else if (response.statusCode == 401) {
-        print('AnnouncementService: Unauthorized - token may be expired');
+        print('NotificationService: Unauthorized - token may be expired');
         throw Exception('Authentication failed. Please login again.');
       } else {
         print(
-          'AnnouncementService: HTTP Error ${response.statusCode}: ${response.body}',
+          'NotificationService: HTTP Error ${response.statusCode}: ${response.body}',
         );
         throw Exception(
-          'Failed to fetch announcements: ${response.statusCode}',
+          'Failed to fetch notifications: ${response.statusCode}',
         );
       }
     } catch (e) {
-      print('AnnouncementService Error: $e');
+      print('NotificationService Error: $e');
       rethrow;
     }
   }
 
-  // Get announcements by scope
-  Future<List<Announcement>> getAnnouncementsByScope(String scope) async {
-    return await getAnnouncements(scope: scope);
+  // Get all notifications (load all pages)
+  Future<List<NotificationItem>> getAllNotifications() async {
+    List<NotificationItem> allNotifications = [];
+    int currentPage = 1;
+    bool hasMorePages = true;
+
+    while (hasMorePages) {
+      try {
+        final response = await getNotificationFeed(page: currentPage);
+        allNotifications.addAll(response.results);
+
+        // Check if there are more pages
+        hasMorePages = response.next != null;
+        currentPage++;
+
+        print(
+          'NotificationService: Loaded page $currentPage, total: ${allNotifications.length}',
+        );
+      } catch (e) {
+        print('NotificationService: Error loading page $currentPage: $e');
+        break;
+      }
+    }
+
+    return allNotifications;
   }
 
-  // Get announcements for specific activity
-  Future<List<Announcement>> getActivityAnnouncements(int activityId) async {
-    return await getAnnouncements(activityId: activityId, scope: 'ACTIVITY');
+  // Get unread notifications only
+  Future<List<NotificationItem>> getUnreadNotifications({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await getNotificationFeed(page: page, pageSize: pageSize);
+    return response.results
+        .where((notification) => !notification.isRead)
+        .toList();
   }
 
-  // Get society announcements
-  Future<List<Announcement>> getSocietyAnnouncements(int societyId) async {
-    return await getAnnouncements(societyId: societyId, scope: 'SOCIETY');
+  // Get notifications by type
+  Future<List<NotificationItem>> getNotificationsByType(
+    String type, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await getNotificationFeed(page: page, pageSize: pageSize);
+    return response.results
+        .where((notification) => notification.type == type)
+        .toList();
   }
 
-  // Get general announcements
-  Future<List<Announcement>> getGeneralAnnouncements() async {
-    return await getAnnouncements(scope: 'GENERAL');
+  // Mark notification as read
+  Future<bool> markAsRead(int notificationId) async {
+    try {
+      Uri url = Uri.parse('$baseUrl$markAsReadEndpoint$notificationId/read/');
+
+      String? token = await LoginAuthService.getToken();
+
+      if (token == null) {
+        print('NotificationService: No authentication token found');
+        throw Exception('Authentication token not found. Please login again.');
+      }
+
+      Map<String, String> headers = {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      print('NotificationService: POST $url (mark as read)');
+
+      final response = await http.post(url, headers: headers);
+
+      print('NotificationService: Mark as read status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print(
+          'NotificationService: Notification $notificationId marked as read',
+        );
+        return true;
+      } else {
+        print(
+          'NotificationService: Failed to mark as read: ${response.statusCode}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('NotificationService: Error marking as read: $e');
+      return false;
+    }
   }
 
-  // Search announcements
-  Future<List<Announcement>> searchAnnouncements(String searchTerm) async {
-    return await getAnnouncements(search: searchTerm);
+  // Get unread count
+  Future<int> getUnreadCount() async {
+    try {
+      final response = await getNotificationFeed(page: 1, pageSize: 100);
+      return response.results.where((n) => !n.isRead).length;
+    } catch (e) {
+      print('NotificationService: Error getting unread count: $e');
+      return 0;
+    }
   }
 }

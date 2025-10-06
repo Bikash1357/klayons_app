@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification/announcementService.dart';
 import '../services/notification/modelAnnouncement.dart';
 import '../utils/styles/fonts.dart';
@@ -14,84 +13,114 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  final AnnouncementService _announcementService = AnnouncementService();
-  List<Announcement> announcements = [];
-  List<Announcement> filteredAnnouncements = [];
+  final NotificationService _notificationService = NotificationService();
+  List<NotificationItem> notifications = [];
   bool isLoading = true;
   String? errorMessage;
-  String searchQuery = '';
-  String selectedScope = 'ALL';
+  int currentPage = 1;
+  bool hasMorePages = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadAnnouncements();
+    _loadNotifications();
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> _loadAnnouncements() async {
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      if (!isLoading && hasMorePages) {
+        _loadMoreNotifications();
+      }
+    }
+  }
+
+  Future<void> _loadNotifications() async {
     setState(() {
       isLoading = true;
       errorMessage = null;
+      currentPage = 1;
+      notifications.clear();
     });
 
     try {
-      List<Announcement> loadedAnnouncements;
-
-      if (selectedScope == 'ALL') {
-        loadedAnnouncements = await _announcementService.getAnnouncements();
-      } else {
-        loadedAnnouncements = await _announcementService
-            .getAnnouncementsByScope(selectedScope);
-      }
+      final response = await _notificationService.getNotificationFeed(
+        page: currentPage,
+        pageSize: 20,
+      );
 
       setState(() {
-        announcements = loadedAnnouncements.where((a) => a.isActive).toList();
-        _filterAnnouncements();
+        notifications = response.results;
+        hasMorePages = response.next != null;
         isLoading = false;
       });
+
+      print('NotificationsPage: Loaded ${notifications.length} notifications');
     } catch (e) {
       setState(() {
-        errorMessage = 'Failed to load notifications: ${e.toString()}';
+        errorMessage = 'Failed to load notifications';
         isLoading = false;
       });
-      print('Error loading announcements: $e');
+      print('Error loading notifications: $e');
     }
   }
 
-  void _filterAnnouncements() {
-    if (searchQuery.isEmpty) {
-      filteredAnnouncements = announcements;
-    } else {
-      filteredAnnouncements = announcements.where((announcement) {
-        return announcement.title.toLowerCase().contains(
-              searchQuery.toLowerCase(),
-            ) ||
-            announcement.content.toLowerCase().contains(
-              searchQuery.toLowerCase(),
-            );
-      }).toList();
-    }
-  }
+  Future<void> _loadMoreNotifications() async {
+    if (isLoading || !hasMorePages) return;
 
-  Future<void> _markAnnouncementAsRead(int announcementId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final readNotifications = prefs.getStringList('read_notifications') ?? [];
-
-      if (!readNotifications.contains(announcementId.toString())) {
-        readNotifications.add(announcementId.toString());
-        await prefs.setStringList('read_notifications', readNotifications);
-      }
-    } catch (e) {
-      print('Error marking announcement as read: $e');
-    }
-  }
-
-  void _onSearchChanged(String query) {
     setState(() {
-      searchQuery = query;
-      _filterAnnouncements();
+      isLoading = true;
     });
+
+    try {
+      currentPage++;
+      final response = await _notificationService.getNotificationFeed(
+        page: currentPage,
+        pageSize: 20,
+      );
+
+      setState(() {
+        notifications.addAll(response.results);
+        hasMorePages = response.next != null;
+        isLoading = false;
+      });
+
+      print(
+        'NotificationsPage: Loaded page $currentPage, total: ${notifications.length}',
+      );
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        currentPage--; // Revert page number on error
+      });
+      print('Error loading more notifications: $e');
+    }
+  }
+
+  Future<void> _handleNotificationTap(NotificationItem notification) async {
+    if (!notification.isRead) {
+      // Mark as read
+      await _notificationService.markAsRead(notification.id);
+
+      // Update local state
+      setState(() {
+        int index = notifications.indexWhere((n) => n.id == notification.id);
+        if (index != -1) {
+          notifications[index] = notification.copyWith(isRead: true);
+        }
+      });
+    }
+
+    // Show notification details
+    _showNotificationDetails(notification);
   }
 
   @override
@@ -122,146 +151,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ),
         centerTitle: false,
-        actions: [
-          PopupMenuButton<String>(
-            icon: Icon(Icons.filter_list, color: AppColors.darkElements),
-            onSelected: (value) {
-              setState(() {
-                selectedScope = value;
-              });
-              _loadAnnouncements();
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'ALL',
-                child: Row(
-                  children: [
-                    Icon(Icons.all_inclusive, size: 18),
-                    SizedBox(width: 8),
-                    Text('All'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'GENERAL',
-                child: Row(
-                  children: [
-                    Icon(Icons.notifications, size: 18),
-                    SizedBox(width: 8),
-                    Text('General'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'SOCIETY',
-                child: Row(
-                  children: [
-                    Icon(Icons.groups, size: 18),
-                    SizedBox(width: 8),
-                    Text('Society'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'ACTIVITY',
-                child: Row(
-                  children: [
-                    Icon(Icons.event, size: 18),
-                    SizedBox(width: 8),
-                    Text('Activity'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Search bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Search notifications...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            searchQuery = '';
-                            _filterAnnouncements();
-                          });
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-
-          // Filter chip
-          if (selectedScope != 'ALL')
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Chip(
-                    label: Text(selectedScope),
-                    backgroundColor: _getScopeColor(
-                      selectedScope,
-                    ).withOpacity(0.1),
-                    labelStyle: TextStyle(
-                      color: _getScopeColor(selectedScope),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    deleteIcon: Icon(
-                      Icons.close,
-                      size: 18,
-                      color: _getScopeColor(selectedScope),
-                    ),
-                    onDeleted: () {
-                      setState(() {
-                        selectedScope = 'ALL';
-                      });
-                      _loadAnnouncements();
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-          // Content area
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _loadAnnouncements,
-              child: _buildContent(),
-            ),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _loadNotifications,
+        color: AppColors.primaryOrange,
+        child: _buildContent(),
       ),
     );
   }
 
   Widget _buildContent() {
-    if (isLoading) {
+    if (isLoading && notifications.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFFFF6B35)),
       );
     }
 
-    if (errorMessage != null) {
+    if (errorMessage != null && notifications.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -277,7 +183,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _loadAnnouncements,
+              onPressed: _loadNotifications,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6B35),
                 foregroundColor: Colors.white,
@@ -289,23 +195,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
     }
 
-    if (filteredAnnouncements.isEmpty) {
+    if (notifications.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              searchQuery.isNotEmpty
-                  ? Icons.search_off
-                  : Icons.notifications_none,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.notifications_none, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              searchQuery.isNotEmpty
-                  ? 'No notifications found for "$searchQuery"'
-                  : 'No notifications available',
+              'No notifications available',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium(
                 context,
@@ -316,171 +214,116 @@ class _NotificationsPageState extends State<NotificationsPage> {
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
+      controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: filteredAnnouncements.length,
+      itemCount: notifications.length + (hasMorePages ? 1 : 0),
+      separatorBuilder: (context, index) => const SizedBox(height: 0),
       itemBuilder: (context, index) {
-        final announcement = filteredAnnouncements[index];
-        return _buildAnnouncementCard(announcement);
+        if (index == notifications.length) {
+          // Loading indicator at bottom
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Color(0xFFFF6B35))
+                  : const SizedBox.shrink(),
+            ),
+          );
+        }
+
+        final notification = notifications[index];
+        return _buildNotificationCard(notification);
       },
     );
   }
 
-  Widget _buildAnnouncementCard(Announcement announcement) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _showAnnouncementDetails(announcement),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row with scope and date
-              Row(
+  Widget _buildNotificationCard(NotificationItem notification) {
+    return InkWell(
+      onTap: () => _handleNotificationTap(notification),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: notification.isRead ? Colors.white : Colors.orange.shade50,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade200, width: 1),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Red/Orange dot indicator for unread
+            Container(
+              margin: const EdgeInsets.only(right: 12, top: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: notification.isRead
+                    ? Colors.transparent
+                    : _getTypeColor(notification.type),
+                shape: BoxShape.circle,
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getScopeColor(
-                        announcement.scope,
-                      ).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _getScopeIcon(announcement.scope),
-                          size: 14,
-                          color: _getScopeColor(announcement.scope),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          announcement.scope,
-                          style: AppTextStyles.bodySmall(context).copyWith(
-                            color: _getScopeColor(announcement.scope),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                  // Title row with time
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          notification.title,
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            fontWeight: notification.isRead
+                                ? FontWeight.w500
+                                : FontWeight.w600,
+                            color: Colors.black87,
+                            fontSize: 15,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _formatDate(announcement.createdAt),
-                    style: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(color: Colors.grey[600], fontSize: 12),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Title
-              Text(
-                announcement.title,
-                style: AppTextStyles.titleSmall(
-                  context,
-                ).copyWith(fontWeight: FontWeight.w600, color: Colors.black87),
-              ),
-              const SizedBox(height: 8),
-
-              // Content preview
-              Text(
-                announcement.content,
-                style: AppTextStyles.bodyMedium(
-                  context,
-                ).copyWith(color: Colors.grey[700]),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              // Activities (if any)
-              if (announcement.activities.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: announcement.activities.take(2).map((activity) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
                       ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        activity.name,
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTimeAgo(notification.createdAt),
                         style: AppTextStyles.bodySmall(
                           context,
-                        ).copyWith(color: Colors.orange[700], fontSize: 11),
+                        ).copyWith(color: Colors.grey[600], fontSize: 12),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              // Attachment indicator
-              if (announcement.attachmentUrl != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.attachment, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Attachment available',
-                      style: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
-
-              // Footer with creator and expiry
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'By ${announcement.createdBy.name}',
-                      style: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(color: Colors.grey[600], fontSize: 12),
-                    ),
+                    ],
                   ),
+                  const SizedBox(height: 4),
+
+                  // Body text
                   Text(
-                    'Expires: ${_formatDate(announcement.expiry)}',
-                    style: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(color: Colors.grey[600], fontSize: 12),
+                    _stripHtmlTags(notification.body),
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: Colors.grey[700],
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showAnnouncementDetails(Announcement announcement) {
-    _markAnnouncementAsRead(announcement.id);
+  void _showNotificationDetails(NotificationItem notification) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.8,
+        height: MediaQuery.of(context).size.height * 0.75,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
@@ -512,34 +355,31 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _getScopeColor(
-                        announcement.scope,
-                      ).withOpacity(0.1),
+                      color: _getTypeColor(notification.type).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _getScopeIcon(announcement.scope),
-                          size: 16,
-                          color: _getScopeColor(announcement.scope),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          announcement.scope,
-                          style: AppTextStyles.bodySmall(context).copyWith(
-                            color: _getScopeColor(announcement.scope),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      notification.type.toUpperCase(),
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color: _getTypeColor(notification.type),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                   const Spacer(),
+                  Text(
+                    _formatFullDate(notification.createdAt),
+                    style: AppTextStyles.bodySmall(
+                      context,
+                    ).copyWith(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -552,70 +392,102 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title
                     Text(
-                      announcement.title,
+                      notification.title,
                       style: AppTextStyles.titleLarge(context).copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
+                        fontSize: 20,
                       ),
                     ),
                     const SizedBox(height: 16),
 
+                    // Body (strip HTML tags for display)
                     Text(
-                      announcement.content,
-                      style: AppTextStyles.bodyMedium(
-                        context,
-                      ).copyWith(color: Colors.grey[700], height: 1.5),
+                      _stripHtmlTags(notification.body),
+                      style: AppTextStyles.bodyMedium(context).copyWith(
+                        color: Colors.grey[800],
+                        height: 1.6,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 20),
 
-                    if (announcement.activities.isNotEmpty) ...[
-                      Text(
-                        'Activities',
-                        style: AppTextStyles.titleMedium(context).copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                    // Image if available
+                    if (notification.imageUrl != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          notification.imageUrl!,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200,
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 48,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      ...announcement.activities.map(
-                        (activity) => Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: _buildInfoRow(
-                            '${activity.name}',
-                            activity.instructor,
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Attachment button if available
+                    if (notification.attachmentUrl != null) ...[
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _openAttachment(notification.attachmentUrl!),
+                        icon: const Icon(Icons.attachment, size: 18),
+                        label: const Text('View Attachment'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6B35),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
                     ],
 
-                    if (announcement.attachmentUrl != null) ...[
-                      ElevatedButton.icon(
-                        onPressed: () =>
-                            _openAttachment(announcement.attachmentUrl!),
-                        icon: const Icon(Icons.attachment),
-                        label: const Text('View Attachment'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B35),
-                          foregroundColor: Colors.white,
+                    // Expiry info if available
+                    if (notification.expiresAt != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 16,
+                              color: Colors.orange[700],
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Expires on ${_formatFullDate(notification.expiresAt!)}',
+                              style: AppTextStyles.bodySmall(context).copyWith(
+                                color: Colors.orange[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 20),
                     ],
-
-                    _buildInfoRow('Created by', announcement.createdBy.name),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                      'Created on',
-                      _formatDate(announcement.createdAt),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                      'Expires on',
-                      _formatDate(announcement.expiry),
-                    ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -626,66 +498,55 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  Color _getScopeColor(String scope) {
-    switch (scope) {
-      case 'ACTIVITY':
-        return const Color(0xFF4CAF50);
-      case 'BATCH':
-        return const Color(0xFF2196F3);
-      case 'SOCIETY':
-        return const Color(0xFF9C27B0);
-      case 'GENERAL':
+  Color _getTypeColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'payment':
+        return Colors.red;
+      case 'promotion':
+        return Colors.green;
+      case 'alert':
+        return Colors.red.shade700;
+      case 'announcement':
+        return Colors.blue;
+      case 'general':
       default:
         return const Color(0xFFFF6B35);
     }
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            '$label:',
-            style: AppTextStyles.bodySmall(
-              context,
-            ).copyWith(color: Colors.grey[600], fontWeight: FontWeight.w500),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: AppTextStyles.bodySmall(
-              context,
-            ).copyWith(color: Colors.black87),
-          ),
-        ),
-      ],
-    );
-  }
+  String _formatTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
-  IconData _getScopeIcon(String scope) {
-    switch (scope) {
-      case 'ACTIVITY':
-        return Icons.event;
-      case 'BATCH':
-        return Icons.group;
-      case 'SOCIETY':
-        return Icons.groups;
-      case 'GENERAL':
-      default:
-        return Icons.notifications;
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds}s';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d';
+    } else if (difference.inDays < 30) {
+      return '${(difference.inDays / 7).floor()}w';
+    } else if (difference.inDays < 365) {
+      return '${(difference.inDays / 30).floor()}mo';
+    } else {
+      return '${(difference.inDays / 365).floor()}y';
     }
   }
 
-  String _formatDate(DateTime date) {
+  String _formatFullDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _stripHtmlTags(String htmlText) {
+    // Remove HTML tags for plain text display
+    final RegExp exp = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: true);
+    return htmlText.replaceAll(exp, '').trim();
   }
 
   void _openAttachment(String attachmentUrl) {
     // Implement attachment opening logic
-    // This could launch a URL, open a file viewer, etc.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Opening attachment: $attachmentUrl'),

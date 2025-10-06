@@ -556,16 +556,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(32),
             child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/profile_bg.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(color: Colors.black.withOpacity(0.1)),
-                child: const Icon(Icons.person, color: Colors.white, size: 32),
-              ),
+              decoration: BoxDecoration(color: Colors.black.withOpacity(0.1)),
+              child: const Icon(Icons.person, color: Colors.white, size: 32),
             ),
           ),
         ),

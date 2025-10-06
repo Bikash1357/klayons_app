@@ -88,6 +88,8 @@ flutter:
   assets:
     - assets/images/
     - assets/App_icons/
+    - assets/App_icons/Boy.svg
+    - assets/App_icons/Girl.svg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

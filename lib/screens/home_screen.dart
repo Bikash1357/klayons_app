@@ -44,15 +44,11 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   // Notification state
   int _unreadNotificationCount = 0;
   bool _isLoadingNotifications = false;
-  List<Announcement> _allAnnouncements = [];
 
   // User profile data
   UserProfile? _userProfile;
   bool _isLoadingUserProfile = false;
   String _userName = 'User';
-
-  // Announcement service
-  final AnnouncementService _announcementService = AnnouncementService();
 
   // Pages for bottom navigation
   final List<Widget> _pages = [
@@ -107,116 +103,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   // Load all initial data
   Future<void> _loadInitialData() async {
-    await Future.wait([
-      _loadActivityData(),
-      _loadUserProfile(),
-      _loadNotificationCount(),
-    ]);
-  }
-
-  // Load notification count
-  Future<void> _loadNotificationCount() async {
-    setState(() => _isLoadingNotifications = true);
-
-    try {
-      // Get all announcements
-      final announcements = await _announcementService.getAnnouncements();
-
-      if (mounted) {
-        setState(() {
-          _allAnnouncements = announcements;
-        });
-
-        // Calculate unread count
-        await _calculateUnreadCount();
-      }
-    } catch (e) {
-      print('Error loading notifications: $e');
-      if (mounted) {
-        setState(() {
-          _unreadNotificationCount = 0;
-          _isLoadingNotifications = false;
-        });
-      }
-    }
-  }
-
-  // Calculate unread notification count
-  Future<void> _calculateUnreadCount() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Get last seen notification timestamp
-      final lastSeenTimestamp = prefs.getString('last_seen_notification') ?? '';
-      DateTime? lastSeenDate;
-
-      if (lastSeenTimestamp.isNotEmpty) {
-        lastSeenDate = DateTime.tryParse(lastSeenTimestamp);
-      }
-
-      // Get read notification IDs
-      final readNotificationIds =
-          prefs.getStringList('read_notifications') ?? [];
-      final readIds = readNotificationIds
-          .map((id) => int.tryParse(id))
-          .where((id) => id != null)
-          .cast<int>()
-          .toSet();
-
-      int unreadCount = 0;
-
-      for (final announcement in _allAnnouncements) {
-        // Check if notification is unread
-        bool isUnread = true;
-
-        // If user has read this specific notification
-        if (readIds.contains(announcement.id)) {
-          isUnread = false;
-        }
-        // If user visited notifications after this announcement was created
-        else if (lastSeenDate != null &&
-            announcement.createdAt.isBefore(lastSeenDate)) {
-          isUnread = false;
-        }
-
-        if (isUnread) {
-          unreadCount++;
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _unreadNotificationCount = unreadCount;
-          _isLoadingNotifications = false;
-        });
-      }
-    } catch (e) {
-      print('Error calculating unread count: $e');
-      if (mounted) {
-        setState(() {
-          _unreadNotificationCount = 0;
-          _isLoadingNotifications = false;
-        });
-      }
-    }
-  }
-
-  // Mark notifications as seen when user opens notification page
-  Future<void> _markNotificationsAsSeen() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        'last_seen_notification',
-        DateTime.now().toIso8601String(),
-      );
-
-      // Reset unread count
-      setState(() {
-        _unreadNotificationCount = 0;
-      });
-    } catch (e) {
-      print('Error marking notifications as seen: $e');
-    }
+    await Future.wait([_loadActivityData(), _loadUserProfile()]);
   }
 
   // Load activity data
@@ -342,27 +229,15 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
 
   // Navigate to notifications
   Future<void> _navigateToNotifications() async {
-    // Mark notifications as seen before navigation
-    await _markNotificationsAsSeen();
-
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => NotificationsPage()),
     );
-
-    // Refresh notification count when returning from notifications page
-    if (result == true || result == null) {
-      await _loadNotificationCount();
-    }
   }
 
   // Refresh all data
   Future<void> _refreshData() async {
-    await Future.wait([
-      _loadActivityData(),
-      _loadUserProfile(),
-      _loadNotificationCount(),
-    ]);
+    await Future.wait([_loadActivityData(), _loadUserProfile()]);
   }
 
   @override
@@ -378,136 +253,141 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   Widget _buildHomePage() {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Main content with CustomScrollView
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // Flexible AppBar that can hide/show
-              SliverAppBar(
-                expandedHeight: 40,
-                floating: true,
-                snap: true,
-                pinned: false,
-                leadingWidth: 200,
-                backgroundColor: AppColors.background,
-                automaticallyImplyLeading: false,
-                elevation: 0,
-                leading: _isLoadingUserProfile
-                    ? Container(
-                        width: 80,
-                        height: 16,
-                        margin: const EdgeInsets.only(left: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white60,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'Hi, $_userName!',
-                              style: GoogleFonts.poetsenOne(
-                                textStyle: AppTextStyles.titleLarge(
-                                  context,
-                                ).copyWith(color: AppColors.primaryOrange),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                actions: [
-                  Stack(
-                    children: [
-                      IconButton(
-                        icon: _isLoadingNotifications
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.darkElements,
-                                  ),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        color: AppColors.primaryOrange,
+        child: Stack(
+          children: [
+            // Main content with CustomScrollView
+            CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                // Flexible AppBar that can hide/show
+                SliverAppBar(
+                  expandedHeight: 40,
+                  floating: true,
+                  snap: true,
+                  pinned: false,
+                  leadingWidth: 200,
+                  backgroundColor: AppColors.background,
+                  automaticallyImplyLeading: false,
+                  elevation: 0,
+                  leading: _isLoadingUserProfile
+                      ? Container(
+                          width: 80,
+                          height: 16,
+                          margin: const EdgeInsets.only(left: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white60,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.only(left: 16),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Hi, $_userName!',
+                                style: GoogleFonts.poetsenOne(
+                                  textStyle: AppTextStyles.titleLarge(
+                                    context,
+                                  ).copyWith(color: AppColors.primaryOrange),
                                 ),
-                              )
-                            : SvgPicture.asset(
-                                'assets/App_icons/iconBell.svg',
-                                width: 24,
-                                height: 24,
-                                colorFilter: ColorFilter.mode(
-                                  AppColors.darkElements,
-                                  BlendMode.srcIn,
-                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                        onPressed: _navigateToNotifications,
-                      ),
-                      if (_unreadNotificationCount > 0 &&
-                          !_isLoadingNotifications)
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF6B35),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            constraints: const BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              _unreadNotificationCount > 99
-                                  ? '99+'
-                                  : _unreadNotificationCount.toString(),
-                              style: AppTextStyles.bodySmall(context).copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
+                            ],
                           ),
                         ),
-                    ],
-                  ),
-                ],
-              ),
+                  actions: [
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: _isLoadingNotifications
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.darkElements,
+                                    ),
+                                  ),
+                                )
+                              : SvgPicture.asset(
+                                  'assets/App_icons/iconBell.svg',
+                                  width: 24,
+                                  height: 24,
+                                  colorFilter: ColorFilter.mode(
+                                    AppColors.darkElements,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                          onPressed: _navigateToNotifications,
+                        ),
+                        if (_unreadNotificationCount > 0 &&
+                            !_isLoadingNotifications)
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B35),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                _unreadNotificationCount > 99
+                                    ? '99+'
+                                    : _unreadNotificationCount.toString(),
+                                style: AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
 
-              // Pinned search bar
-              // Update the SliverPersistentHeader delegate (around line 485)
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _SearchBarDelegate(
-                  child: _buildSearchField(),
-                  height: 80,
-                  isScrolled: _isScrolled, // Pass scroll state
+                // Pinned search bar
+                // Update the SliverPersistentHeader delegate (around line 485)
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SearchBarDelegate(
+                    child: _buildSearchField(),
+                    height: 80,
+                    isScrolled: _isScrolled, // Pass scroll state
+                  ),
                 ),
-              ),
-              // Section title
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: _buildSectionTitle(),
+                // Section title
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: _buildSectionTitle(),
+                  ),
                 ),
-              ),
-              // Main content
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverToBoxAdapter(child: _buildContent()),
-              ),
-              // Bottom spacing
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
-          ),
-        ],
+                // Main content
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverToBoxAdapter(child: _buildContent()),
+                ),
+                // Bottom spacing
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

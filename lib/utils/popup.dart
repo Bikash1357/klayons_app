@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:klayons/utils/colour.dart';
 
 class ConfirmationDialog {
   /// Shows a confirmation dialog with customizable content
@@ -12,6 +14,7 @@ class ConfirmationDialog {
   /// - [confirmColor]: Color for confirm button (default: Colors.orange)
   /// - [iconColor]: Color for the warning icon (default: Colors.orange)
   /// - [icon]: Icon to display (default: Icons.error_outline)
+  /// - [customIcon]: Custom widget to display instead of icon (e.g., SvgPicture)
   ///
   /// Returns: Future<bool?> - true if confirmed, false if cancelled, null if dismissed
   static Future<bool?> show({
@@ -22,10 +25,11 @@ class ConfirmationDialog {
     String cancelText = 'Cancel',
     Color? confirmColor,
     Color? iconColor,
-    IconData icon = Icons.error_outline,
+    IconData? icon,
+    Widget? customIcon,
   }) {
-    final Color buttonColor = confirmColor ?? Colors.orange;
-    final Color circleColor = iconColor ?? Colors.orange;
+    final Color buttonColor = confirmColor ?? AppColors.primaryOrange;
+    final Color circleColor = iconColor ?? AppColors.primaryOrange;
 
     return showDialog<bool>(
       context: context,
@@ -39,7 +43,7 @@ class ConfirmationDialog {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Circular icon
+              // Circular icon - FIXED to support customIcon
               Container(
                 width: 80,
                 height: 80,
@@ -47,11 +51,13 @@ class ConfirmationDialog {
                   color: circleColor,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 50,
-                ),
+                child: customIcon != null
+                    ? Center(child: customIcon) // Use custom widget if provided
+                    : Icon(
+                        icon ?? Icons.error_outline,
+                        color: Colors.white,
+                        size: 50,
+                      ), // Fallback to IconData
               ),
               SizedBox(height: 24),
 
@@ -81,29 +87,31 @@ class ConfirmationDialog {
               // Buttons in a row
               Row(
                 children: [
-                  // Cancel button
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  // Cancel button - only show if cancelText is not empty
+                  if (cancelText.isNotEmpty) ...[
+                    Expanded(
+                      child: SizedBox(
+                        height: 50,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          style: TextButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          cancelText,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                          child: Text(
+                            cancelText,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: 12),
+                    SizedBox(width: 12),
+                  ],
 
                   // Confirm button
                   Expanded(
@@ -148,7 +156,8 @@ void showDeleteProfileDialog(BuildContext context) async {
   final result = await ConfirmationDialog.show(
     context: context,
     title: 'Are you sure?',
-    message: 'Deleting this profile will unenroll from all the activities booked for the child!',
+    message:
+        'Deleting this profile will unenroll from all the activities booked for the child!',
     confirmText: 'Delete Profile',
     cancelText: 'Cancel',
     confirmColor: Colors.orange,
@@ -189,7 +198,8 @@ void showUnenrollDialog(BuildContext context) async {
   final result = await ConfirmationDialog.show(
     context: context,
     title: 'Confirm Unenrollment',
-    message: 'This action will remove the child from the activity. You can re-enroll later if needed.',
+    message:
+        'This action will remove the child from the activity. You can re-enroll later if needed.',
     confirmText: 'Yes, Unenroll',
     cancelText: 'No, Keep',
     confirmColor: Colors.deepOrange,
@@ -225,7 +235,8 @@ void showCancelBookingDialog(BuildContext context) async {
   final result = await ConfirmationDialog.show(
     context: context,
     title: 'Cancel Booking?',
-    message: 'Cancelling this booking may result in cancellation charges. Do you want to proceed?',
+    message:
+        'Cancelling this booking may result in cancellation charges. Do you want to proceed?',
     confirmText: 'Yes, Cancel',
     cancelText: 'Keep Booking',
     confirmColor: Colors.orange[700]!,
@@ -236,5 +247,34 @@ void showCancelBookingDialog(BuildContext context) async {
   if (result == true) {
     // Cancel the booking
     print('Booking cancelled');
+  }
+}
+
+// Example 6: With Custom SVG Icon (Your Use Case)
+// Make sure to import: import 'package:flutter_svg/flutter_svg.dart';
+void showDeleteWithSvgDialog(BuildContext context, String childName) async {
+  final result = await ConfirmationDialog.show(
+    context: context,
+    title: 'Are you sure?',
+    message:
+        'Deleting this profile will unenroll $childName from all the activities booked for the child!',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    confirmColor: Colors.red,
+    iconColor: Colors.red,
+    customIcon: SvgPicture.asset(
+      'assets/App_icons/Exclamation_mark.svg',
+      width: 50,
+      height: 50,
+      colorFilter: ColorFilter.mode(
+        Colors.white, // White color to show on red background
+        BlendMode.srcIn,
+      ),
+    ),
+  );
+
+  if (result == true) {
+    // Proceed with deletion
+    print('Child profile deleted');
   }
 }
