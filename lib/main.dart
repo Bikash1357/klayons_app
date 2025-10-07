@@ -91,7 +91,7 @@ class _KlayonsAppState extends State<KlayonsApp> with WidgetsBindingObserver {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
       ),
-      initialRoute: '/',
+      initialRoute: '/home',
       routes: {
         '/': (context) => KlayonsSplashScreen(),
         '/login': (context) => LoginPage(),

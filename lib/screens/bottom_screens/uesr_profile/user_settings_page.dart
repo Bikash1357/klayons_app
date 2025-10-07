@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Add this import for input formatters
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
-import 'package:klayons/screens/bottom_screens/uesr_profile/profile_page.dart';
 import 'package:klayons/utils/colour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/UserProfileServices/updateUserProfileServices.dart';
@@ -21,7 +20,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   // Loading states
-  bool _isLoggingOut = false;
   bool _isLoading = true;
   bool _isUpdating = false;
   bool _isVerifyingEmail = false;
@@ -61,7 +59,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _hasPhoneInput = false;
 
   // Constants
-  static const String baseUrl = 'https://dev-klayonsapi.vercel.app/api';
+  static const String baseUrl = 'https://dev-klayons.onrender.com/api';
   static const Duration snackBarDuration = Duration(seconds: 2);
   static const Duration errorDuration = Duration(seconds: 3);
 
@@ -266,27 +264,6 @@ class _SettingsPageState extends State<SettingsPage> {
       return false;
     }
     return true;
-  }
-
-  Future<void> _performLogout() async {
-    setState(() => _isLoggingOut = true);
-
-    try {
-      final success = await LoginAuthService.logout();
-      if (success && mounted) {
-        _showSnackBar('Logged out successfully');
-        await Future.delayed(const Duration(milliseconds: 500));
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
-      } else {
-        _showSnackBar('Logout failed. Please try again.', isError: true);
-      }
-    } catch (e) {
-      _showSnackBar('An error occurred during logout', isError: true);
-    } finally {
-      if (mounted) setState(() => _isLoggingOut = false);
-    }
   }
 
   Future<Map<String, dynamic>> _makeApiCall(
@@ -796,248 +773,300 @@ class _SettingsPageState extends State<SettingsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Basic Information Section
-                _buildSectionTitle('Basic Information'),
-                _buildTextField(
-                  controller: _nameController,
-                  hint: 'Enter your name',
-                  isValid: _isNameValid,
-                  errorText: _isNameValid
-                      ? null
-                      : 'Name must be at least 2 characters',
-                  onChanged: (value) => setState(
-                    () => _isNameValid = value.isEmpty || _validateName(value),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Dynamic email/phone layout based on existing data
-                if (_hasEmailData) ...[
-                  _buildTextField(
-                    controller: _emailController,
-                    hint: 'Email',
-                    keyboardType: TextInputType.emailAddress,
-                    isValid: _isEmailValid,
-                    errorText: _isEmailValid
-                        ? null
-                        : 'Please enter a valid email',
-                    enabled: false,
-                    onChanged: (value) => setState(
-                      () => _isEmailValid =
-                          value.isEmpty || _validateEmail(value),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _phoneController,
-                    hint: 'Enter your phone number',
-                    keyboardType: TextInputType.phone,
-                    isValid: _isPhoneValid,
-                    errorText: _isPhoneValid
-                        ? null
-                        : 'Please enter exactly 10 digits',
-                    enabled: !_hasPhoneData,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
                     ],
-                    onChanged: (value) => setState(() {
-                      _isPhoneValid = value.isEmpty || _validatePhone(value);
-                      _hasPhoneInput = value.trim().isNotEmpty;
-                    }),
                   ),
-                  if (!_hasPhoneData &&
-                      !_showPhoneOTP &&
-                      _hasPhoneInput &&
-                      _isPhoneValid) ...[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildVerifyButton(
-                        text: 'Verify Phone',
-                        onPressed: _linkPhone,
-                        isLoading: _isVerifyingPhone,
-                      ),
-                    ),
-                  ],
-                  if (_showPhoneOTP) _buildOTPFields(),
-                ] else if (_hasPhoneData) ...[
-                  _buildTextField(
-                    controller: _phoneController,
-                    hint: 'Enter your phone number',
-                    keyboardType: TextInputType.phone,
-                    isValid: _isPhoneValid,
-                    errorText: _isPhoneValid
-                        ? null
-                        : 'Please enter exactly 10 digits',
-                    enabled: false,
-                    onChanged: (value) => setState(
-                      () => _isPhoneValid =
-                          value.isEmpty || _validatePhone(value),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _emailController,
-                    hint: 'Email',
-                    keyboardType: TextInputType.emailAddress,
-                    isValid: _isEmailValid,
-                    errorText: _isEmailValid
-                        ? null
-                        : 'Please enter a valid email',
-                    enabled: !_hasEmailData,
-                    onChanged: (value) => setState(() {
-                      _isEmailValid = value.isEmpty || _validateEmail(value);
-                      _hasEmailInput = value.trim().isNotEmpty;
-                    }),
-                  ),
-                  if (!_hasEmailData &&
-                      !_showEmailOTP &&
-                      _hasEmailInput &&
-                      _isEmailValid) ...[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildVerifyButton(
-                        text: 'Verify Email',
-                        onPressed: _linkEmail,
-                        isLoading: _isVerifyingEmail,
-                      ),
-                    ),
-                  ],
-                  if (_showEmailOTP) _buildOTPFields(),
-                ] else ...[
-                  _buildTextField(
-                    controller: _emailController,
-                    hint: 'Email',
-                    keyboardType: TextInputType.emailAddress,
-                    isValid: _isEmailValid,
-                    errorText: _isEmailValid
-                        ? null
-                        : 'Please enter a valid email',
-                    enabled: true,
-                    onChanged: (value) => setState(() {
-                      _isEmailValid = value.isEmpty || _validateEmail(value);
-                      _hasEmailInput = value.trim().isNotEmpty;
-                    }),
-                  ),
-                  if (!_showEmailOTP && _hasEmailInput && _isEmailValid) ...[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildVerifyButton(
-                        text: 'Verify Email',
-                        onPressed: _linkEmail,
-                        isLoading: _isVerifyingEmail,
-                      ),
-                    ),
-                  ],
-                  if (_showEmailOTP) _buildOTPFields(),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _phoneController,
-                    hint: 'Enter your phone number',
-                    keyboardType: TextInputType.phone,
-                    isValid: _isPhoneValid,
-                    errorText: _isPhoneValid
-                        ? null
-                        : 'Please enter exactly 10 digits',
-                    enabled: true,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(10),
-                    ],
-                    onChanged: (value) => setState(() {
-                      _isPhoneValid = value.isEmpty || _validatePhone(value);
-                      _hasPhoneInput = value.trim().isNotEmpty;
-                    }),
-                  ),
-                  if (!_showPhoneOTP && _hasPhoneInput && _isPhoneValid) ...[
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: _buildVerifyButton(
-                        text: 'Verify Phone',
-                        onPressed: _linkPhone,
-                        isLoading: _isVerifyingPhone,
-                      ),
-                    ),
-                  ],
-                  if (_showPhoneOTP) _buildOTPFields(),
-                ],
-
-                _buildSectionTitle('Address Information'),
-                if (_hasSocietyInfo) ...[
-                  _buildTextField(
-                    controller: _societyNameController,
-                    hint: 'Society',
-                    enabled: false,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _towerController,
-                          hint: 'Tower',
+                      _buildSectionTitle('Basic Information'),
+                      _buildTextField(
+                        controller: _nameController,
+                        hint: 'Enter your name',
+                        isValid: _isNameValid,
+                        errorText: _isNameValid
+                            ? null
+                            : 'Name must be at least 2 characters',
+                        onChanged: (value) => setState(
+                          () => _isNameValid =
+                              value.isEmpty || _validateName(value),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _flatController,
-                          hint: 'Flat',
+                      const SizedBox(height: 12),
+
+                      // Dynamic email/phone layout based on existing data
+                      if (_hasEmailData) ...[
+                        _buildTextField(
+                          controller: _emailController,
+                          hint: 'Email',
+                          keyboardType: TextInputType.emailAddress,
+                          isValid: _isEmailValid,
+                          errorText: _isEmailValid
+                              ? null
+                              : 'Please enter a valid email',
+                          enabled: false,
+                          onChanged: (value) => setState(
+                            () => _isEmailValid =
+                                value.isEmpty || _validateEmail(value),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ] else ...[
-                  _buildTextField(
-                    controller: _addressController,
-                    hint: 'Address',
-                  ),
-                ],
-
-                const SizedBox(height: 16),
-                _buildInfoCard(
-                  'If you wish to change your address, please send us a mail at support@klayons.com',
-                  AppColors.primaryOrange,
-                ),
-
-                const SizedBox(height: 40),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isUpdating ? null : _updateProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF5722),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isUpdating
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Text(
-                            'Save Details',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              fontSize: 16,
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          controller: _phoneController,
+                          hint: 'Enter your phone number',
+                          keyboardType: TextInputType.phone,
+                          isValid: _isPhoneValid,
+                          errorText: _isPhoneValid
+                              ? null
+                              : 'Please enter exactly 10 digits',
+                          enabled: !_hasPhoneData,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          onChanged: (value) => setState(() {
+                            _isPhoneValid =
+                                value.isEmpty || _validatePhone(value);
+                            _hasPhoneInput = value.trim().isNotEmpty;
+                          }),
+                        ),
+                        if (!_hasPhoneData &&
+                            !_showPhoneOTP &&
+                            _hasPhoneInput &&
+                            _isPhoneValid) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildVerifyButton(
+                              text: 'Verify Phone',
+                              onPressed: _linkPhone,
+                              isLoading: _isVerifyingPhone,
                             ),
                           ),
+                        ],
+                        if (_showPhoneOTP) _buildOTPFields(),
+                      ] else if (_hasPhoneData) ...[
+                        _buildTextField(
+                          controller: _phoneController,
+                          hint: 'Enter your phone number',
+                          keyboardType: TextInputType.phone,
+                          isValid: _isPhoneValid,
+                          errorText: _isPhoneValid
+                              ? null
+                              : 'Please enter exactly 10 digits',
+                          enabled: false,
+                          onChanged: (value) => setState(
+                            () => _isPhoneValid =
+                                value.isEmpty || _validatePhone(value),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          controller: _emailController,
+                          hint: 'Email',
+                          keyboardType: TextInputType.emailAddress,
+                          isValid: _isEmailValid,
+                          errorText: _isEmailValid
+                              ? null
+                              : 'Please enter a valid email',
+                          enabled: !_hasEmailData,
+                          onChanged: (value) => setState(() {
+                            _isEmailValid =
+                                value.isEmpty || _validateEmail(value);
+                            _hasEmailInput = value.trim().isNotEmpty;
+                          }),
+                        ),
+                        if (!_hasEmailData &&
+                            !_showEmailOTP &&
+                            _hasEmailInput &&
+                            _isEmailValid) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildVerifyButton(
+                              text: 'Verify Email',
+                              onPressed: _linkEmail,
+                              isLoading: _isVerifyingEmail,
+                            ),
+                          ),
+                        ],
+                        if (_showEmailOTP) _buildOTPFields(),
+                      ] else ...[
+                        _buildTextField(
+                          controller: _emailController,
+                          hint: 'Email',
+                          keyboardType: TextInputType.emailAddress,
+                          isValid: _isEmailValid,
+                          errorText: _isEmailValid
+                              ? null
+                              : 'Please enter a valid email',
+                          enabled: true,
+                          onChanged: (value) => setState(() {
+                            _isEmailValid =
+                                value.isEmpty || _validateEmail(value);
+                            _hasEmailInput = value.trim().isNotEmpty;
+                          }),
+                        ),
+                        if (!_showEmailOTP &&
+                            _hasEmailInput &&
+                            _isEmailValid) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildVerifyButton(
+                              text: 'Verify Email',
+                              onPressed: _linkEmail,
+                              isLoading: _isVerifyingEmail,
+                            ),
+                          ),
+                        ],
+                        if (_showEmailOTP) _buildOTPFields(),
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          controller: _phoneController,
+                          hint: 'Enter your phone number',
+                          keyboardType: TextInputType.phone,
+                          isValid: _isPhoneValid,
+                          errorText: _isPhoneValid
+                              ? null
+                              : 'Please enter exactly 10 digits',
+                          enabled: true,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          onChanged: (value) => setState(() {
+                            _isPhoneValid =
+                                value.isEmpty || _validatePhone(value);
+                            _hasPhoneInput = value.trim().isNotEmpty;
+                          }),
+                        ),
+                        if (!_showPhoneOTP &&
+                            _hasPhoneInput &&
+                            _isPhoneValid) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: _buildVerifyButton(
+                              text: 'Verify Phone',
+                              onPressed: _linkPhone,
+                              isLoading: _isVerifyingPhone,
+                            ),
+                          ),
+                        ],
+                        if (_showPhoneOTP) _buildOTPFields(),
+                      ],
+                      SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle('Address Information'),
+                      if (_hasSocietyInfo) ...[
+                        _buildTextField(
+                          controller: _societyNameController,
+                          hint: 'Society',
+                          enabled: false,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _towerController,
+                                hint: 'Tower',
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _flatController,
+                                hint: 'Flat',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        _buildTextField(
+                          controller: _addressController,
+                          hint: 'Address',
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+                      _buildInfoCard(
+                        'If you wish to change your address, please send us a mail at support@klayons.com',
+                        AppColors.primaryOrange,
+                      ),
+
+                      const SizedBox(height: 30),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 40),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isUpdating ? null : _updateProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF5722),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isUpdating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Text(
+                              'Save Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

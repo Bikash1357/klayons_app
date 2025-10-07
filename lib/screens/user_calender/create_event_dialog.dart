@@ -480,6 +480,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
           return StatefulBuilder(
             builder: (context, setState) {
               return AlertDialog(
+                backgroundColor: AppColors.primaryContainer,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -572,6 +573,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
+                backgroundColor: AppColors.primaryContainer,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -626,23 +628,17 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                         flex: 1,
                         child: Container(
                           margin: EdgeInsets.only(left: 2, right: 6),
-                          child: ElevatedButton(
+                          child: TextButton(
                             onPressed: () {
                               Navigator.of(
                                 context,
                               ).pop({'action': 'never_stop'});
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryOrange,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                            ),
+
                             child: Text(
                               'Never Stop',
                               style: AppTextStyles.bodyMedium(context).copyWith(
-                                color: Colors.white,
+                                color: Colors.grey.shade600,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

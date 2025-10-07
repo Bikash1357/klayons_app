@@ -94,7 +94,7 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen>
         decoration: const BoxDecoration(color: AppColors.primaryOrange),
         child: SafeArea(
           child: Transform.translate(
-            offset: const Offset(0, -20),
+            offset: const Offset(0, -70),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -110,7 +110,7 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen>
                         'Growing Curious, Creative and \n Confident Kids',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.titleMedium(context).copyWith(
-                          color: AppColors.background,
+                          color: AppColors.orangeHighlight,
                           fontWeight: FontWeight.w500,
                           fontStyle: FontStyle.italic,
                           letterSpacing: 0.2,

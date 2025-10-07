@@ -1166,7 +1166,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Custom activity created successfully!'),
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.deepOrange,
             ),
           );
         },
@@ -1206,7 +1206,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Custom activity updated successfully!'),
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.deepOrange,
               ),
             );
           } catch (e) {
@@ -1291,7 +1291,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Custom activity deleted successfully!'),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Colors.deepOrange,
                     ),
                   );
                 }

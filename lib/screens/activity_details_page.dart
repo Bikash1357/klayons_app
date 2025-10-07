@@ -527,77 +527,82 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Book for section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                  'Book for:',
-                  style: AppTextStyles.bodyMedium(context).copyWith(
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w500,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    'Book for:',
+                    style: AppTextStyles.bodyMedium(context).copyWith(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Text(
-                        "  No Child Profiles Added",
-                        style: AppTextStyles.bodySmall(context).copyWith(
-                          letterSpacing: 0.01,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AddChildPage(),
-                            ),
-                          ).then((_) {
-                            _loadChildren();
-                          });
-                        },
-                        child: const Text(
-                          'Add now?',
-                          style: TextStyle(
-                            color: Colors.deepOrange,
-                            fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Text(
+                          "  No Child Profiles Added",
+                          style: AppTextStyles.bodySmall(context).copyWith(
+                            letterSpacing: 0.01,
+                            color: Colors.grey[700],
                           ),
                         ),
-                      ),
-                    ],
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AddChildPage(),
+                              ),
+                            ).then((_) {
+                              _loadChildren();
+                            });
+                          },
+                          child: const Text(
+                            'Add now?',
+                            style: TextStyle(
+                              color: Colors.deepOrange,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
 
             const SizedBox(height: 5),
 
             // Enroll button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: null, // Disabled when no children
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey,
-                  disabledBackgroundColor: Colors.grey[300],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: null, // Disabled when no children
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey,
+                    disabledBackgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Enroll Now',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                  child: const Text(
+                    'Enroll Now',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -1263,6 +1268,29 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (activity.subcategory.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Transform.translate(
+            offset: Offset(-4, 0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.primaryOrange),
+                color: AppColors.orangeHighlight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                activity.subcategory,
+                style: AppTextStyles.bodySmall(context).copyWith(
+                  fontSize: 12,
+                  color: AppColors.primaryOrange,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+        SizedBox(height: 5),
         Row(
           children: [
             Flexible(
@@ -1277,25 +1305,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 maxLines: 1,
               ),
             ),
-            if (activity.subcategory.isNotEmpty) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.primaryOrange),
-                  color: AppColors.orangeHighlight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  activity.subcategory,
-                  style: AppTextStyles.bodySmall(context).copyWith(
-                    fontSize: 12,
-                    color: AppColors.primaryOrange,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 8),

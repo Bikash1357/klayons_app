@@ -186,18 +186,28 @@ class _LoginPageState extends State<LoginPage> {
 
                             // Error message display
                             if (_showError && _errorMessage != null)
-                              ErrorMessageWidget(
-                                message: _errorMessage!,
-                                onClose: _clearMessages,
-                                showCloseButton: true,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: ErrorMessageWidget(
+                                  message: _errorMessage!,
+                                  onClose: _clearMessages,
+                                  showCloseButton: true,
+                                ),
                               ),
 
                             // Success message display using reusable widget
                             if (_showSuccess && _successMessage != null)
-                              SuccessMessageWidget(
-                                message: _successMessage!,
-                                onClose: _clearMessages,
-                                showCloseButton: true,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: SuccessMessageWidget(
+                                  message: _successMessage!,
+                                  onClose: _clearMessages,
+                                  showCloseButton: true,
+                                ),
                               ),
 
                             SizedBox(height: 16),

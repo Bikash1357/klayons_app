@@ -472,31 +472,52 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 20),
-            Text(
-              'What Interests Your Child?',
-              style: AppTextStyles.titleMedium(
-                context,
-              ).copyWith(color: Colors.black87, letterSpacing: 0.5),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              widget.isEditMode
-                  ? 'Update interests for ${widget.childData.firstName}'
-                  : 'Select interests for ${widget.childData.firstName}',
-              style: AppTextStyles.titleSmall(
-                context,
-              ).copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 30),
             Expanded(
-              child: isLoadingInterests
-                  ? _buildLoadingState()
-                  : (errorMessage != null
-                        ? _buildErrorState()
-                        : _buildInterestsGrid()),
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 20),
+                      Text(
+                        'What Interests Your Child?',
+                        style: AppTextStyles.titleMedium(
+                          context,
+                        ).copyWith(color: Colors.black87, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.isEditMode
+                            ? 'Update interests for ${widget.childData.firstName}'
+                            : 'Select interests for ${widget.childData.firstName}',
+                        style: AppTextStyles.titleSmall(
+                          context,
+                        ).copyWith(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 30),
+                      isLoadingInterests
+                          ? _buildLoadingState()
+                          : (errorMessage != null
+                                ? _buildErrorState()
+                                : _buildInterestsGrid()),
+                    ],
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             OrangeButton(
