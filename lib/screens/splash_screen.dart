@@ -93,30 +93,32 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen>
         height: double.infinity,
         decoration: const BoxDecoration(color: AppColors.primaryOrange),
         child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Klayons logo (appears immediately)
-                KlayonsText(),
-                const SizedBox(height: 12),
-                // Animated tagline
-                SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Text(
-                      'Growing Curious, Creative, and Confident Kids',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.titleMedium(context).copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: 0.2,
+          child: Transform.translate(
+            offset: const Offset(0, -20),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Klayons logo (appears immediately)
+                  KlayonsText(),
+                  // Animated tagline
+                  SlideTransition(
+                    position: _slideAnimation,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Text(
+                        'Growing Curious, Creative and \n Confident Kids',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.titleMedium(context).copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w300,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

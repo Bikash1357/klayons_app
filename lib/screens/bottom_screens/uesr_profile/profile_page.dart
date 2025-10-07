@@ -348,18 +348,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
-          ),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
         ),
         backgroundColor: AppColors.background,
         elevation: 0,
         title: Text(
           'Your Profile',
-          style: AppTextStyles.titleLarge(
-            context,
-          ).copyWith(color: AppColors.darkElements),
+          style: AppTextStyles.formLarge(context).copyWith(
+            color: AppColors.darkElements,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         centerTitle: false,
         actions: [

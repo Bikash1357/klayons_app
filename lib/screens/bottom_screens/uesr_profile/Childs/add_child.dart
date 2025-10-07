@@ -465,16 +465,15 @@ class _AddChildPageState extends State<AddChildPage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => UserProfilePage()),
-          ),
+          onPressed: () =>
+              Navigator.pushReplacementNamed(context, '/user_profile_page'),
         ),
         title: Text(
           widget.isEditMode ? 'Edit Child' : 'Add Child',
-          style: AppTextStyles.titleLarge(
-            context,
-          ).copyWith(color: AppColors.darkElements),
+          style: AppTextStyles.formLarge(context).copyWith(
+            color: AppColors.darkElements,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         centerTitle: false,
         actions: widget.isEditMode
@@ -523,13 +522,13 @@ class _AddChildPageState extends State<AddChildPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: screenHeight * 0.025),
+                        SizedBox(height: screenHeight * 0.01),
 
                         // Title
                         Center(
                           child: Text(
                             widget.isEditMode
-                                ? 'Update Your Child\'S Info'
+                                ? 'Update Your Child\'s Info'
                                 : 'Tell Us About Your Child',
                             style: AppTextStyles.titleMedium(context).copyWith(
                               color: Colors.black87,
@@ -538,18 +537,26 @@ class _AddChildPageState extends State<AddChildPage> {
                             ),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.05),
+                        SizedBox(height: screenHeight * 0.03),
 
                         // Profile Image
                         _buildProfileImageSection(),
-                        SizedBox(height: screenHeight * 0.01),
+                        SizedBox(height: screenHeight * 0.03),
 
                         // First Name Field
-                        Text(
-                          'Your Child\'s name *',
-                          style: AppTextStyles.bodyMedium(context).copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                        RichText(
+                          text: TextSpan(
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                            children: [
+                              TextSpan(text: 'Child name'),
+                              TextSpan(
+                                text: '*',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
                           ),
                         ),
                         SizedBox(height: screenHeight * 0.01),
@@ -559,14 +566,22 @@ class _AddChildPageState extends State<AddChildPage> {
                           heightPercentage: 0.06, // 6% of screen height
                           showDynamicBorders: false,
                         ),
-                        SizedBox(height: screenHeight * 0.03),
+                        SizedBox(height: screenHeight * 0.015),
 
                         // Birthday Field
-                        Text(
-                          'Date of Birth *',
-                          style: AppTextStyles.bodyMedium(context).copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                        RichText(
+                          text: TextSpan(
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                            children: [
+                              TextSpan(text: 'Date of Birth'),
+                              TextSpan(
+                                text: '*',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
                           ),
                         ),
                         SizedBox(height: screenHeight * 0.01),
@@ -581,18 +596,51 @@ class _AddChildPageState extends State<AddChildPage> {
                             ),
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.03),
+                        SizedBox(height: screenHeight * 0.015),
 
                         // Gender Selection
-                        Text(
-                          'Gender? *',
-                          style: AppTextStyles.bodyMedium(context).copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                        RichText(
+                          text: TextSpan(
+                            style: AppTextStyles.bodyMedium(context).copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
+                            ),
+                            children: [
+                              TextSpan(text: 'Gender'),
+                              TextSpan(
+                                text: '*',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: screenHeight * 0.015),
+                        SizedBox(height: screenHeight * 0.01),
                         _buildGenderSelection(),
+                        SizedBox(height: screenHeight * 0.02),
+                        OrangeButton(
+                          onPressed: _navigateToInterests,
+                          isDisabled: _isLoading,
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  'Next',
+                                  style: AppTextStyles.bodyMedium(context)
+                                      .copyWith(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                ),
+                        ),
+                        SizedBox(height: screenHeight * 0.01),
                       ],
                     ),
                   ),
@@ -601,36 +649,6 @@ class _AddChildPageState extends State<AddChildPage> {
             ),
           ),
           // Fixed button at bottom
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenHeight * 0.020),
-              child: OrangeButton(
-                onPressed: _navigateToInterests,
-                isDisabled: _isLoading,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : Text(
-                        'Next',
-                        style: AppTextStyles.bodyMedium(context).copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ),
         ],
       ),
     );

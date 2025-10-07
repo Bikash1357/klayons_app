@@ -767,9 +767,10 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: AppColors.background,
         title: Text(
           'Settings',
-          style: AppTextStyles.titleLarge(
-            context,
-          ).copyWith(color: AppColors.darkElements),
+          style: AppTextStyles.formLarge(context).copyWith(
+            color: AppColors.darkElements,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         elevation: 0,
         titleSpacing: 0,
@@ -783,10 +784,8 @@ class _SettingsPageState extends State<SettingsPage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const UserProfilePage()),
-          ),
+          onPressed: () =>
+              Navigator.pushReplacementNamed(context, '/user_profile_page'),
         ),
       ),
       body: SafeArea(

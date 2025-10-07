@@ -142,12 +142,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
+
         title: Text(
           'Notifications',
-          style: AppTextStyles.titleMedium(context).copyWith(
+          style: AppTextStyles.formLarge(context).copyWith(
             color: Colors.black87,
             fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: false,

@@ -595,16 +595,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
-          ),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
         ),
         title: Text(
           'Activity Schedule',
-          style: AppTextStyles.titleLarge(
-            context,
-          ).copyWith(color: AppColors.darkElements),
+          style: AppTextStyles.formLarge(context).copyWith(
+            color: AppColors.darkElements,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         backgroundColor: AppColors.background,
         elevation: 0,

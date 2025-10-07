@@ -644,42 +644,46 @@ class _SignUnPageState extends State<SignUnPage> {
           showDynamicBorders: false,
         ),
         if (_showSuggestions)
-          Container(
-            margin: EdgeInsets.only(top: 4),
-            constraints: BoxConstraints(maxHeight: 200),
-            decoration: BoxDecoration(
-              border: Border.all(color: Color(0xFFFF6B35)),
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+          Transform.translate(
+            offset: Offset(0, -12),
+            child: Container(
+              constraints: BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: AppColors.textInactive.withOpacity(0.1),
                 ),
-              ],
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _filteredSocieties.length,
-              itemBuilder: (context, index) {
-                final society = _filteredSocieties[index];
-                return ListTile(
-                  title: Text(society.name),
-                  subtitle: Text(
-                    society.address,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                borderRadius: BorderRadius.circular(0),
+                color: AppColors.secondaryContainer,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
-                  onTap: () {
-                    _searchController.text = society.name;
-                    setState(() {
-                      _selectedSociety = society;
-                      _showSuggestions = false;
-                    });
-                  },
-                );
-              },
+                ],
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filteredSocieties.length,
+                itemBuilder: (context, index) {
+                  final society = _filteredSocieties[index];
+                  return ListTile(
+                    title: Text(society.name),
+                    subtitle: Text(
+                      society.address,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () {
+                      _searchController.text = society.name;
+                      setState(() {
+                        _selectedSociety = society;
+                        _showSuggestions = false;
+                      });
+                    },
+                  );
+                },
+              ),
             ),
           ),
       ],

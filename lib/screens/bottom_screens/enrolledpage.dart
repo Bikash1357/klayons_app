@@ -35,7 +35,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
   }
 
   // Load custom activities from ChildrenCalendarService
-  // Load custom activities from ChildrenCalendarService
   Future<void> _loadCustomActivities() async {
     try {
       setState(() {
@@ -221,7 +220,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'Deleting this profile will unenroll from ${response.data!.activity.name} for the ${response.data!.child.name}!',
+                'Deleting this profile will unenroll from ${enrollment.activityName} for the ${enrollment.childName}!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -354,9 +353,10 @@ class _EnrolledPageState extends State<EnrolledPage> {
         ),
         title: Text(
           "Activity Tracker",
-          style: AppTextStyles.titleLarge(
-            context,
-          ).copyWith(color: AppColors.darkElements),
+          style: AppTextStyles.formLarge(context).copyWith(
+            color: AppColors.darkElements,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         automaticallyImplyLeading: false,
         elevation: 0,
