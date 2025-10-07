@@ -110,8 +110,9 @@ class _KlayonsSplashScreenState extends State<KlayonsSplashScreen>
                         'Growing Curious, Creative and \n Confident Kids',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.titleMedium(context).copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w300,
+                          color: AppColors.background,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
                           letterSpacing: 0.2,
                         ),
                       ),
