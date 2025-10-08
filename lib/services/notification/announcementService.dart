@@ -7,6 +7,7 @@ class NotificationService {
   static const String baseUrl = 'https://dev-klayons.onrender.com';
   static const String notificationFeedEndpoint = '/api/notifications/feed/';
   static const String markAsReadEndpoint = '/api/notifications/';
+  static const String notificationDetailEndpoint = '/api/notifications/';
 
   // Get notification feed with pagination
   Future<NotificationFeedResponse> getNotificationFeed({
@@ -84,6 +85,63 @@ class NotificationService {
       }
     } catch (e) {
       print('NotificationService Error: $e');
+      rethrow;
+    }
+  }
+
+  // Get notification detail (automatically marks as read)
+  Future<NotificationDetail?> getNotificationDetail(int notificationId) async {
+    try {
+      Uri url = Uri.parse(
+        '$baseUrl$notificationDetailEndpoint$notificationId/',
+      );
+
+      String? token = await LoginAuthService.getToken();
+
+      if (token == null) {
+        print('NotificationService: No authentication token found');
+        throw Exception('Authentication token not found. Please login again.');
+      }
+
+      Map<String, String> headers = {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      print('NotificationService: GET $url (notification detail)');
+      print('NotificationService: Using token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(url, headers: headers);
+
+      print(
+        'NotificationService: Detail response status: ${response.statusCode}',
+      );
+      print('NotificationService: Detail response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        NotificationDetail detail = NotificationDetail.fromJson(jsonData);
+        print(
+          'NotificationService: Retrieved notification detail for ID $notificationId (marked as read)',
+        );
+        return detail;
+      } else if (response.statusCode == 404) {
+        print('NotificationService: Notification not found or expired (404)');
+        return null;
+      } else if (response.statusCode == 401) {
+        print('NotificationService: Unauthorized - token may be expired');
+        throw Exception('Authentication failed. Please login again.');
+      } else {
+        print(
+          'NotificationService: HTTP Error ${response.statusCode}: ${response.body}',
+        );
+        throw Exception(
+          'Failed to fetch notification detail: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('NotificationService: Error getting notification detail: $e');
       rethrow;
     }
   }

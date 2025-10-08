@@ -41,16 +41,14 @@ class CustomActivityService {
 
   // Helper method to convert Flutter Color to hex string
   static String colorToHex(Color color) {
-    // Convert color to hex format without alpha channel (#RRGGBB)
-    return '#${color.value.toRadixString(16).substring(2).padLeft(6, '0')}';
+    return '#${color.value.toRadixString(16).substring(2).padLeft(6, '0').toUpperCase()}';
   }
 
   // Helper method to convert hex string back to Flutter Color
   static Color hexToColor(String hexString) {
-    // Remove # if present and convert to Color
     String hex = hexString.replaceFirst('#', '');
     if (hex.length == 6) {
-      hex = 'FF$hex'; // Add full opacity
+      hex = 'FF$hex';
     }
     return Color(int.parse(hex, radix: 16));
   }
@@ -64,23 +62,27 @@ class CustomActivityService {
       );
     }
 
+    // Build request body according to API spec
     Map<String, dynamic> requestBody = {
       "title": event.title,
       "address": event.address,
+      "startTime": event.startTime.toUtc().toIso8601String(),
+      "endTime": event.endTime.toUtc().toIso8601String(),
+      "childId": event.childId, // Changed from childName to childId
+      "color": colorToHex(event.color),
     };
 
+    // Add recurrence if present
     if (event.recurrence != null) {
       final recurrence = {
-        "startTime": event.startTime.toIso8601String(),
-        "endTime": event.endTime.toIso8601String(),
-        "childName": event.childName ?? '',
-        "color": colorToHex(event.color),
         "type": recurrenceTypeToString(event.recurrence!.type),
         "interval": event.recurrence!.interval,
-        "daysOfWeek": event.recurrence!.daysOfWeek,
+        if (event.recurrence!.daysOfWeek != null &&
+            event.recurrence!.daysOfWeek!.isNotEmpty)
+          "daysOfWeek": event.recurrence!.daysOfWeek,
         "endRule": recurrenceEndToString(event.recurrence!.endRule),
         if (event.recurrence!.endDate != null)
-          "endDate": event.recurrence!.endDate!.toIso8601String(),
+          "endDate": event.recurrence!.endDate!.toUtc().toIso8601String(),
         if (event.recurrence!.occurrences != null)
           "occurrences": event.recurrence!.occurrences,
       };
@@ -88,13 +90,13 @@ class CustomActivityService {
     }
 
     print('Creating custom activity...');
-    print('Endpoint: $_baseUrl/');
+    print('Endpoint: $_baseUrl/create/');
     print('Token length: ${token.length}');
     print('Request body: ${jsonEncode(requestBody)}');
 
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/'),
+        Uri.parse('$_baseUrl/create/'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -113,8 +115,8 @@ class CustomActivityService {
     }
   }
 
-  // New method: Update Custom Activity
-  static Future<Event> updateCustomActivity(String id, Event event) async {
+  // Update Custom Activity - using PATCH for partial updates
+  static Future<Event> updateCustomActivity(int id, Event event) async {
     final token = await getToken();
 
     if (token == null || token.isEmpty) {
@@ -123,12 +125,13 @@ class CustomActivityService {
       );
     }
 
+    // Build request body with only fields to update
     Map<String, dynamic> requestBody = {
       "title": event.title,
       "address": event.address,
-      "startTime": event.startTime.toIso8601String(),
-      "endTime": event.endTime.toIso8601String(),
-      "childName": event.childName ?? '',
+      "startTime": event.startTime.toUtc().toIso8601String(),
+      "endTime": event.endTime.toUtc().toIso8601String(),
+      "childId": event.childId, // Use childId, not childName
       "color": colorToHex(event.color),
     };
 
@@ -136,10 +139,12 @@ class CustomActivityService {
       final recurrence = {
         "type": recurrenceTypeToString(event.recurrence!.type),
         "interval": event.recurrence!.interval,
-        "daysOfWeek": event.recurrence!.daysOfWeek,
+        if (event.recurrence!.daysOfWeek != null &&
+            event.recurrence!.daysOfWeek!.isNotEmpty)
+          "daysOfWeek": event.recurrence!.daysOfWeek,
         "endRule": recurrenceEndToString(event.recurrence!.endRule),
         if (event.recurrence!.endDate != null)
-          "endDate": event.recurrence!.endDate!.toIso8601String(),
+          "endDate": event.recurrence!.endDate!.toUtc().toIso8601String(),
         if (event.recurrence!.occurrences != null)
           "occurrences": event.recurrence!.occurrences,
       };
@@ -152,7 +157,7 @@ class CustomActivityService {
     print('Request body: ${jsonEncode(requestBody)}');
 
     try {
-      final response = await http.put(
+      final response = await http.patch(
         Uri.parse('$_baseUrl/$id/'),
         headers: {
           'Accept': 'application/json',
@@ -172,8 +177,8 @@ class CustomActivityService {
     }
   }
 
-  // New method: Delete Custom Activity
-  static Future<bool> deleteCustomActivity(String id) async {
+  // Delete Custom Activity
+  static Future<bool> deleteCustomActivity(int id) async {
     final token = await getToken();
 
     if (token == null || token.isEmpty) {
@@ -191,7 +196,6 @@ class CustomActivityService {
         Uri.parse('$_baseUrl/$id/'),
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
@@ -201,6 +205,7 @@ class CustomActivityService {
 
       switch (response.statusCode) {
         case 200:
+        case 204:
           print('Custom activity deleted successfully');
           return true;
 
@@ -215,6 +220,11 @@ class CustomActivityService {
             'Authentication failed. Please login again.',
             statusCode: 401,
           );
+
+        case 400:
+          final Map<String, dynamic> errorData = json.decode(response.body);
+          final errorMessage = _extractErrorMessage(errorData);
+          throw CustomActivityException(errorMessage, statusCode: 400);
 
         default:
           String unknownError =
@@ -242,7 +252,7 @@ class CustomActivityService {
         try {
           final Map<String, dynamic> jsonResponse = json.decode(response.body);
 
-          // Handle different response structures
+          // API returns data wrapped in {"success": true, "data": {...}}
           Map<String, dynamic> eventData;
           if (jsonResponse.containsKey('data')) {
             eventData = jsonResponse['data'];
@@ -264,9 +274,16 @@ class CustomActivityService {
         }
 
       case 400:
-        final Map<String, dynamic> errorData = json.decode(response.body);
-        final errorMessage = _extractErrorMessage(errorData);
-        throw CustomActivityException(errorMessage, statusCode: 400);
+        try {
+          final Map<String, dynamic> errorData = json.decode(response.body);
+          final errorMessage = _extractErrorMessage(errorData);
+          throw CustomActivityException(errorMessage, statusCode: 400);
+        } catch (e) {
+          throw CustomActivityException(
+            'Validation error: ${response.body}',
+            statusCode: 400,
+          );
+        }
 
       case 401:
         throw CustomActivityException(
@@ -302,6 +319,7 @@ class CustomActivityService {
 
   static String _extractErrorMessage(Map<String, dynamic> errorData) {
     try {
+      // Check for various error formats
       if (errorData.containsKey('error')) {
         final error = errorData['error'];
         if (error is Map<String, dynamic>) {
@@ -318,6 +336,7 @@ class CustomActivityService {
           return error;
         }
       }
+
       if (errorData.containsKey('details') && errorData['details'] is Map) {
         final details = errorData['details'] as Map<String, dynamic>;
         List<String> messages = [];
@@ -330,14 +349,31 @@ class CustomActivityService {
         });
         return messages.join(', ');
       }
+
       if (errorData.containsKey('detail')) {
         final detail = errorData['detail'];
         return detail != null ? detail.toString() : 'Unknown error occurred';
       }
+
       if (errorData.containsKey('message')) {
         final message = errorData['message'];
         return message != null ? message.toString() : 'Unknown error occurred';
       }
+
+      // Check for field-level validation errors (common in DRF)
+      List<String> fieldErrors = [];
+      errorData.forEach((field, value) {
+        if (value is List) {
+          fieldErrors.addAll(value.map((m) => '$field: $m'));
+        } else if (value is String) {
+          fieldErrors.add('$field: $value');
+        }
+      });
+
+      if (fieldErrors.isNotEmpty) {
+        return fieldErrors.join(', ');
+      }
+
       return errorData.toString();
     } catch (e) {
       print('Error parsing error message: $e');

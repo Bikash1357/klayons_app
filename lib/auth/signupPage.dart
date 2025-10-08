@@ -38,6 +38,8 @@ class _SignUnPageState extends State<SignUnPage> {
   final _emailOrPhoneController = TextEditingController();
   final _searchController = TextEditingController();
   final _addressController = TextEditingController();
+  final _scrollController = ScrollController();
+  final GlobalKey _societyFieldKey = GlobalKey();
 
   bool _isSubmitting = false;
   bool _isLoadingLocation = false;
@@ -82,8 +84,30 @@ class _SignUnPageState extends State<SignUnPage> {
             .where((s) => s.name.toLowerCase().contains(query))
             .toList();
         _showSuggestions = _filteredSocieties.isNotEmpty;
+
+        // Auto-scroll when suggestions appear
+        if (_showSuggestions) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToSuggestions();
+          });
+        }
       }
     });
+  }
+
+  void _scrollToSuggestions() {
+    if (_societyFieldKey.currentContext != null) {
+      final RenderBox renderBox =
+          _societyFieldKey.currentContext!.findRenderObject() as RenderBox;
+      final position = renderBox.localToGlobal(Offset.zero);
+      final offset = position.dy + _scrollController.offset - 100;
+
+      _scrollController.animateTo(
+        offset,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   _getCurrentLocation() async {
@@ -244,6 +268,7 @@ class _SignUnPageState extends State<SignUnPage> {
         children: [
           // Main scrollable content
           SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               children: [
                 // Top section with background image
@@ -635,6 +660,7 @@ class _SignUnPageState extends State<SignUnPage> {
 
   Widget _buildSocietyField() {
     return Column(
+      key: _societyFieldKey,
       children: [
         SizedBox(height: 16),
         CustomTextField(
@@ -652,7 +678,7 @@ class _SignUnPageState extends State<SignUnPage> {
                 border: Border.all(
                   color: AppColors.textInactive.withOpacity(0.1),
                 ),
-                borderRadius: BorderRadius.circular(0),
+                borderRadius: BorderRadius.circular(8),
                 color: AppColors.secondaryContainer,
                 boxShadow: [
                   BoxShadow(
@@ -663,11 +689,17 @@ class _SignUnPageState extends State<SignUnPage> {
                 ],
               ),
               child: ListView.builder(
+                padding: EdgeInsets.zero,
                 shrinkWrap: true,
                 itemCount: _filteredSocieties.length,
                 itemBuilder: (context, index) {
                   final society = _filteredSocieties[index];
                   return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
                     title: Text(society.name),
                     subtitle: Text(
                       society.address,
@@ -739,6 +771,7 @@ class _SignUnPageState extends State<SignUnPage> {
     _emailOrPhoneController.dispose();
     _searchController.dispose();
     _addressController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }

@@ -26,7 +26,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime? _selectedDay;
 
   // Filter state
-  bool _showAllActivities = true; // "All Activities" selected by default
+  bool _showAllActivities = true;
 
   // Child-related variables
   List<Child> _children = [];
@@ -62,12 +62,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   // Pull to refresh functionality
   Future<void> _onRefresh() async {
     try {
-      // Clear available caches
       SocietyActivitiesService.clearCache();
       ChildrenCalendarService.clearCache();
-      // Note: GetChildservices doesn't have clearCache method
 
-      // Reset state variables
       setState(() {
         _batchEvents.clear();
         _childrenCalendarEvents.clear();
@@ -78,15 +75,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
         }
       });
 
-      // Reload all data
       await Future.wait([_loadChildren(), _loadSocietyBatches()]);
 
-      // Reload children calendar if any child is selected
       if (_selectedChildIds.isNotEmpty) {
         await _loadChildrenCalendar();
       }
 
-      // Update selected events
       _selectedEvents.value = _getEventsForDay(_selectedDay!);
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,7 +99,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  // Load society batches
   Future<void> _loadSocietyBatches() async {
     try {
       setState(() {
@@ -237,7 +230,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<dynamic> _getEventsForDay(DateTime day) {
     List<dynamic> eventsForDay = [];
 
-    // Add society batch events if "All Activities" is selected
     if (_showAllActivities) {
       for (ActivityCalendarEvent batchEvent in _batchEvents) {
         if (isSameDay(batchEvent.startTime, day)) {
@@ -246,7 +238,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
     }
 
-    // Add children calendar events if specific children are selected
     if (_selectedChildIds.isNotEmpty) {
       for (ChildCalendarEvent childEvent in _childrenCalendarEvents) {
         if (isSameDay(childEvent.startTime, day)) {
@@ -268,7 +259,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  // Updated event marker builder to handle different event types
   Widget _eventMarkerBuilder(
     BuildContext context,
     DateTime day,
@@ -279,7 +269,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final int eventCount = events.length;
 
     if (eventCount <= 2) {
-      // Show individual dots for 1-2 events
       return Positioned(
         bottom: 1,
         child: Row(
@@ -309,13 +298,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
       );
     } else {
-      // Show 2 dots + plus for 3+ events
       return Positioned(
         bottom: 1,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // First dot
             Container(
               width: 6,
               height: 6,
@@ -325,7 +312,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 shape: BoxShape.circle,
               ),
             ),
-            // Second dot
             Container(
               width: 6,
               height: 6,
@@ -335,7 +321,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 shape: BoxShape.circle,
               ),
             ),
-            // Plus sign
             Container(
               width: 8,
               height: 8,
@@ -389,12 +374,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          // "All Activities" chip (always first)
           GestureDetector(
             onTap: () {
               setState(() {
                 if (!_showAllActivities) {
-                  // If turning ON All Activities, clear child selections
                   _selectedChildIds.clear();
                 }
                 _showAllActivities = !_showAllActivities;
@@ -427,8 +410,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
           ),
-
-          // Children chips
           ..._children.map((child) {
             bool isSelected = _selectedChildIds.contains(child.id);
             return GestureDetector(
@@ -438,7 +419,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     _selectedChildIds.remove(child.id);
                   } else {
                     _selectedChildIds.add(child.id);
-                    // If selecting any child, deselect "All Activities"
                     _showAllActivities = false;
                   }
                 });
@@ -458,7 +438,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
                 child: Text(
-                  // Show only first name of child here
                   "${child.name.split(' ').first}'s Activities",
                   style: AppTextStyles.bodySmall(context).copyWith(
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
@@ -473,7 +452,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  // Helper method to get status badge text
   String _getEventStatusText(dynamic event) {
     if (event is ActivityCalendarEvent) {
       if (event.isCancelled) return 'CANCELLED';
@@ -488,7 +466,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return '';
   }
 
-  // Helper method to get status badge color
   Color _getEventStatusColor(String status) {
     switch (status) {
       case 'CANCELLED':
@@ -504,9 +481,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
-  // Helper method to convert ChildCustomActivity to Event for editing
+  // Updated conversion method to include childId
   Event _convertCustomActivityToEvent(ChildCustomActivity customActivity) {
-    // Convert custom recurrence to RecurrenceRule if present
     RecurrenceRule? recurrence;
     if (customActivity.recurrence != null) {
       var customRec = customActivity.recurrence!;
@@ -535,9 +511,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           recEnd = RecurrenceEnd.never;
           break;
         case 'ondate':
+        case 'date':
           recEnd = RecurrenceEnd.onDate;
           break;
         case 'after':
+        case 'occurrences':
           recEnd = RecurrenceEnd.after;
           break;
         default:
@@ -554,7 +532,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    // Convert hex color to Flutter Color
     Color eventColor = AppColors.primaryOrange;
     try {
       String hex = customActivity.color.replaceFirst('#', '');
@@ -566,14 +543,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
       print('Error converting color: $e');
     }
 
+    // Find the child ID from the child name
+    int? childId;
+    try {
+      Child? matchingChild = _children.firstWhere(
+        (child) => child.name == customActivity.childName,
+        orElse: () => _children.first,
+      );
+      childId = matchingChild.id;
+    } catch (e) {
+      print('Error finding child ID: $e');
+      if (_children.isNotEmpty) {
+        childId = _children.first.id;
+      }
+    }
+
     return Event(
-      id: customActivity.id.toString(),
+      id: customActivity.id,
       title: customActivity.title,
       address: customActivity.address,
       startTime: customActivity.startTime,
       endTime: customActivity.endTime,
       recurrence: recurrence,
       color: eventColor,
+      childId: childId,
       childName: customActivity.childName,
     );
   }
@@ -615,7 +608,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           physics: AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              // MMYYYY and filter chips OUTSIDE card container
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Row(
@@ -649,8 +641,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: _buildFilterChips(),
               ),
-
-              // Card container with shadow wrapping calendar ONLY
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
@@ -660,7 +650,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
-                        offset: Offset(4, 0), // Side shadow on the right
+                        offset: Offset(4, 0),
                         blurRadius: 16,
                         spreadRadius: 2,
                       ),
@@ -702,7 +692,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           defaultTextStyle: AppTextStyles.bodyMedium(
                             context,
                           ).copyWith(color: Colors.black),
-
                           selectedDecoration: BoxDecoration(
                             color: AppColors.primaryOrange,
                             borderRadius: BorderRadius.circular(8),
@@ -712,7 +701,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
-
                           todayDecoration: BoxDecoration(
                             color: AppColors.highlight2,
                             borderRadius: BorderRadius.circular(8),
@@ -722,8 +710,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 color: AppColors.primaryOrange,
                                 fontWeight: FontWeight.bold,
                               ),
-
-                          // Add these to prevent circle shape animations
                           defaultDecoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -736,7 +722,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           disabledDecoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                           ),
-
                           markersMaxCount: 0,
                           canMarkersOverflow: false,
                         ),
@@ -763,10 +748,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 8.0),
-
-              // Event List with minimum height for RefreshIndicator
               Container(
                 constraints: BoxConstraints(
                   minHeight: MediaQuery.of(context).size.height * 0.4,
@@ -865,14 +847,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           return SizedBox.shrink();
                         }
 
-                        // Inside ListView.builder itemBuilder - Replace the existing Container with this:
                         return GestureDetector(
                           onTap: () {
-                            // Only navigate for enrolled activities (not custom activities)
                             if (event is ActivityCalendarEvent) {
-                              // Society activity - navigate with activity ID
                               int activityId = event.originalActivity.id;
-
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -882,11 +860,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 ),
                               );
                             } else if (event is ChildCalendarEvent) {
-                              // Check if it's an enrolled activity (not custom)
                               if (!event.isCustomActivity &&
                                   event.originalActivity
                                       is ChildEnrolledActivity) {
-                                // Extract activity ID from enrolled activity
                                 ChildEnrolledActivity enrolledActivity =
                                     event.originalActivity
                                         as ChildEnrolledActivity;
@@ -901,7 +877,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   ),
                                 );
                               }
-                              // For custom activities, do nothing (no navigation)
                             }
                           },
                           child: Container(
@@ -925,7 +900,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                             child: Row(
                               children: [
-                                // Keep color bar for all activities (including custom)
                                 Container(
                                   width: 4,
                                   height: 50,
@@ -988,10 +962,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                                       fontSize: 10,
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color:
-                                                          _getEventStatusColor(
-                                                            statusText,
-                                                          ),
+                                                      color: Colors.white,
                                                     ),
                                               ),
                                             ),
@@ -1058,7 +1029,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                     ],
                                   ),
                                 ),
-                                // Show three dots menu only for custom activities
                                 if (isCustomActivity &&
                                     event is ChildCalendarEvent)
                                   PopupMenuButton<String>(
@@ -1156,19 +1126,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
         selectedDate: _selectedDay ?? DateTime.now(),
         eventToEdit: null,
         children: _children,
-        onEventCreated: (event) {
-          // After creating a custom event, refresh the children calendar
-          // if any child is selected to show the new custom activity
+        onEventCreated: (event) async {
+          // Clear cache to force fresh data
+          ChildrenCalendarService.clearCache();
+
+          // Reload calendar data
           if (_selectedChildIds.isNotEmpty) {
-            _loadChildrenCalendar();
+            await _loadChildrenCalendar();
           }
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Custom activity created successfully!'),
-              backgroundColor: Colors.deepOrange,
-            ),
-          );
+          // Refresh the selected events for the current day
+          if (mounted) {
+            setState(() {
+              _selectedEvents.value = _getEventsForDay(_selectedDay!);
+            });
+          }
         },
       ),
     );
@@ -1177,30 +1149,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void _showEditEventDialog(BuildContext context, Event eventToEdit) {
     showDialog(
       context: context,
-      builder: (context) => CreateEventDialog(
+      builder: (dialogContext) => CreateEventDialog(
         selectedDate: eventToEdit.startTime,
         eventToEdit: eventToEdit,
         children: _children,
         onEventCreated: (updatedEvent) async {
-          // Show loading dialog
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (context) => Center(child: CircularProgressIndicator()),
+            builder: (loadingContext) =>
+                Center(child: CircularProgressIndicator()),
           );
 
           try {
-            // Call update API
             await CustomActivityService.updateCustomActivity(
-              eventToEdit.id,
+              eventToEdit.id!,
               updatedEvent,
             );
 
-            Navigator.of(context).pop(); // Remove loading dialog
+            if (!mounted) return;
 
-            // After editing a custom event, refresh the children calendar
+            Navigator.of(context).pop(); // Close loading
+
+            // Clear cache and reload
+            ChildrenCalendarService.clearCache();
+
             if (_selectedChildIds.isNotEmpty) {
               await _loadChildrenCalendar();
+            }
+
+            // Force UI update
+            if (mounted) {
+              setState(() {
+                _selectedEvents.value = _getEventsForDay(_selectedDay!);
+              });
             }
 
             ScaffoldMessenger.of(context).showSnackBar(
@@ -1210,7 +1192,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             );
           } catch (e) {
-            Navigator.of(context).pop(); // Remove loading dialog
+            if (!mounted) return;
+            Navigator.of(context).pop();
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Failed to update activity: $e'),
@@ -1229,29 +1213,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
   ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(
           'Delete Custom Activity',
-          style: AppTextStyles.titleMedium(context),
+          style: AppTextStyles.titleMedium(dialogContext),
         ),
         content: Text(
           'Are you sure you want to delete "${event.title}"? This action cannot be undone.',
-          style: AppTextStyles.bodyMedium(context),
+          style: AppTextStyles.bodyMedium(dialogContext),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel', style: AppTextStyles.bodyMedium(context)),
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.bodyMedium(dialogContext),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop(); // Close confirmation dialog
+              Navigator.of(dialogContext).pop(); // Close confirmation dialog
 
-              // Show loading dialog
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) => AlertDialog(
+                builder: (loadingContext) => AlertDialog(
                   content: Row(
                     children: [
                       CircularProgressIndicator(),
@@ -1263,29 +1249,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
               );
 
               try {
-                // Get the original custom activity ID
-                String activityId = '';
+                int activityId = 0;
                 if (event.originalActivity is ChildCustomActivity) {
                   ChildCustomActivity customActivity =
                       event.originalActivity as ChildCustomActivity;
-                  activityId = customActivity.id.toString();
+                  activityId = customActivity.id;
                 }
 
-                if (activityId.isEmpty) {
+                if (activityId == 0) {
                   throw Exception('Activity ID not found');
                 }
 
-                // Call delete API
                 bool deleted = await CustomActivityService.deleteCustomActivity(
                   activityId,
                 );
 
-                Navigator.of(context).pop(); // Remove loading dialog
+                if (!mounted) return;
+
+                Navigator.of(context).pop(); // Close loading
 
                 if (deleted) {
-                  // Refresh the children calendar to remove the deleted activity
+                  // Clear cache and reload
+                  ChildrenCalendarService.clearCache();
+
                   if (_selectedChildIds.isNotEmpty) {
                     await _loadChildrenCalendar();
+                  }
+
+                  // Force UI update
+                  if (mounted) {
+                    setState(() {
+                      _selectedEvents.value = _getEventsForDay(_selectedDay!);
+                    });
                   }
 
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1296,7 +1291,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   );
                 }
               } catch (e) {
-                Navigator.of(context).pop(); // Remove loading dialog
+                if (!mounted) return;
+
+                Navigator.of(context).pop(); // Close loading
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Failed to delete activity: $e'),
@@ -1309,7 +1307,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             child: Text(
               'Delete',
               style: AppTextStyles.bodyMedium(
-                context,
+                dialogContext,
               ).copyWith(color: Colors.white),
             ),
           ),

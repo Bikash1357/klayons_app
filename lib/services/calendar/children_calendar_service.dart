@@ -129,12 +129,14 @@ class ChildCustomRecurrence {
 
   factory ChildCustomRecurrence.fromJson(Map<String, dynamic> json) {
     return ChildCustomRecurrence(
-      type: json['type'],
-      interval: json['interval'],
-      daysOfWeek: List<int>.from(json['daysOfWeek'] ?? []),
-      endRule: json['endRule'],
+      type: json['type']?.toString() ?? 'weekly',
+      interval: json['interval'] ?? 1,
+      daysOfWeek: json['daysOfWeek'] != null
+          ? List<int>.from(json['daysOfWeek'])
+          : [],
+      endRule: json['endRule']?.toString() ?? 'never',
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
-      occurrences: json['occurrences'],
+      occurrences: json['occurrences'], // Can be null
     );
   }
 }
@@ -167,12 +169,12 @@ class ChildCustomActivity {
   factory ChildCustomActivity.fromJson(Map<String, dynamic> json) {
     return ChildCustomActivity(
       id: json['id'],
-      title: json['title'],
-      address: json['address'],
+      title: json['title']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
       startTime: DateTime.parse(json['startTime']),
       endTime: DateTime.parse(json['endTime']),
-      childName: json['childName'],
-      color: json['color'],
+      childName: json['childName']?.toString() ?? '',
+      color: json['color']?.toString() ?? '#FF6B6B',
       recurrence: json['recurrence'] != null
           ? ChildCustomRecurrence.fromJson(json['recurrence'])
           : null,

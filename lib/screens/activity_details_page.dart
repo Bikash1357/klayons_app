@@ -778,51 +778,54 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
         // Enroll button - ✅ Now uses computed values that update with selected child
         const SizedBox(height: 5),
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: ElevatedButton(
-            onPressed: isButtonEnabled ? _handleEnrollment : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: buttonColor,
-              disabledBackgroundColor: Colors.grey[300],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: isButtonEnabled ? _handleEnrollment : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: buttonColor,
+                disabledBackgroundColor: Colors.grey[300],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
-            child: _isEnrolling
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+              child: _isEnrolling
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        'Enrolling...',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                        SizedBox(width: 12),
+                        Text(
+                          'Enrolling...',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
+                      ],
+                    )
+                  : Text(
+                      buttonText,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
                       ),
-                    ],
-                  )
-                : Text(
-                    buttonText,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
                     ),
-                  ),
+            ),
           ),
         ),
       ],
@@ -1298,7 +1301,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 activity.batchName.isNotEmpty
                     ? '${activity.name} - ${activity.batchName}'
                     : activity.name,
-                style: AppTextStyles.headlineSmall(
+                style: AppTextStyles.titleLarge(
                   context,
                 ).copyWith(letterSpacing: -0.1),
                 overflow: TextOverflow.ellipsis,

@@ -31,7 +31,8 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   TimeOfDay? _endTime;
   DateTime _selectedDate = DateTime.now();
   DateTime _endDate = DateTime.now();
-  String _selectedChild = '';
+  int? _selectedChildId; // Changed to store child ID instead of name
+  String _selectedChildName = ''; // Keep for display purposes
   bool _neverStops = true;
   Set<int> _selectedDays = <int>{};
 
@@ -51,11 +52,18 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       _endTime = TimeOfDay.fromDateTime(widget.eventToEdit!.endTime);
       _selectedDate = widget.eventToEdit!.startTime;
 
+      // Set child ID from edit mode
+      _selectedChildId = widget.eventToEdit!.childId;
+      _selectedChildName = widget.eventToEdit!.childName ?? '';
+
       // Set recurrence data if exists
       if (widget.eventToEdit!.recurrence != null) {
-        _selectedDays = Set<int>.from(
-          widget.eventToEdit!.recurrence!.daysOfWeek,
-        );
+        // Handle nullable daysOfWeek
+        if (widget.eventToEdit!.recurrence!.daysOfWeek != null) {
+          _selectedDays = Set<int>.from(
+            widget.eventToEdit!.recurrence!.daysOfWeek!,
+          );
+        }
         _neverStops =
             widget.eventToEdit!.recurrence!.endRule == RecurrenceEnd.never;
         if (!_neverStops && widget.eventToEdit!.recurrence!.endDate != null) {
@@ -69,7 +77,8 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
 
     // Set default child if available
     if (widget.children.isNotEmpty) {
-      _selectedChild = widget.children.first.name;
+      _selectedChildId = widget.children.first.id;
+      _selectedChildName = widget.children.first.name;
     }
   }
 
@@ -144,7 +153,8 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                                 (child) => GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _selectedChild = child.name
+                                      _selectedChildId = child.id;
+                                      _selectedChildName = child.name
                                           .split(' ')
                                           .first;
                                     });
@@ -156,21 +166,15 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                                       vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color:
-                                          _selectedChild ==
-                                              child.name.split(' ').first
+                                      color: _selectedChildId == child.id
                                           ? AppColors.primaryOrange
                                           : Colors.grey.shade200,
                                       borderRadius: BorderRadius.circular(10),
                                       border: Border.all(
-                                        color:
-                                            _selectedChild ==
-                                                child.name.split(' ').first
+                                        color: _selectedChildId == child.id
                                             ? AppColors.primaryOrange
                                             : Colors.grey.shade300,
-                                        width:
-                                            _selectedChild ==
-                                                child.name.split(' ').first
+                                        width: _selectedChildId == child.id
                                             ? 2
                                             : 1,
                                       ),
@@ -179,14 +183,11 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                                       child.name.split(' ').first,
                                       style: AppTextStyles.bodyMedium(context)
                                           .copyWith(
-                                            color:
-                                                _selectedChild ==
-                                                    child.name.split(' ').first
+                                            color: _selectedChildId == child.id
                                                 ? Colors.white
                                                 : Colors.grey.shade700,
                                             fontWeight:
-                                                _selectedChild ==
-                                                    child.name.split(' ').first
+                                                _selectedChildId == child.id
                                                 ? FontWeight.w600
                                                 : FontWeight.normal,
                                           ),
@@ -435,12 +436,12 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed:
-                          widget.children.isEmpty || _selectedChild.isEmpty
+                          widget.children.isEmpty || _selectedChildId == null
                           ? null
                           : _createEvent,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            widget.children.isEmpty || _selectedChild.isEmpty
+                            widget.children.isEmpty || _selectedChildId == null
                             ? Colors.grey.shade300
                             : AppColors.primaryOrange,
                         padding: EdgeInsets.symmetric(vertical: 12),
@@ -453,7 +454,8 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                         'Save',
                         style: AppTextStyles.bodyMedium(context).copyWith(
                           color:
-                              widget.children.isEmpty || _selectedChild.isEmpty
+                              widget.children.isEmpty ||
+                                  _selectedChildId == null
                               ? Colors.grey.shade500
                               : Colors.white,
                           fontWeight: FontWeight.w600,
@@ -515,10 +517,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   ],
                 ),
                 actions: [
-                  // Cancel button
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pop(); // Returns null
+                      Navigator.of(context).pop();
                     },
                     child: Text(
                       'Cancel',
@@ -527,12 +528,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ).copyWith(color: Colors.grey.shade600),
                     ),
                   ),
-                  // Save button - returns the selected date
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.of(
-                        context,
-                      ).pop(tempPickedDate); // Returns DateTime
+                      Navigator.of(context).pop(tempPickedDate);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryOrange,
@@ -565,7 +563,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
         });
       }
     } else {
-      // Custom dialog for end date with CalendarDatePicker, Save and "Set as Never Stop" buttons
       final result = await showDialog<Map<String, dynamic>>(
         context: context,
         builder: (context) {
@@ -608,10 +605,9 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   ],
                 ),
                 actions: [
-                  // Cancel button
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pop(); // Cancel
+                      Navigator.of(context).pop();
                     },
                     child: Text(
                       'Cancel',
@@ -620,10 +616,8 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ).copyWith(color: Colors.grey.shade600),
                     ),
                   ),
-                  // Row with Never Stop and Save buttons with proper spacing
                   Row(
                     children: [
-                      // Never Stop button - aligned to left with margin
                       Expanded(
                         flex: 1,
                         child: Container(
@@ -634,7 +628,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                                 context,
                               ).pop({'action': 'never_stop'});
                             },
-
                             child: Text(
                               'Never Stop',
                               style: AppTextStyles.bodyMedium(context).copyWith(
@@ -645,7 +638,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                           ),
                         ),
                       ),
-                      // Save button - aligned to right with margin
                       Expanded(
                         flex: 1,
                         child: Container(
@@ -682,7 +674,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
         },
       );
 
-      // Handle the result
       if (result != null) {
         if (result['action'] == 'save') {
           setState(() {
@@ -729,7 +720,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
   }
 
   void _createEvent() async {
-    if (_titleController.text.isEmpty) {
+    if (_titleController.text.isEmpty || _selectedChildId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please fill all required fields'),
@@ -739,7 +730,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       return;
     }
 
-    // Use default times if not set
     final startTimeToUse = _startTime ?? TimeOfDay(hour: 17, minute: 0);
     final endTimeToUse = _endTime ?? TimeOfDay(hour: 18, minute: 0);
 
@@ -764,26 +754,25 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       recurrence = RecurrenceRule(
         type: RecurrenceType.weekly,
         interval: 1,
-        daysOfWeek: _selectedDays.toList(),
+        daysOfWeek: _selectedDays.toList(), // Convert Set<int> to List<int>
         endRule: _neverStops ? RecurrenceEnd.never : RecurrenceEnd.onDate,
         endDate: _neverStops ? null : _endDate,
       );
     }
 
     final event = Event(
-      id:
-          widget.eventToEdit?.id ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.eventToEdit?.id,
       title: _titleController.text,
       address: _addressController.text,
       startTime: startDateTime,
       endTime: endDateTime,
       recurrence: recurrence,
       color: AppColors.primaryOrange,
-      childName: _selectedChild,
+      childId: _selectedChildId, // Pass childId instead of childName
+      childName: _selectedChildName, // Keep for display
     );
 
-    // Show loading indicator while API is called
+    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -791,21 +780,31 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
     );
 
     try {
-      // Remove the accessToken parameter - service handles token internally
-      final createdEvent = await CustomActivityService.createCustomActivity(
-        event,
-      );
+      Event createdEvent;
+
+      if (widget.eventToEdit != null && widget.eventToEdit!.id != null) {
+        // Update existing event
+        createdEvent = await CustomActivityService.updateCustomActivity(
+          widget.eventToEdit!.id!,
+          event,
+        );
+      } else {
+        // Create new event
+        createdEvent = await CustomActivityService.createCustomActivity(event);
+      }
 
       Navigator.of(context).pop(); // Remove loading dialog
 
-      // Pass the created event back
       widget.onEventCreated(createdEvent);
       Navigator.of(context).pop(); // Close the create dialog
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Activity created successfully!'),
+          content: Text(
+            widget.eventToEdit != null
+                ? 'Activity updated successfully!'
+                : 'Activity created successfully!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -813,20 +812,11 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
       Navigator.of(context).pop(); // Remove loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to create activity: $e'),
+          content: Text('Failed to save activity: $e'),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
         ),
       );
     }
-  }
-
-  /// Dummy function for access token
-  /// Get the actual authentication token from SharedPreferences
-  Future<String> getAccessToken() async {
-    final token = await CustomActivityService.getToken();
-    if (token == null || token.isEmpty) {
-      throw Exception('No authentication token found. Please login first.');
-    }
-    return token;
   }
 }

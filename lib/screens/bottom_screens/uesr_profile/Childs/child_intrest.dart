@@ -520,26 +520,31 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            OrangeButton(
-              isDisabled: !actionEnabled,
-              onPressed: actionEnabled ? _submit : null,
-              child: isSubmitting
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OrangeButton(
+                isDisabled: !actionEnabled,
+                onPressed: actionEnabled ? _submit : null,
+                child: isSubmitting
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : Text(
+                        widget.isEditMode
+                            ? 'Update Child Profile'
+                            : 'Save Child Profile',
+                        style: AppTextStyles.titleMedium(
+                          context,
+                        ).copyWith(color: Colors.white),
                       ),
-                    )
-                  : Text(
-                      widget.isEditMode
-                          ? 'Update Child Profile'
-                          : 'Save Child Profile',
-                      style: AppTextStyles.titleMedium(
-                        context,
-                      ).copyWith(color: Colors.white),
-                    ),
+              ),
             ),
           ],
         ),

@@ -1,3 +1,6 @@
+// Type alias for notification detail - reuses NotificationItem structure
+typedef NotificationDetail = NotificationItem;
+
 class NotificationFeedResponse {
   final int? count;
   final String? next;

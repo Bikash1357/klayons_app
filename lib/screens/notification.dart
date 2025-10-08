@@ -105,22 +105,56 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  Future<void> _handleNotificationTap(NotificationItem notification) async {
-    if (!notification.isRead) {
-      // Mark as read
-      await _notificationService.markAsRead(notification.id);
+  Future<void> _handleNotificationTap(int notificationId) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF6B35)),
+      ),
+    );
 
-      // Update local state
-      setState(() {
-        int index = notifications.indexWhere((n) => n.id == notification.id);
-        if (index != -1) {
-          notifications[index] = notification.copyWith(isRead: true);
-        }
-      });
+    try {
+      // Fetch full notification detail (automatically marks as read)
+      NotificationDetail? detail = await _notificationService
+          .getNotificationDetail(notificationId);
+
+      // Close loading indicator
+      Navigator.pop(context);
+
+      if (detail != null) {
+        // Update local state to reflect read status
+        setState(() {
+          int index = notifications.indexWhere((n) => n.id == notificationId);
+          if (index != -1) {
+            notifications[index] = notifications[index].copyWith(isRead: true);
+          }
+        });
+
+        // Show notification details in popup dialog
+        _showNotificationDetailsDialog(detail);
+      } else {
+        // Show error if notification not found
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notification not found or has expired'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading indicator
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading notification: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      print('Error fetching notification detail: $e');
     }
-
-    // Show notification details
-    _showNotificationDetails(notification);
   }
 
   @override
@@ -142,7 +176,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-
         title: Text(
           'Notifications',
           style: AppTextStyles.formLarge(context).copyWith(
@@ -241,7 +274,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Widget _buildNotificationCard(NotificationItem notification) {
     return InkWell(
-      onTap: () => _handleNotificationTap(notification),
+      onTap: () => _handleNotificationTap(notification.id),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -318,182 +351,187 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  void _showNotificationDetails(NotificationItem notification) {
-    showModalBottomSheet(
+  void _showNotificationDetailsDialog(NotificationDetail notification) {
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.75,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
           ),
-        ),
-        child: Column(
-          children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getTypeColor(notification.type).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      notification.type.toUpperCase(),
-                      style: AppTextStyles.bodySmall(context).copyWith(
-                        color: _getTypeColor(notification.type),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                      ),
-                    ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
-                  const Spacer(),
-                  Text(
-                    _formatFullDate(notification.createdAt),
-                    style: AppTextStyles.bodySmall(
-                      context,
-                    ).copyWith(color: Colors.grey[600], fontSize: 12),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                child: Row(
                   children: [
-                    // Title
-                    Text(
-                      notification.title,
-                      style: AppTextStyles.titleLarge(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                        fontSize: 20,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Body (strip HTML tags for display)
-                    Text(
-                      _stripHtmlTags(notification.body),
-                      style: AppTextStyles.bodyMedium(context).copyWith(
-                        color: Colors.grey[800],
-                        height: 1.6,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Image if available
-                    if (notification.imageUrl != null) ...[
-                      ClipRRect(
+                      decoration: BoxDecoration(
+                        color: _getTypeColor(
+                          notification.type,
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          notification.imageUrl!,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 200,
-                              color: Colors.grey[200],
-                              child: Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  size: 48,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
-                            );
-                          },
+                      ),
+                      child: Text(
+                        notification.type.toUpperCase(),
+                        style: AppTextStyles.bodySmall(context).copyWith(
+                          color: _getTypeColor(notification.type),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Attachment button if available
-                    if (notification.attachmentUrl != null) ...[
-                      ElevatedButton.icon(
-                        onPressed: () =>
-                            _openAttachment(notification.attachmentUrl!),
-                        icon: const Icon(Icons.attachment, size: 18),
-                        label: const Text('View Attachment'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B35),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Expiry info if available
-                    if (notification.expiresAt != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.schedule,
-                              size: 16,
-                              color: Colors.orange[700],
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Expires on ${_formatFullDate(notification.expiresAt!)}',
-                              style: AppTextStyles.bodySmall(context).copyWith(
-                                color: Colors.orange[700],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
+                    ),
+                    const Spacer(),
+                    Text(
+                      _formatFullDate(notification.createdAt),
+                      style: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(color: Colors.grey[600], fontSize: 12),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        notification.title,
+                        style: AppTextStyles.titleLarge(context).copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Body (strip HTML tags for display)
+                      Text(
+                        _stripHtmlTags(notification.body),
+                        style: AppTextStyles.bodyMedium(context).copyWith(
+                          color: Colors.grey[800],
+                          height: 1.6,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Image if available
+                      if (notification.imageUrl != null) ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            notification.imageUrl!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: 200,
+                                color: Colors.grey[200],
+                                child: Center(
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Attachment button if available
+                      if (notification.attachmentUrl != null) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () =>
+                                _openAttachment(notification.attachmentUrl!),
+                            icon: const Icon(Icons.attachment, size: 18),
+                            label: const Text('View Attachment'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF6B35),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // Expiry info if available
+                      if (notification.expiresAt != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.schedule,
+                                size: 16,
+                                color: Colors.orange[700],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Expires on ${_formatFullDate(notification.expiresAt!)}',
+                                  style: AppTextStyles.bodySmall(context)
+                                      .copyWith(
+                                        color: Colors.orange[700],
+                                        fontSize: 12,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
