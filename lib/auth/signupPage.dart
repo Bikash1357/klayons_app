@@ -160,15 +160,23 @@ class _SignUnPageState extends State<SignUnPage> {
       Map<String, dynamic> requestBody = {
         'name': _nameController.text.trim(),
         'residence_type': _selectedResidence,
-        'address': _selectedResidence == 'society'
-            ? _selectedSociety!.address
-            : _addressController.text.trim(),
       };
 
       if (email != null) requestBody['email'] = email;
       if (phone != null) requestBody['phone'] = phone;
-      if (_selectedResidence == 'society')
-        requestBody['society_name'] = _selectedSociety!.name;
+
+      // Handle society selection
+      if (_selectedResidence == 'society') {
+        requestBody['society_name'] =
+            _selectedSociety?.name ?? _searchController.text.trim();
+        // Only add address if society was selected from list
+        if (_selectedSociety != null) {
+          requestBody['address'] = _selectedSociety!.address;
+        }
+      } else if (_selectedResidence == 'individual') {
+        // For individual housing, send the address
+        requestBody['address'] = _addressController.text.trim();
+      }
 
       final response = await http.post(
         Uri.parse('https://dev-klayons.onrender.com/api/auth/signup/'),
@@ -211,7 +219,8 @@ class _SignUnPageState extends State<SignUnPage> {
         _selectedResidence != null;
 
     if (_selectedResidence == 'society') {
-      return basic && _selectedSociety != null;
+      // Valid if either a society is selected OR manual text is entered
+      return basic && _searchController.text.trim().isNotEmpty;
     } else if (_selectedResidence == 'individual') {
       return basic && _addressController.text.trim().isNotEmpty;
     }
@@ -664,7 +673,7 @@ class _SignUnPageState extends State<SignUnPage> {
       children: [
         SizedBox(height: 16),
         CustomTextField(
-          hintText: 'Search Society Complex*',
+          hintText: 'Search or Enter Society Complex*',
           controller: _searchController,
           keyboardType: TextInputType.text,
           showDynamicBorders: false,

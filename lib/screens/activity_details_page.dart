@@ -1315,7 +1315,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           text: TextSpan(
             style: AppTextStyles.bodySmall(
               context,
-            ).copyWith(color: Colors.grey[600]),
+            ).copyWith(color: Colors.grey[800], fontSize: 14),
             children: [
               TextSpan(text: 'Recommended for '),
               TextSpan(
@@ -1333,27 +1333,45 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
   /// Build price section
   Widget _buildPriceSection(ActivityDetail activity) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '₹${activity.price.toStringAsFixed(0)}',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.deepOrange,
+        Row(
+          children: [
+            Text(
+              '₹${activity.price.toStringAsFixed(0)}',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepOrange,
+              ),
+            ),
+            if (_getPaymentTypeDisplay(activity.paymentType).isNotEmpty)
+              Flexible(
+                child: Text(
+                  _getPaymentTypeDisplay(activity.paymentType),
+                  style: AppTextStyles.bodyMedium(
+                    context,
+                  ).copyWith(color: AppColors.primaryOrange),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+          ],
+        ),
+        RichText(
+          text: TextSpan(
+            style: AppTextStyles.bodyMedium(
+              context,
+            ).copyWith(color: AppColors.primaryOrange),
+            children: [
+              TextSpan(
+                text:
+                    '${activity.sessionCount.toString()} sessions, ${activity.sessionDuration.toString()}mins each',
+              ),
+            ],
           ),
         ),
-        if (_getPaymentTypeDisplay(activity.paymentType).isNotEmpty)
-          Flexible(
-            child: Text(
-              _getPaymentTypeDisplay(activity.paymentType),
-              style: AppTextStyles.bodyMedium(
-                context,
-              ).copyWith(color: AppColors.primaryOrange),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
-          ),
       ],
     );
   }

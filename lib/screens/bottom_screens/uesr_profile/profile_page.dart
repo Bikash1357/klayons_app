@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
-import 'package:klayons/screens/home_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:klayons/utils/colour.dart';
 import '../../../services/UserProfileServices/userProfileModels.dart';
 import '../../../services/auth/login_service.dart';
@@ -66,6 +66,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
               textColor: Colors.white,
               onPressed: () => _loadUserProfile(forceRefresh: true),
             ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchURL(String urlString) async {
+    try {
+      final Uri url = Uri.parse(urlString);
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not launch $urlString');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to open link: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -1014,23 +1033,35 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
       child: Column(
         children: [
-          _buildMenuItem('About Klayons', Icons.info_outline, () {}),
+          _buildMenuItem(
+            'About Klayons',
+            Icons.info_outline,
+            () => _launchURL('https://www.klayons.com/about-us'),
+          ),
           const Divider(color: Color(0xFFE2E8F0)),
           _buildMenuItem(
             'Child Protection Policy',
             Icons.shield_outlined,
-            () {},
+            () => _launchURL('https://www.klayons.com/child-protection-policy'),
           ),
           const Divider(color: Color(0xFFE2E8F0)),
           _buildMenuItem(
             'Payments & Refund Policy',
             Icons.payment_outlined,
-            () {},
+            () => _launchURL('https://www.klayons.com/payment-refund-policy'),
           ),
           const Divider(color: Color(0xFFE2E8F0)),
-          _buildMenuItem('Terms of Service', Icons.description_outlined, () {}),
+          _buildMenuItem(
+            'Terms of Service',
+            Icons.description_outlined,
+            () => _launchURL('https://www.klayons.com/terms-conditions'),
+          ),
           const Divider(color: Color(0xFFE2E8F0)),
-          _buildMenuItem('Privacy Policy', Icons.privacy_tip_outlined, () {}),
+          _buildMenuItem(
+            'Privacy Policy',
+            Icons.privacy_tip_outlined,
+            () => _launchURL('https://www.klayons.com/privacy-policy'),
+          ),
           const Divider(color: Color(0xFFE2E8F0)),
           _buildMenuItem(
             'Log Out',

@@ -592,6 +592,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         // Handle error responses with detailed logging
         String errorMessage = 'Failed to send OTP. Please try again.';
+        bool shouldNavigateToSignup = false;
 
         print('❌ Error Response Details:');
         print('   - Success: ${response.isSuccess}');
@@ -601,8 +602,10 @@ class _LoginPageState extends State<LoginPage> {
         // Handle specific error cases
         if (response.httpStatusCode == 400) {
           if (response.message.toLowerCase().contains('not found') ||
-              response.message.toLowerCase().contains('not registered')) {
-            errorMessage = 'Account not found. Please register first.';
+              response.message.toLowerCase().contains('not registered') ||
+              response.message.toLowerCase().contains('does not exist')) {
+            errorMessage = 'Account does not exist. Please signup first.';
+            shouldNavigateToSignup = true;
           } else if (response.message.toLowerCase().contains(
             'already registered',
           )) {
@@ -616,7 +619,8 @@ class _LoginPageState extends State<LoginPage> {
         } else if (response.httpStatusCode == 401) {
           errorMessage = 'Authentication failed. Please try again.';
         } else if (response.httpStatusCode == 404) {
-          errorMessage = 'Account not found. Please register first.';
+          errorMessage = 'Account does not exist. Please signup first.';
+          shouldNavigateToSignup = true;
         } else if (response.httpStatusCode == 429) {
           errorMessage = 'Too many attempts. Please try again later.';
         } else if (response.httpStatusCode == 500) {
@@ -626,6 +630,18 @@ class _LoginPageState extends State<LoginPage> {
         }
 
         _showErrorMessage(errorMessage);
+
+        // Navigate to signup page if account doesn't exist
+        if (shouldNavigateToSignup) {
+          Future.delayed(Duration(milliseconds: 800), () {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => SignUnPage()),
+              );
+            }
+          });
+        }
       }
     } catch (e) {
       print('❌ Login OTP error: $e');

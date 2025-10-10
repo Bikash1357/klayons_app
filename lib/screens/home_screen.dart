@@ -574,7 +574,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   // Build bottom navigation bar
   Widget _buildBottomNavigationBar() {
     return Container(
-      height: 80,
+      height: 70,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -637,7 +637,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         onTap: () => _onBottomNavTapped(index),
         behavior: HitTestBehavior.translucent,
         child: SizedBox(
-          height: 70,
+          height: 60,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
