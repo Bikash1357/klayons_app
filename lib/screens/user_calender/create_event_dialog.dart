@@ -105,15 +105,74 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
               SizedBox(height: 20),
 
               // Activity for section
-              Text(
-                'Activity for',
-                style: AppTextStyles.bodyMedium(
-                  context,
-                ).copyWith(fontWeight: FontWeight.w500),
+              Row(
+                children: [
+                  Text(
+                    'Activity for:  ',
+                    style: AppTextStyles.bodyMedium(
+                      context,
+                    ).copyWith(fontWeight: FontWeight.w500),
+                  ),
+
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ...widget.children
+                            .take(2)
+                            .map(
+                              (child) => GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedChildId = child.id;
+                                    _selectedChildName = child.name
+                                        .split(' ')
+                                        .first;
+                                  });
+                                },
+                                child: Container(
+                                  margin: EdgeInsets.only(right: 12),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _selectedChildId == child.id
+                                        ? AppColors.orangeHighlight
+                                        : Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: _selectedChildId == child.id
+                                          ? AppColors.primaryOrange
+                                          : Colors.grey.shade300,
+                                      width: _selectedChildId == child.id
+                                          ? 2
+                                          : 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    child.name.split(' ').first,
+                                    style: AppTextStyles.bodyMedium(context)
+                                        .copyWith(
+                                          color: _selectedChildId == child.id
+                                              ? AppColors.primaryOrange
+                                              : Colors.grey.shade700,
+                                          fontWeight:
+                                              _selectedChildId == child.id
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 8),
-
-              // Show different UI based on children availability
               widget.children.isEmpty
                   ? Row(
                       children: [
@@ -138,67 +197,14 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                               color: AppColors.primaryOrange,
                               fontWeight: FontWeight.w600,
                               decoration: TextDecoration.underline,
+                              decorationColor: AppColors.primaryOrange,
                             ),
                           ),
                         ),
                       ],
                     )
-                  : SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          ...widget.children
-                              .take(2)
-                              .map(
-                                (child) => GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedChildId = child.id;
-                                      _selectedChildName = child.name
-                                          .split(' ')
-                                          .first;
-                                    });
-                                  },
-                                  child: Container(
-                                    margin: EdgeInsets.only(right: 12),
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _selectedChildId == child.id
-                                          ? AppColors.primaryOrange
-                                          : Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: _selectedChildId == child.id
-                                            ? AppColors.primaryOrange
-                                            : Colors.grey.shade300,
-                                        width: _selectedChildId == child.id
-                                            ? 2
-                                            : 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      child.name.split(' ').first,
-                                      style: AppTextStyles.bodyMedium(context)
-                                          .copyWith(
-                                            color: _selectedChildId == child.id
-                                                ? Colors.white
-                                                : Colors.grey.shade700,
-                                            fontWeight:
-                                                _selectedChildId == child.id
-                                                ? FontWeight.w600
-                                                : FontWeight.normal,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ],
-                      ),
-                    ),
+                  : SizedBox.shrink(),
+              // Show different UI based on children availability
               SizedBox(height: 20),
 
               // Activity Name
@@ -206,6 +212,11 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                 controller: _titleController,
                 decoration: InputDecoration(
                   hintText: 'Activity Name',
+                  isDense: true,
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -219,6 +230,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                   ),
                 ),
               ),
+
               SizedBox(height: 16),
 
               // Instructor and Location
@@ -226,6 +238,10 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                 controller: _addressController,
                 decoration: InputDecoration(
                   hintText: 'Instructor and Location',
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey.shade300),
@@ -255,11 +271,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 20,
-                              color: Colors.grey.shade600,
-                            ),
                             SizedBox(width: 8),
                             Flexible(
                               child: Text(
@@ -274,7 +285,13 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       ),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 12),
+                    child: Icon(
+                      Icons.arrow_forward,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
                   Expanded(
                     child: GestureDetector(
                       onTap: () => _selectDate(context, false),
@@ -286,11 +303,6 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 20,
-                              color: Colors.grey.shade600,
-                            ),
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(

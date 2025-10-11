@@ -712,7 +712,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                         ] else if (isAgeWarning) ...[
                           const SizedBox(width: 4),
                           Icon(
-                            Icons.warning,
+                            Icons.error_outline,
                             size: 12,
                             color: isSelected
                                 ? AppColors.primaryOrange
@@ -742,32 +742,35 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
               final childAge = _calculateAge(selectedChild!.dob);
               final ageInt = int.tryParse(childAge) ?? 0;
               if (ageInt < 4) {
-                return Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.orange[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: Colors.orange[600],
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'This child may not meet the minimum age requirement for this activity.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange[800],
-                            fontWeight: FontWeight.w500,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Colors.orange[600],
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'This child may not meet the minimum age requirement for this activity.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange[800],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               }
@@ -1303,7 +1306,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                     : activity.name,
                 style: AppTextStyles.titleLarge(
                   context,
-                ).copyWith(letterSpacing: -0.1),
+                ).copyWith(letterSpacing: -0.2, fontWeight: FontWeight.w600),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
               ),
@@ -1341,7 +1344,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
             Text(
               '₹${activity.price.toStringAsFixed(0)}',
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.deepOrange,
               ),
@@ -1691,27 +1694,6 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         return 'Unenrolled';
       default:
         return status.toUpperCase();
-    }
-  }
-
-  /// Format enrollment date for display
-  String _formatEnrollmentDate(String timestamp) {
-    try {
-      final dateTime = DateTime.parse(timestamp);
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inDays == 0) {
-        return 'Today';
-      } else if (difference.inDays == 1) {
-        return 'Yesterday';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays} days ago';
-      } else {
-        return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-      }
-    } catch (e) {
-      return 'Recently';
     }
   }
 }
