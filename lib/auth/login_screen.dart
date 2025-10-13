@@ -10,7 +10,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/styles/errorMessage.dart';
 import 'otp_verification_page.dart';
 import '../utils/colour.dart';
-import 'package:klayons/utils/colour.dart';
 
 // Import the reusable error widget
 class LoginPage extends StatefulWidget {
@@ -23,6 +22,14 @@ class _LoginPageState extends State<LoginPage> {
   final ScrollController _scrollController = ScrollController();
   final FocusNode _emailFocusNode = FocusNode();
   bool _isLoading = false;
+  bool _showGuestButton = false;
+
+  // Guest mode constants - For App Store/Play Store review only
+  // Token is pre-configured and saved in backend for review purposes
+  // Does not affect regular user authentication flow
+  static const String GUEST_EMAIL = "guest@klayons.com";
+  static const String GUEST_TOKEN =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjo0OTEzOTM3MjU2LCJpYXQiOjE3NjAzMzcyNTYsImp0aSI6IjkzNzY3NTg0NmFlYzRlYmRiN2JhNGMyM2I1ZjhjMmNmIiwidXNlcl9pZCI6IjE0In0.AyeWhdym62tg0bD2e9Zf2S6P8EidE0nIimaOldsl4xM";
 
   // Error and success state management
   String? _errorMessage;
@@ -43,6 +50,12 @@ class _LoginPageState extends State<LoginPage> {
 
   void _onTextChanged() {
     setState(() {
+      // Check if guest email is entered (for app store reviewers only)
+      // Regular users won't see this option unless they know the exact email
+      _showGuestButton =
+          _emailController.text.trim().toLowerCase() ==
+          GUEST_EMAIL.toLowerCase();
+
       // Clear messages when user starts typing
       if (_showError) {
         _showError = false;
@@ -98,6 +111,62 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = null;
       _successMessage = null;
     });
+  }
+
+  // Guest mode login - For App Store/Play Store review process only
+  // This allows reviewers to access the app without creating an account
+  // Real users will go through normal email/phone -> OTP -> homepage flow
+  Future<void> _loginAsGuest() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _clearMessages();
+
+    try {
+      print('🎭 Guest mode login initiated for app review...');
+
+      // Use LoginAuthService to save guest token (reusing existing methods)
+      await LoginAuthService.saveToken(GUEST_TOKEN);
+
+      // Store additional guest user data using saveAuthData
+      await LoginAuthService.saveAuthData(
+        token: GUEST_TOKEN,
+        userData: {
+          'name': 'Guest',
+          'user_email': 'guest@klayons.com',
+          'user_phone': null,
+          'residence_type': 'society',
+          'society_id': 1,
+          'society_name': 'Tata Primanti',
+          'tower': null,
+          'flat_no': null,
+          'address': '',
+          'avatar_url': null,
+          'profile_complete': false,
+          'is_guest': true,
+        },
+      );
+
+      print('✅ Guest credentials stored successfully');
+      _showSuccessMessage('Welcome! Loading your dashboard...');
+
+      // Navigate to home page
+      await Future.delayed(Duration(milliseconds: 1000));
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      print('❌ Guest login error: $e');
+      _showErrorMessage('Unable to login as guest. Please try again.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -212,53 +281,132 @@ class _LoginPageState extends State<LoginPage> {
 
                             SizedBox(height: 16),
 
-                            // Send OTP Button - now activates when user starts typing
-                            SizedBox(
-                              width: double.infinity,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
-                                child: OrangeButton(
-                                  onPressed: _isLoading
-                                      ? null
-                                      : (_emailController.text.trim().isNotEmpty
-                                            ? _sendLoginOTP
-                                            : null),
-                                  child: _isLoading
-                                      ? Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                      Color
-                                                    >(Colors.white),
+                            // Guest Mode Button - Only for App Store/Play Store reviewers
+                            // Hidden from regular users, appears only when "guest@klayons.com" is entered
+                            // This allows reviewers to test the app without creating a real account
+                            // Regular user flow: Email/Phone -> OTP -> Homepage (unchanged)
+                            if (_showGuestButton)
+                              SizedBox(
+                                width: double.infinity,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: ElevatedButton(
+                                    onPressed: _isLoading
+                                        ? null
+                                        : _loginAsGuest,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryOrange,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: _isLoading
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white),
+                                                ),
                                               ),
-                                            ),
-                                            SizedBox(width: 12),
-                                            Text(
-                                              "Sending OTP...",
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
+                                              SizedBox(width: 12),
+                                              Text(
+                                                "Logging in...",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        )
-                                      : Text(
-                                          "Send OTP",
-                                          style:
-                                              AppTextStyles.bodyLargeEmphasized(
-                                                context,
-                                              ).copyWith(color: Colors.white),
-                                        ),
+                                            ],
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.person_outline,
+                                                size: 20,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                "Continue as Guest",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                  ),
                                 ),
                               ),
-                            ),
+
+                            if (_showGuestButton) SizedBox(height: 16),
+
+                            // Send OTP Button - Standard user authentication flow
+                            // All regular users go through: Email/Phone -> OTP -> Homepage
+                            // Only hidden when guest mode is active (for reviewers)
+                            if (!_showGuestButton)
+                              SizedBox(
+                                width: double.infinity,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 16),
+                                  child: OrangeButton(
+                                    onPressed: _isLoading
+                                        ? null
+                                        : (_emailController.text
+                                                  .trim()
+                                                  .isNotEmpty
+                                              ? _sendLoginOTP
+                                              : null),
+                                    child: _isLoading
+                                        ? Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(Colors.white),
+                                                ),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Text(
+                                                "Sending OTP...",
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : Text(
+                                            "Send OTP",
+                                            style:
+                                                AppTextStyles.bodyLargeEmphasized(
+                                                  context,
+                                                ).copyWith(color: Colors.white),
+                                          ),
+                                  ),
+                                ),
+                              ),
 
                             SizedBox(height: 28),
 

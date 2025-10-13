@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class Event {
-  final int? id; // Changed from String to int to match API response
+  final int? id;
   final String title;
   final String address;
   final DateTime startTime;
   final DateTime endTime;
   final RecurrenceRule? recurrence;
   final Color color;
-  final int? childId; // Added for API requests
-  final String? childName; // Kept for API responses
+  final int? childId;
+  final String? childName;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -66,14 +66,36 @@ class Event {
       }
     }
 
+    // Parse datetime strings - DateTime.parse() handles timezone offsets automatically
+    // If the string has +05:30, it will be parsed correctly
+    DateTime parsedStartTime = DateTime.parse(json['startTime']);
+    DateTime parsedEndTime = DateTime.parse(json['endTime']);
+
+    // Debug logging to verify parsing
+    print('📅 Parsing Event DateTime:');
+    print('   Raw startTime: ${json['startTime']}');
+    print('   Parsed startTime: $parsedStartTime');
+    print('   Is UTC: ${parsedStartTime.isUtc}');
+    print('   TimeZone offset: ${parsedStartTime.timeZoneOffset}');
+    print('   Local representation: ${parsedStartTime.toLocal()}');
+
+    // Convert to local time if parsed as UTC
+    // DateTime.parse() converts timezone-aware strings to UTC internally
+    // then we convert back to local for display
+    final DateTime localStartTime = parsedStartTime.toLocal();
+    final DateTime localEndTime = parsedEndTime.toLocal();
+
+    print('   Final startTime: $localStartTime');
+    print('   Final endTime: $localEndTime');
+
     return Event(
       id: json['id'] is int
           ? json['id']
           : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
       title: json['title']?.toString() ?? '',
       address: json['address']?.toString() ?? '',
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
+      startTime: localStartTime,
+      endTime: localEndTime,
       recurrence: json['recurrence'] != null
           ? RecurrenceRule.fromJson(json['recurrence'])
           : null,
@@ -85,10 +107,10 @@ class Event {
                 : null),
       childName: json['childName']?.toString(),
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
+          ? DateTime.parse(json['createdAt']).toLocal()
           : null,
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'])
+          ? DateTime.parse(json['updatedAt']).toLocal()
           : null,
     );
   }
@@ -120,6 +142,11 @@ class Event {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  @override
+  String toString() {
+    return 'Event(id: $id, title: $title, startTime: $startTime, endTime: $endTime, childId: $childId, childName: $childName)';
   }
 }
 
@@ -160,10 +187,10 @@ class RecurrenceRule {
       case 'never':
         return RecurrenceEnd.never;
       case 'ondate':
-      case 'date': // Handle both 'ondate' and 'date'
+      case 'date':
         return RecurrenceEnd.onDate;
       case 'after':
-      case 'occurrences': // Handle both 'after' and 'occurrences'
+      case 'occurrences':
         return RecurrenceEnd.after;
       default:
         throw Exception('Unknown RecurrenceEnd: $value');
@@ -190,9 +217,16 @@ class RecurrenceRule {
           ? List<int>.from(json['daysOfWeek'])
           : null,
       endRule: _recurrenceEndFromString(json['endRule']?.toString() ?? 'never'),
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
-      occurrences: json['occurrences'], // This can be null
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate']).toLocal()
+          : null,
+      occurrences: json['occurrences'],
     );
+  }
+
+  @override
+  String toString() {
+    return 'RecurrenceRule(type: $type, interval: $interval, daysOfWeek: $daysOfWeek, endRule: $endRule, endDate: $endDate)';
   }
 }
 
