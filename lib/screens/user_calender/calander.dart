@@ -274,15 +274,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: events.take(2).map((event) {
-            Color dotColor = AppColors.primaryOrange;
-            if (event is ActivityCalendarEvent) {
-              dotColor = event.isCancelled
-                  ? Colors.grey
-                  : (event.isRescheduled
-                        ? event.color.withOpacity(0.7)
-                        : event.color);
-            } else if (event is ChildCalendarEvent) {
-              dotColor = event.isCancelled ? Colors.grey : event.color;
+            Color dotColor;
+
+            // Only 2 colors: orange for custom, primaryOrange for all others
+            if (event is ChildCalendarEvent) {
+              dotColor = event.isCustomActivity
+                  ? Colors
+                        .orange // Orange for custom activities
+                  : AppColors.primaryOrange; // Primary orange for all others
+            } else {
+              // For ActivityCalendarEvent (society batches)
+              dotColor = AppColors.primaryOrange;
             }
 
             return Container(
@@ -298,6 +300,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
       );
     } else {
+      // When more than 2 events, show 2 dots + plus sign
       return Positioned(
         bottom: 1,
         child: Row(
@@ -461,7 +464,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       if (event.isCancelled) return 'CANCELLED';
       if (event.isRescheduled) return 'RESCHEDULED';
       if (event.isCustomActivity) return 'CUSTOM';
-      if (event.isFromRDate) return 'SPECIAL';
+      //if (event.isFromRDate) return 'SPECIAL';
     }
     return '';
   }
@@ -473,9 +476,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       case 'RESCHEDULED':
         return Colors.orange;
       case 'CUSTOM':
-        return Colors.blue;
-      case 'SPECIAL':
-        return Colors.purple;
+        return Colors.orange;
+      //   case 'SPECIAL':
+      // return Colors.purple;
       default:
         return Colors.grey;
     }
@@ -827,7 +830,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               '${DateFormat('h:mma').format(event.startTime).toLowerCase()} - ${DateFormat('h:mma').format(event.endTime).toLowerCase()}';
                           venue = event.venue;
                           iconColor = event.color;
-                          childInfo = 'for ${event.childName.split(' ').first}';
+                          //childInfo = 'for ${event.childName.split(' ').first}';
                           isCancelled = event.isCancelled;
                           isRescheduled = event.isRescheduled;
                           isCustomActivity = event.isCustomActivity;
@@ -904,14 +907,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   width: 4,
                                   height: 50,
                                   decoration: BoxDecoration(
-                                    color: isCancelled
-                                        ? Colors.grey
-                                        : (isRescheduled
-                                              ? iconColor.withOpacity(0.7)
-                                              : iconColor),
+                                    color: isCustomActivity
+                                        ? Colors
+                                              .orange // Orange for custom activities
+                                        : AppColors
+                                              .primaryOrange, // Primary orange for all others
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
+
                                 SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
@@ -1068,7 +1072,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                               Icon(
                                                 Icons.edit,
                                                 size: 18,
-                                                color: Colors.blue,
+                                                color: Colors.grey,
                                               ),
                                               SizedBox(width: 8),
                                               Text('Edit'),
@@ -1188,7 +1192,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Custom activity updated successfully!'),
-                backgroundColor: Colors.deepOrange,
+                backgroundColor: Colors.green,
               ),
             );
           } catch (e) {

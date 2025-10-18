@@ -40,8 +40,8 @@ android {
         multiDexEnabled = true
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
-        versionCode = 2
-        versionName = "1.0.1"
+        versionCode = 6
+        versionName = "1.0.6"
     }
 
     signingConfigs {
