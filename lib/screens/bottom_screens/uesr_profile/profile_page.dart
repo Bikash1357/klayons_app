@@ -927,17 +927,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: _getAvatarColor(child.gender),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _getGenderIcon(child.gender),
-                  color: Colors.white,
-                  size: 18,
+              Text(
+                child.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2D3748),
                 ),
               ),
               InkWell(
@@ -987,27 +982,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                child.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2D3748),
-                ),
+                child.gender.toLowerCase() == 'male' ? 'Boy,' : 'Girl,',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF2D3748)),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(width: 6),
               Text(
-                'Age: ${_formatDate(child.dob)}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF718096)),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Gender: ${child.gender.toLowerCase() == 'male' ? 'Boy' : 'Girl'}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF718096)),
+                _formatDate(child.dob),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF2D3748)),
               ),
             ],
           ),
