@@ -680,7 +680,7 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
       child: Column(
         children: [
           // Add spacing when scrolled
-          if (isScrolled) const SizedBox(height: 20),
+          if (isScrolled) const SizedBox(height: 24),
           child,
         ],
       ),
@@ -688,10 +688,10 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => height + (isScrolled ? 20 : 0);
+  double get maxExtent => height + (isScrolled ? 24 : 0);
 
   @override
-  double get minExtent => height + (isScrolled ? 20 : 0);
+  double get minExtent => height + (isScrolled ? 24 : 0);
 
   @override
   bool shouldRebuild(covariant _SearchBarDelegate oldDelegate) {

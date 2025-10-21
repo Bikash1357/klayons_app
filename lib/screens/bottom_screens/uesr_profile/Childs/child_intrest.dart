@@ -386,6 +386,127 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
     );
   }
 
+  // Add this method to organize interests by category
+  Map<String, List<Interest>> _organizeInterestsByCategory() {
+    final Map<String, List<Interest>> categorized = {
+      'Physical Activities': [],
+      'Arts & Creativity': [],
+      'Music & Dance': [],
+      'Technology & Innovation': [],
+      'Learning & Academics': [],
+      'Life Skills': [],
+    };
+
+    for (var interest in interests) {
+      final lower = interest.name.toLowerCase();
+
+      // Physical Activities - All sports, fitness, martial arts
+      if (lower.contains('sport') ||
+          lower.contains('swim') ||
+          lower.contains('yoga') ||
+          lower.contains('fitness') ||
+          lower.contains('football') ||
+          lower.contains('cricket') ||
+          lower.contains('basketball') ||
+          lower.contains('badminton') ||
+          lower.contains('tennis') ||
+          lower.contains('skating') ||
+          lower.contains('cycling') ||
+          lower.contains('athletics') ||
+          lower.contains('karate') ||
+          lower.contains('taekwondo') ||
+          lower.contains('judo') ||
+          lower.contains('martial') ||
+          lower.contains('kung fu') ||
+          lower.contains('boxing')) {
+        categorized['Physical Activities']!.add(interest);
+      }
+      // Arts & Creativity - Drawing, painting, crafts, photography
+      else if (lower.contains('draw') ||
+          lower.contains('paint') ||
+          lower.contains('craft') ||
+          lower.contains('art') ||
+          lower.contains('sketch') ||
+          lower.contains('pottery') ||
+          lower.contains('sculpture') ||
+          lower.contains('origami') ||
+          lower.contains('photo') ||
+          lower.contains('video') ||
+          lower.contains('film')) {
+        categorized['Arts & Creativity']!.add(interest);
+      }
+      // Music & Dance - All performing arts
+      else if (lower.contains('music') ||
+          lower.contains('sing') ||
+          lower.contains('dance') ||
+          lower.contains('drama') ||
+          lower.contains('theater') ||
+          lower.contains('piano') ||
+          lower.contains('guitar') ||
+          lower.contains('violin') ||
+          lower.contains('drums') ||
+          lower.contains('ballet') ||
+          lower.contains('hip hop') ||
+          lower.contains('classical dance')) {
+        categorized['Music & Dance']!.add(interest);
+      }
+      // Technology & Innovation - STEM, robotics, coding
+      else if (lower.contains('robot') ||
+          lower.contains('cod') ||
+          lower.contains('science') ||
+          lower.contains('tech') ||
+          lower.contains('programming') ||
+          lower.contains('stem') ||
+          lower.contains('computer') ||
+          lower.contains('engineering') ||
+          lower.contains('electronics') ||
+          lower.contains('3d print')) {
+        categorized['Technology & Innovation']!.add(interest);
+      }
+      // Learning & Academics - Reading, math, languages, chess
+      else if (lower.contains('math') ||
+          lower.contains('reading') ||
+          lower.contains('read') ||
+          lower.contains('writing') ||
+          lower.contains('tutor') ||
+          lower.contains('homework') ||
+          lower.contains('study') ||
+          lower.contains('academic') ||
+          lower.contains('chess') ||
+          lower.contains('strategy') ||
+          lower.contains('language') ||
+          lower.contains('english') ||
+          lower.contains('spanish') ||
+          lower.contains('french') ||
+          lower.contains('hindi') ||
+          lower.contains('communication') ||
+          lower.contains('speech')) {
+        categorized['Learning & Academics']!.add(interest);
+      }
+      // Life Skills - Cooking, wellness, mindfulness
+      else if (lower.contains('cook') ||
+          lower.contains('chef') ||
+          lower.contains('baking') ||
+          lower.contains('culinary') ||
+          lower.contains('meditation') ||
+          lower.contains('mindful') ||
+          lower.contains('wellness') ||
+          lower.contains('mental health')) {
+        categorized['Life Skills']!.add(interest);
+      }
+      // Default to Life Skills
+      else {
+        categorized['Life Skills']!.add(interest);
+      }
+    }
+
+    // Remove empty categories
+    categorized.removeWhere((key, value) => value.isEmpty);
+
+    return categorized;
+  }
+
+  // Replace the _buildInterestsGrid method with this version
   Widget _buildInterestsGrid() {
     if (interests.isEmpty) {
       return Center(
@@ -396,11 +517,20 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
       );
     }
 
+    // Get categorized and sorted interests
+    final categorizedInterests = _organizeInterestsByCategory();
+
+    // Flatten all interests in category order
+    final sortedInterests = <Interest>[];
+    for (var entry in categorizedInterests.entries) {
+      sortedInterests.addAll(entry.value);
+    }
+
     return SingleChildScrollView(
       child: Wrap(
         spacing: 10,
         runSpacing: 12,
-        children: interests.map((interest) {
+        children: sortedInterests.map((interest) {
           final isSelected = selectedInterestIds.contains(interest.id);
           final color = _chipColor(0);
           final icon = _iconForInterest(interest.name);
