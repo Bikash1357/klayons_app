@@ -1,16 +1,42 @@
-# klayons
+# 🌟 Klayons
 
-Event Management Application.
+**Klayons** is redefining after-school learning by bringing expert-led extracurricular programs directly into residential communities.  
+We believe that every child deserves access to enriching learning opportunities — right where they live.
 
-## Getting Started
+By collaborating with certified instructors and activity specialists, Klayons transforms societies into vibrant learning ecosystems that inspire **curiosity, creativity, and confidence**.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🚀 Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- 📚 Expert-led extracurricular programs
+- 🏡 Society-based learning model
+- 🔐 Email & Phone login with OTP verification
+- 👤 Guest mode (explore without login)
+- 📍 Location-based activity discovery
+- 💬 Easy parent-instructor communication
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## 📱 App Screenshots
+
+| Login Page                                                                  | Guest Mode                                                                    | Home Page |
+|-----------------------------------------------------------------------------|-------------------------------------------------------------------------------|-------------|
+| <img src="assets/PlayStore_preview_photos/App_screenshots.png" width="250"> | <img src="assets/PlayStore_preview_photos/App_screenshots_1.png" width="250"> | <img src="assets/PlayStore_preview_photos/App_screenshots_2.png" width="250"> | <img src="assets/PlayStore_preview_photos/App_screenshots_3.png" width="250"> | <img src="assets/PlayStore_preview_photos/App_screenshots_4.png" width="250"> |  
+
+---
+
+## 🧠 Tech Stack
+
+- **Frontend:** Flutter (Dart)
+- **Backend:** Firebase
+- **Authentication:** Email / Phone OTP + Guest Mode
+- **Hosting:** Google Play Store
+
+---
+
+## ⚙️ Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/klayons.git
