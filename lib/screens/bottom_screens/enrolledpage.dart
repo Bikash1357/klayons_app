@@ -7,6 +7,7 @@ import '../../services/Enrollments/deleteEnrollmentService.dart';
 import '../../services/Enrollments/enrollementModel.dart';
 import '../../services/Enrollments/get_enrolled_service.dart';
 import '../../services/calendar/children_calendar_service.dart';
+import '../../services/calendar/CustomCalander/post_custome_child_calender_services.dart';
 import '../../services/user_child/get_ChildServices.dart' as childService;
 import '../../utils/styles/fonts.dart';
 import 'package:klayons/utils/colour.dart';
@@ -24,6 +25,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
   late Future<List<GetEnrollment>> _futureEnrollments;
   bool _isRefreshing = false;
   Set<int> _deletingEnrollments = {};
+  Set<int> _deletingCustomActivities = {}; // Track deleting custom activities
   List<ChildCustomActivity> _customActivities = [];
   bool _isLoadingCustomActivities = false;
 
@@ -93,6 +95,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
     setState(() {
       _isRefreshing = true;
       _deletingEnrollments.clear();
+      _deletingCustomActivities.clear();
     });
 
     try {
@@ -175,6 +178,185 @@ class _EnrolledPageState extends State<EnrolledPage> {
         }
       }
     }
+  }
+
+  // Handle custom activity deletion
+  Future<void> _handleCustomActivityDeletion(
+    ChildCustomActivity customActivity,
+  ) async {
+    final bool? shouldDelete = await showCustomActivityDeleteDialog(
+      customActivity,
+    );
+
+    if (shouldDelete == true) {
+      setState(() {
+        _deletingCustomActivities.add(customActivity.id);
+      });
+
+      try {
+        bool deleted = await CustomActivityService.deleteCustomActivity(
+          customActivity.id,
+        );
+
+        if (mounted) {
+          setState(() {
+            _deletingCustomActivities.remove(customActivity.id);
+          });
+
+          if (deleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${customActivity.title} has been deleted successfully',
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: Duration(seconds: 3),
+                action: SnackBarAction(
+                  label: 'OK',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
+              ),
+            );
+
+            // Clear cache and reload
+            ChildrenCalendarService.clearCache();
+            await _loadCustomActivities();
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _deletingCustomActivities.remove(customActivity.id);
+          });
+
+          String errorMessage = 'Failed to delete custom activity';
+
+          if (e is CustomActivityException) {
+            errorMessage = e.message;
+          } else if (e.toString().contains('Authentication')) {
+            errorMessage = 'Please log in again to continue';
+          } else if (e.toString().contains('not found')) {
+            errorMessage =
+                'This custom activity was not found or already removed';
+          }
+
+          _showErrorDialog('Delete Failed', errorMessage);
+        }
+      }
+    }
+  }
+
+  // Confirmation dialog for custom activity deletion
+  Future<bool?> showCustomActivityDeleteDialog(
+    ChildCustomActivity customActivity,
+  ) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          contentPadding: EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryOrange,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () {},
+                  icon: SvgPicture.asset(
+                    'assets/App_icons/Exclamation_mark.svg',
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Are you sure?',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  fontSize: 20,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Delete "${customActivity.title}" for ${customActivity.childName}?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryOrange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<bool?> showUnenrollConfirmationDialog(GetEnrollment enrollment) async {
@@ -548,8 +730,10 @@ class _EnrolledPageState extends State<EnrolledPage> {
     );
   }
 
-  // Build card for custom activities
+  // Build card for custom activities with delete button
   Widget _buildCustomActivityCard(ChildCustomActivity customActivity) {
+    final isDeleting = _deletingCustomActivities.contains(customActivity.id);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -610,8 +794,37 @@ class _EnrolledPageState extends State<EnrolledPage> {
                 ),
               ),
 
-              // Arrow indicator
-              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+              // Delete Button
+              GestureDetector(
+                onTap: isDeleting
+                    ? null
+                    : () => _handleCustomActivityDeletion(customActivity),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: isDeleting
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
+                          ),
+                        )
+                      : SvgPicture.asset(
+                          'assets/App_icons/iconDelete.svg',
+                          width: 20,
+                          height: 20,
+                          colorFilter: ColorFilter.mode(
+                            Color(0xFFE53935),
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                ),
+              ),
             ],
           ),
         ),

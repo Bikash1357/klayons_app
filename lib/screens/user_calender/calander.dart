@@ -268,6 +268,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     final int eventCount = events.length;
 
+    // Check if this day is selected to change marker color
+    final bool isSelected =
+        _selectedDay != null && isSameDay(_selectedDay, day);
+    final Color markerColor = isSelected
+        ? Colors.white
+        : AppColors.primaryOrange;
+
     if (eventCount <= 2) {
       return Positioned(
         bottom: 1,
@@ -276,15 +283,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
           children: events.take(2).map((event) {
             Color dotColor;
 
-            // Only 2 colors: orange for custom, primaryOrange for all others
-            if (event is ChildCalendarEvent) {
-              dotColor = event.isCustomActivity
-                  ? Colors
-                        .orange // Orange for custom activities
-                  : AppColors.primaryOrange; // Primary orange for all others
+            if (isSelected) {
+              // If date is selected, use white for all dots
+              dotColor = Colors.white;
             } else {
-              // For ActivityCalendarEvent (society batches)
-              dotColor = AppColors.primaryOrange;
+              // Only 2 colors: orange for custom, primaryOrange for all others
+              if (event is ChildCalendarEvent) {
+                dotColor = event.isCustomActivity
+                    ? Colors
+                          .orange // Orange for custom activities
+                    : AppColors.primaryOrange; // Primary orange for all others
+              } else {
+                // For ActivityCalendarEvent (society batches)
+                dotColor = AppColors.primaryOrange;
+              }
             }
 
             return Container(
@@ -311,7 +323,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               height: 6,
               margin: EdgeInsets.only(right: 2),
               decoration: BoxDecoration(
-                color: AppColors.primaryOrange,
+                color: markerColor,
                 shape: BoxShape.circle,
               ),
             ),
@@ -320,21 +332,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
               height: 6,
               margin: EdgeInsets.only(right: 2),
               decoration: BoxDecoration(
-                color: AppColors.primaryOrange,
+                color: markerColor,
                 shape: BoxShape.circle,
               ),
             ),
             Container(
-              width: 8,
-              height: 8,
-              child: Center(
-                child: Text(
-                  '+',
-                  style: TextStyle(
-                    color: AppColors.primaryOrange,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
+              padding: EdgeInsets.symmetric(horizontal: 1),
+              child: Text(
+                '+',
+                style: TextStyle(
+                  color: markerColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  height: 1.0,
                 ),
               ),
             ),
@@ -459,7 +469,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     if (event is ActivityCalendarEvent) {
       if (event.isCancelled) return 'CANCELLED';
       if (event.isRescheduled) return 'RESCHEDULED';
-      if (event.isFromRDate) return 'SPECIAL';
+      //if (event.isFromRDate) return 'SPECIAL';
     } else if (event is ChildCalendarEvent) {
       if (event.isCancelled) return 'CANCELLED';
       if (event.isRescheduled) return 'RESCHEDULED';

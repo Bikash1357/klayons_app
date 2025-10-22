@@ -105,6 +105,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
               SizedBox(height: 20),
 
               // Activity for section
+              // Activity for section - REPLACE the existing Row widget
               Row(
                 children: [
                   Text(
@@ -113,61 +114,56 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                       context,
                     ).copyWith(fontWeight: FontWeight.w500),
                   ),
-
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ...widget.children
-                            .take(2)
-                            .map(
-                              (child) => GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedChildId = child.id;
-                                    _selectedChildName = child.name
-                                        .split(' ')
-                                        .first;
-                                  });
-                                },
-                                child: Container(
-                                  margin: EdgeInsets.only(right: 12),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          ...widget.children.map(
+                            (child) => GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedChildId = child.id;
+                                  _selectedChildName = child.name
+                                      .split(' ')
+                                      .first;
+                                });
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(right: 12),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _selectedChildId == child.id
+                                      ? AppColors.orangeHighlight
+                                      : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
                                     color: _selectedChildId == child.id
-                                        ? AppColors.orangeHighlight
-                                        : Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                      color: _selectedChildId == child.id
-                                          ? AppColors.primaryOrange
-                                          : Colors.grey.shade300,
-                                      width: _selectedChildId == child.id
-                                          ? 2
-                                          : 1,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    child.name.split(' ').first,
-                                    style: AppTextStyles.bodyMedium(context)
-                                        .copyWith(
-                                          color: _selectedChildId == child.id
-                                              ? AppColors.primaryOrange
-                                              : Colors.grey.shade700,
-                                          fontWeight:
-                                              _selectedChildId == child.id
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                        ),
+                                        ? AppColors.primaryOrange
+                                        : Colors.grey.shade300,
+                                    width: _selectedChildId == child.id ? 2 : 1,
                                   ),
                                 ),
+                                child: Text(
+                                  child.name.split(' ').first,
+                                  style: AppTextStyles.bodyMedium(context)
+                                      .copyWith(
+                                        color: _selectedChildId == child.id
+                                            ? AppColors.primaryOrange
+                                            : Colors.grey.shade700,
+                                        fontWeight: _selectedChildId == child.id
+                                            ? FontWeight.w600
+                                            : FontWeight.normal,
+                                      ),
+                                ),
                               ),
-                            )
-                            .toList(),
-                      ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

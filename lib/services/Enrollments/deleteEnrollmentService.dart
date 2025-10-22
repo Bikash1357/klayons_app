@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../auth/signup_service.dart';
 
@@ -182,9 +181,6 @@ class EnrollmentService {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
-          // Note: CSRF token might not be needed for API calls, but including for completeness
-          // You can remove this line if your API doesn't require it
-          // 'X-CSRFTOKEN': 'your_csrf_token_if_needed',
         },
       );
 
@@ -367,15 +363,3 @@ class EnrollmentController {
     print('Refreshing enrollment list...');
   }
 }
-
-// How to use (Updated usage without manual token setting):
-//
-// 1. The service will automatically get the auth token from SharedPreferences
-//    (same as your GetEnrollmentService)
-//
-// 2. Use the service:
-// final controller = EnrollmentController();
-// await controller.handleUnenrollment(12);
-//
-// 3. After successful unenrollment, the enrollment cache is automatically cleared
-//    to ensure fresh data on next fetch

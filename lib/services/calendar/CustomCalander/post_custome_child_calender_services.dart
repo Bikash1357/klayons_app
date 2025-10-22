@@ -63,12 +63,14 @@ class CustomActivityService {
     }
 
     // Build request body according to API spec
+    // Send times in local timezone, let the backend handle UTC conversion
     Map<String, dynamic> requestBody = {
       "title": event.title,
       "address": event.address,
-      "startTime": event.startTime.toUtc().toIso8601String(),
-      "endTime": event.endTime.toUtc().toIso8601String(),
-      "childId": event.childId, // Changed from childName to childId
+      "startTime": event.startTime
+          .toIso8601String(), // Changed: removed .toUtc()
+      "endTime": event.endTime.toIso8601String(), // Changed: removed .toUtc()
+      "childId": event.childId,
       "color": colorToHex(event.color),
     };
 
@@ -82,7 +84,8 @@ class CustomActivityService {
           "daysOfWeek": event.recurrence!.daysOfWeek,
         "endRule": recurrenceEndToString(event.recurrence!.endRule),
         if (event.recurrence!.endDate != null)
-          "endDate": event.recurrence!.endDate!.toUtc().toIso8601String(),
+          "endDate": event.recurrence!.endDate!
+              .toIso8601String(), // Changed: removed .toUtc()
         if (event.recurrence!.occurrences != null)
           "occurrences": event.recurrence!.occurrences,
       };
@@ -126,12 +129,14 @@ class CustomActivityService {
     }
 
     // Build request body with only fields to update
+    // Send times in local timezone
     Map<String, dynamic> requestBody = {
       "title": event.title,
       "address": event.address,
-      "startTime": event.startTime.toUtc().toIso8601String(),
-      "endTime": event.endTime.toUtc().toIso8601String(),
-      "childId": event.childId, // Use childId, not childName
+      "startTime": event.startTime
+          .toIso8601String(), // Changed: removed .toUtc()
+      "endTime": event.endTime.toIso8601String(), // Changed: removed .toUtc()
+      "childId": event.childId,
       "color": colorToHex(event.color),
     };
 
@@ -144,7 +149,8 @@ class CustomActivityService {
           "daysOfWeek": event.recurrence!.daysOfWeek,
         "endRule": recurrenceEndToString(event.recurrence!.endRule),
         if (event.recurrence!.endDate != null)
-          "endDate": event.recurrence!.endDate!.toUtc().toIso8601String(),
+          "endDate": event.recurrence!.endDate!
+              .toIso8601String(), // Changed: removed .toUtc()
         if (event.recurrence!.occurrences != null)
           "occurrences": event.recurrence!.occurrences,
       };
