@@ -285,7 +285,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 24),
               Text(
-                'Are you sure?',
+                'Remove Activity',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -294,7 +294,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'Delete "${customActivity.title}" for ${customActivity.childName}?',
+                'This will remove ${customActivity.childName.split(' ').first}\'s ${customActivity.title} classes. Are you sure ypu want to continue?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -340,7 +340,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
                           elevation: 0,
                         ),
                         child: Text(
-                          'Delete',
+                          'Remove',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -393,7 +393,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 24),
               Text(
-                'Are you sure?',
+                'Confirm Unenrollment',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -402,7 +402,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'unenroll from ${enrollment.activityName} for ${enrollment.childName}!',
+                'Are you sure you want to unenroll ${enrollment.childName.split(' ').first} from the ${enrollment.activityName} classes',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -448,7 +448,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
                           elevation: 0,
                         ),
                         child: Text(
-                          'Delete',
+                          'Unenroll',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,

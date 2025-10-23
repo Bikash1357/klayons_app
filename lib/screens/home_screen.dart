@@ -392,8 +392,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  // Build search field
-  // Build search field
   Widget _buildSearchField() {
     String hintText = 'Find Activities';
     if (_userProfile?.societyName.isNotEmpty == true) {
@@ -401,7 +399,11 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     }
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      constraints: const BoxConstraints(
+        minHeight: 48,
+        maxHeight: 56, // Cap maximum height
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -416,12 +418,19 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
       child: TextField(
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value),
+        maxLines: 1,
+        textAlignVertical: TextAlignVertical.center,
         decoration: InputDecoration(
           hintText: hintText,
+          hintMaxLines: 1,
           hintStyle: AppTextStyles.bodyMedium(
             context,
-          ).copyWith(color: Colors.grey),
+          ).copyWith(color: Colors.grey, overflow: TextOverflow.ellipsis),
           prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 44,
+            minHeight: 44,
+          ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
@@ -429,15 +438,22 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                     _searchQuery = '';
                     _searchController.clear();
                   }),
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
                 )
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
+            horizontal: 16,
             vertical: 12,
           ),
+          isDense: true,
         ),
-        style: AppTextStyles.bodyMedium(context),
+        style: AppTextStyles.bodyMedium(
+          context,
+        ).copyWith(overflow: TextOverflow.ellipsis),
       ),
     );
   }
@@ -657,7 +673,6 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 }
 
-// Custom delegate for pinned search bar
 class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final double height;
@@ -679,8 +694,8 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
       color: AppColors.background,
       child: Column(
         children: [
-          // Add spacing when scrolled
-          if (isScrolled) const SizedBox(height: 24),
+          // Increased spacing when scrolled from 20 to 24
+          if (isScrolled) const SizedBox(height: 30),
           child,
         ],
       ),
@@ -688,14 +703,13 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => height + (isScrolled ? 24 : 0);
+  double get maxExtent => height + (isScrolled ? 30 : 0); // Updated from 20 to 24
 
   @override
-  double get minExtent => height + (isScrolled ? 24 : 0);
+  double get minExtent => height + (isScrolled ? 30 : 0); // Updated from 20 to 24
 
   @override
   bool shouldRebuild(covariant _SearchBarDelegate oldDelegate) {
-    // CRITICAL: Must rebuild when scroll state changes to update the layout
     return oldDelegate.isScrolled != isScrolled ||
         oldDelegate.height != height ||
         oldDelegate.child != child;

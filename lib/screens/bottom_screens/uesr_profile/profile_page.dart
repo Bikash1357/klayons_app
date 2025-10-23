@@ -951,14 +951,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  child.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2D3748),
+                Expanded(
+                  child: Text(
+                    child.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3748),
+                    ),
                   ),
                 ),
+                SizedBox(width: 5),
                 InkWell(
                   onTap: () async {
                     print('✏️ Editing child with ID: ${child.id}');

@@ -407,8 +407,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     return ConfirmationDialog.show(
       context: context,
       title: 'Confirm Enrollment',
-      message: 'Enroll now in ${activityData!.name}',
-      confirmText: 'Confirm',
+      message:
+          'You are about to enroll ${selectedChild!.name.split(' ').first} in the ${activityData!.name} classes',
+      confirmText: 'Enroll Now',
       cancelText: 'Cancel',
       confirmColor: Colors.deepOrange,
       iconColor: Colors.deepOrange,
