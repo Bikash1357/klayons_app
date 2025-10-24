@@ -85,9 +85,14 @@ class ConfirmationDialog {
               SizedBox(height: 24),
 
               // Buttons in a row
+              // Update the Buttons Row section in the ConfirmationDialog.show method:
+
+              // Update the Buttons Row section in the ConfirmationDialog.show method:
+
+              // Buttons in a row
               Row(
                 children: [
-                  // Cancel button - only show if cancelText is not empty
+                  // Cancel button - takes remaining space on the left
                   if (cancelText.isNotEmpty) ...[
                     Expanded(
                       child: SizedBox(
@@ -99,12 +104,16 @@ class ConfirmationDialog {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Text(
-                            cancelText,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              cancelText,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                              maxLines: 1,
                             ),
                           ),
                         ),
@@ -113,27 +122,28 @@ class ConfirmationDialog {
                     SizedBox(width: 12),
                   ],
 
-                  // Confirm button
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: buttonColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
+                  // Confirm button - always sticks to right, never wraps text
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: buttonColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Text(
-                          confirmText,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
+                        elevation: 0,
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      child: Text(
+                        confirmText,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.visible,
                       ),
                     ),
                   ),

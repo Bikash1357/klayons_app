@@ -130,7 +130,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                                 });
                               },
                               child: Container(
-                                margin: EdgeInsets.only(right: 12),
+                                margin: EdgeInsets.only(right: 8),
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 4,
@@ -151,6 +151,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                                   child.name.split(' ').first,
                                   style: AppTextStyles.bodyMedium(context)
                                       .copyWith(
+                                        fontSize: 12,
                                         color: _selectedChildId == child.id
                                             ? AppColors.primaryOrange
                                             : Colors.grey.shade700,
@@ -233,7 +234,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
               TextField(
                 controller: _addressController,
                 decoration: InputDecoration(
-                  hintText: 'Instructor and Location',
+                  hintText: 'Instructor Name',
                   contentPadding: EdgeInsets.symmetric(
                     vertical: 12,
                     horizontal: 12,
@@ -260,14 +261,13 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     child: GestureDetector(
                       onTap: () => _selectDate(context, true),
                       child: Container(
-                        padding: EdgeInsets.all(12),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            SizedBox(width: 8),
                             Flexible(
                               child: Text(
                                 DateFormat('EEE, d MMM').format(_selectedDate),
@@ -292,14 +292,13 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     child: GestureDetector(
                       onTap: () => _selectDate(context, false),
                       child: Container(
-                        padding: EdgeInsets.all(12),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _neverStops
@@ -326,7 +325,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     child: GestureDetector(
                       onTap: () => _selectTime(context, true),
                       child: Container(
-                        padding: EdgeInsets.all(12),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
@@ -351,7 +350,7 @@ class _CreateEventDialogState extends State<CreateEventDialog> {
                     child: GestureDetector(
                       onTap: () => _selectTime(context, false),
                       child: Container(
-                        padding: EdgeInsets.all(12),
+                        padding: EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),

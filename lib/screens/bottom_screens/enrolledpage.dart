@@ -294,7 +294,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'This will remove ${customActivity.childName.split(' ').first}\'s ${customActivity.title} classes. Are you sure ypu want to continue?',
+                'This will remove ${customActivity.childName.split(' ').first}\'s ${customActivity.title} class. Are you sure you want to continue?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -402,7 +402,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
               ),
               SizedBox(height: 16),
               Text(
-                'Are you sure you want to unenroll ${enrollment.childName.split(' ').first} from the ${enrollment.activityName} classes',
+                'Are you sure you want to unenroll ${enrollment.childName.split(' ').first} from ${enrollment.activityName}? ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -516,7 +516,6 @@ class _EnrolledPageState extends State<EnrolledPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
         titleSpacing: 0,
         leading: IconButton(
           icon: SvgPicture.asset(
@@ -528,20 +527,19 @@ class _EnrolledPageState extends State<EnrolledPage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => KlayonsHomePage()),
-          ),
+          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
         ),
+        backgroundColor: AppColors.background,
+        elevation: 0,
         title: Text(
-          "Activity Tracker",
+          'Activity Tracker',
           style: AppTextStyles.formLarge(context).copyWith(
             color: AppColors.darkElements,
             fontWeight: FontWeight.w700,
           ),
         ),
+        centerTitle: false,
         automaticallyImplyLeading: false,
-        elevation: 0,
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -946,7 +944,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
 
   Widget _buildChildInfo(String childName) {
     return Text(
-      'Booked for $childName',
+      childName,
       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
     );
   }

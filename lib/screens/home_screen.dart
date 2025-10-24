@@ -204,7 +204,9 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   List<Activity> get _filteredActivities {
     if (_searchQuery.isEmpty) return _activityData;
 
-    final query = _searchQuery.toLowerCase();
+    final query = _searchQuery.trim().toLowerCase(); // Add trim() here
+    if (query.isEmpty) return _activityData; // Return all if only spaces
+
     return _activityData.where((activity) {
       return activity.name.toLowerCase().contains(query) ||
           activity.category.toLowerCase().contains(query) ||
@@ -373,7 +375,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
                 // Section title
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                     child: _buildSectionTitle(),
                   ),
                 ),

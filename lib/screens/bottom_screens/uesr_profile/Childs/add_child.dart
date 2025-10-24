@@ -86,10 +86,8 @@ class _AddChildPageState extends State<AddChildPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close success dialog
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => UserProfilePage()),
-                  (route) => false,
-                );
+                // Navigate back with result = true to trigger refresh
+                Navigator.of(context).pop(true);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryOrange,

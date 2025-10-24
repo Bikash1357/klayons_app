@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/user_calender/calander.dart';
 import 'package:klayons/utils/styles/fonts.dart';
@@ -408,7 +409,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       context: context,
       title: 'Confirm Enrollment',
       message:
-          'You are about to enroll ${selectedChild!.name.split(' ').first} in the ${activityData!.name} classes',
+          'You are about to enroll ${selectedChild!.name.split(' ').first} in ${activityData!.name}',
       confirmText: 'Enroll Now',
       cancelText: 'Cancel',
       confirmColor: Colors.deepOrange,
@@ -537,7 +538,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    'Book for:',
+                    'Enroll:',
                     style: AppTextStyles.bodyMedium(context).copyWith(
                       color: Colors.grey[700],
                       fontWeight: FontWeight.w500,
@@ -645,85 +646,90 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         Row(
           children: [
             Text(
-              'Book for:',
+              'Enroll:',
               style: AppTextStyles.bodyMedium(
                 context,
               ).copyWith(color: Colors.grey[700], fontWeight: FontWeight.w500),
             ),
             SizedBox(width: 10),
             // Children chips
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: children.map((child) {
-                final isSelected = selectedChildId == child.id.toString();
-                final childAge = _calculateAge(child.dob);
-                final ageInt = int.tryParse(childAge) ?? 0;
-                final isAgeWarning = ageInt < 4;
-                final isChildEnrolled = userEnrollments.any(
-                  (enrollment) =>
-                      enrollment.child?.id == child.id &&
-                      enrollment.activity?.id == widget.activityId &&
-                      (enrollment.status.toLowerCase() == 'enrolled' ||
-                          enrollment.status.toLowerCase() == 'reenrolled' ||
-                          enrollment.status.toLowerCase() == 'waitlist'),
-                );
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: children.map((child) {
+                    final isSelected = selectedChildId == child.id.toString();
+                    final childAge = _calculateAge(child.dob);
+                    final ageInt = int.tryParse(childAge) ?? 0;
+                    final isAgeWarning = ageInt < 4;
+                    final isChildEnrolled = userEnrollments.any(
+                      (enrollment) =>
+                          enrollment.child?.id == child.id &&
+                          enrollment.activity?.id == widget.activityId &&
+                          (enrollment.status.toLowerCase() == 'enrolled' ||
+                              enrollment.status.toLowerCase() == 'reenrolled' ||
+                              enrollment.status.toLowerCase() == 'waitlist'),
+                    );
 
-                return GestureDetector(
-                  onTap: () => _selectChild(child),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.orangeHighlight
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryOrange!
-                            : Colors.grey[300]!,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${child.name.split(' ').first} ',
-                          style: TextStyle(
-                            fontSize: 12,
+                    return GestureDetector(
+                      onTap: () => _selectChild(child),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.orangeHighlight
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
                             color: isSelected
-                                ? AppColors.primaryOrange
-                                : Colors.grey[700],
-                            fontWeight: FontWeight.w500,
+                                ? AppColors.primaryOrange!
+                                : Colors.grey[300]!,
                           ),
                         ),
-                        if (isChildEnrolled) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.check_circle,
-                            size: 12,
-                            color: isSelected
-                                ? AppColors.primaryOrange
-                                : Colors.grey,
-                          ),
-                        ] else if (isAgeWarning) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.error_outline,
-                            size: 12,
-                            color: isSelected
-                                ? AppColors.primaryOrange
-                                : Colors.orange[600],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '${child.name.split(' ').first} ',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected
+                                    ? AppColors.primaryOrange
+                                    : Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (isChildEnrolled) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.check_circle,
+                                size: 12,
+                                color: isSelected
+                                    ? AppColors.primaryOrange
+                                    : Colors.grey,
+                              ),
+                            ] else if (isAgeWarning) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.error_outline,
+                                size: 12,
+                                color: isSelected
+                                    ? AppColors.primaryOrange
+                                    : Colors.orange[600],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
           ],
         ),
@@ -1379,6 +1385,36 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     );
   }
 
+  // Add this helper method to check if activity has started:
+  bool _isActivityStarted(Object? dateValue) {
+    if (dateValue == null) return false;
+
+    try {
+      DateTime startDate;
+
+      if (dateValue is String) {
+        startDate = DateTime.parse(dateValue);
+      } else if (dateValue is int) {
+        startDate = DateTime.fromMillisecondsSinceEpoch(dateValue);
+      } else {
+        return false;
+      }
+
+      // Compare only dates (ignore time)
+      final today = DateTime.now();
+      final todayDate = DateTime(today.year, today.month, today.day);
+      final activityDate = DateTime(
+        startDate.year,
+        startDate.month,
+        startDate.day,
+      );
+
+      return activityDate.isBefore(todayDate);
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Build schedule information
   Widget _buildScheduleInfo(ActivityDetail activity) {
     return Container(
@@ -1445,7 +1481,9 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           Row(
             children: [
               Text(
-                'Start Date: ${_formatDate(activityData?.startDate)}',
+                _isActivityStarted(activityData?.startDate)
+                    ? 'Batch Ongoing'
+                    : 'Start Date: ${_formatDate(activityData?.startDate)}',
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.primaryOrange,
@@ -1530,12 +1568,10 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'DESCRIPTION',
-            style: AppTextStyles.titleMedium(context).copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-              letterSpacing: 1.2,
-            ),
+            'Description',
+            style: AppTextStyles.titleMedium(
+              context,
+            ).copyWith(fontWeight: FontWeight.bold, color: Colors.black87),
           ),
           const SizedBox(height: 5),
           Text(
@@ -1557,8 +1593,23 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
 
   Widget _buildInstructorSection(ActivityDetail activity) {
     const int maxLines = 3;
-    final bool hasLongDescription =
-        activity.instructor.profile.length > 150; // Adjust threshold as needed
+
+    // Calculate if text would exceed maxLines
+    final textPainter =
+        TextPainter(
+          text: TextSpan(
+            text: activity.instructor.profile,
+            style: AppTextStyles.bodySmall(
+              context,
+            ).copyWith(color: Colors.grey[600]),
+          ),
+          maxLines: maxLines,
+          textDirection: TextDirection.ltr,
+        )..layout(
+          maxWidth: MediaQuery.of(context).size.width - 64,
+        ); // Account for padding
+
+    final bool hasLongDescription = textPainter.didExceedMaxLines;
 
     return Container(
       width: double.infinity,
@@ -1579,38 +1630,41 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           ),
           const SizedBox(height: 16),
 
-          // Instructor Avatar (Centered)
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.deepOrange.withOpacity(0.1),
-            backgroundImage: activity.instructor.avatarUrl != null
-                ? NetworkImage(activity.instructor.avatarUrl!)
-                : null,
-            child: activity.instructor.avatarUrl == null
-                ? Text(
-                    activity.instructor.name.isNotEmpty
-                        ? activity.instructor.name.substring(0, 1).toUpperCase()
-                        : 'I',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange,
-                    ),
-                  )
-                : null,
+          // 3. Instructor Avatar - Updated to show initials for multi-word names
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: AppColors.orangeHighlight,
+                backgroundImage: activity.instructor.avatarUrl != null
+                    ? NetworkImage(activity.instructor.avatarUrl!)
+                    : null,
+                child: activity.instructor.avatarUrl == null
+                    ? Text(
+                        _getInstructorInitials(activity.instructor.name),
+                        style: GoogleFonts.poetsenOne(
+                          textStyle: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryOrange,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(width: 15),
+              Text(
+                activity.instructor.name.isNotEmpty
+                    ? activity.instructor.name
+                    : 'Instructor Name',
+                style: AppTextStyles.titleMedium(
+                  context,
+                ).copyWith(fontWeight: FontWeight.w500, color: Colors.black87),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 12),
-
-          // Instructor Name (Centered)
-          Text(
-            activity.instructor.name.isNotEmpty
-                ? activity.instructor.name
-                : 'Instructor Name',
-            style: AppTextStyles.titleMedium(
-              context,
-            ).copyWith(fontWeight: FontWeight.w600, color: Colors.black87),
-          ),
+          const SizedBox(height: 6),
 
           // Instructor Description
           if (activity.instructor.profile.isNotEmpty) ...[
@@ -1649,6 +1703,21 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
         ],
       ),
     );
+  }
+
+  String _getInstructorInitials(String name) {
+    if (name.isEmpty) return 'I';
+
+    final words = name.trim().split(RegExp(r'\s+'));
+
+    if (words.length == 1) {
+      // Single word: return first letter
+      return words[0].substring(0, 1).toUpperCase();
+    } else {
+      // Multiple words: return first letter of first two words
+      return (words[0].substring(0, 1) + words[1].substring(0, 1))
+          .toUpperCase();
+    }
   }
 
   /// Get status color based on enrollment status

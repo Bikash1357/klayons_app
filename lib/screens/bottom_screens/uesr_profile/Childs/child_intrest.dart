@@ -192,8 +192,8 @@ class _AddChildInterestsPageState extends State<AddChildInterestsPage> {
                 const SizedBox(height: 24),
                 Text(
                   widget.isEditMode
-                      ? 'Profile Updated Successfully'
-                      : 'Profile Added Successfully',
+                      ? '${widget.childData.firstName}\'s Profile Updated Successfully'
+                      : '${widget.childData.firstName}\' Profile Added Successfully',
                   style: AppTextStyles.titleMedium(context).copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/user_settings_page.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -551,12 +552,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: Colors.grey.shade200, width: 2),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primaryOrange.withOpacity(0.7),
+                AppColors.primaryOrange,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(32),
-            child: Container(
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.1)),
-              child: const Icon(Icons.person, color: Colors.white, size: 32),
+          child: Center(
+            child: Text(
+              _getUserInitials(),
+              style: GoogleFonts.poetsenOne(
+                textStyle: const TextStyle(
+                  fontSize: 24,
+                  //fontWeight: FontWeight.bold,
+                  color: AppColors.orangeHighlight,
+                ),
+              ),
             ),
           ),
         ),
@@ -619,6 +633,30 @@ class _UserProfilePageState extends State<UserProfilePage> {
         ),
       ],
     );
+  }
+
+  String _getUserInitials() {
+    if (userProfile?.name.isNotEmpty == true) {
+      List<String> nameParts = userProfile!.name.trim().split(' ');
+      if (nameParts.length >= 2) {
+        return '${nameParts[0][0].toUpperCase()}${nameParts[1][0].toUpperCase()}';
+      } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+        return nameParts[0][0].toUpperCase();
+      }
+    }
+    return 'U';
+  }
+
+  String _getChildInitials(String name) {
+    if (name.isNotEmpty) {
+      List<String> nameParts = name.trim().split(' ');
+      if (nameParts.length >= 2) {
+        return '${nameParts[0][0].toUpperCase()}${nameParts[1][0].toUpperCase()}';
+      } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
+        return nameParts[0][0].toUpperCase();
+      }
+    }
+    return 'C';
   }
 
   Widget _buildChildrenProfilesSection(BuildContext context) {
@@ -713,7 +751,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         rowChildren.add(const Expanded(child: SizedBox()));
       }
 
-      childCards.add(Row(children: rowChildren));
+      childCards.add(IntrinsicHeight(child: Row(children: rowChildren)));
 
       if (i + 2 < children!.length) {
         childCards.add(const SizedBox(height: 16));
@@ -721,6 +759,191 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
 
     return Column(children: childCards);
+  }
+
+  Widget _buildChildCard({required Child child}) {
+    return InkWell(
+      onTap: () async {
+        print('✏️ Editing child with ID: ${child.id}');
+
+        try {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  AddChildPage(childToEdit: child, isEditMode: true),
+            ),
+          );
+
+          // Refresh on any successful action (edit or delete)
+          if (result == true && mounted) {
+            print('✅ Child updated/deleted, refreshing...');
+
+            await _loadChildren(forceRefresh: true);
+            await _loadUserProfile(forceRefresh: true);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully!'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          print('❌ Error in child edit flow: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${e.toString()}'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        height:
+            double.infinity, // This makes the container fill available height
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryOrange.withOpacity(0.7),
+                        AppColors.primaryOrange,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getChildInitials(child.name),
+                      style: GoogleFonts.poetsenOne(
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          //fontWeight: FontWeight.bold,
+                          color: AppColors.orangeHighlight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () async {
+                    print('✏️ Editing child with ID: ${child.id}');
+
+                    try {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddChildPage(
+                            childToEdit: child,
+                            isEditMode: true,
+                          ),
+                        ),
+                      );
+
+                      if (result == true && mounted) {
+                        print('✅ Child updated/deleted, refreshing...');
+
+                        await _loadChildren(forceRefresh: true);
+                        await _loadUserProfile(forceRefresh: true);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Profile updated successfully!'),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      print('❌ Error in child edit flow: $e');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Icon(
+                    Icons.edit,
+                    color: Color(0xFF718096),
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  child.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D3748),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      child.gender.toLowerCase() == 'male' ? 'Boy,' : 'Girl,',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF718096),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _formatDate(child.dob),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF718096),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildLoadingChildrenCards() {
@@ -885,156 +1108,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
             style: TextStyle(fontSize: 14, color: Color(0xFF718096)),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildChildCard({required Child child}) {
-    return InkWell(
-      onTap: () async {
-        print('✏️ Editing child with ID: ${child.id}');
-
-        try {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  AddChildPage(childToEdit: child, isEditMode: true),
-            ),
-          );
-
-          if (result == true && mounted) {
-            print('✅ Child updated, refreshing...');
-
-            await _loadChildren(forceRefresh: true);
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Child profile updated successfully!'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        } catch (e) {
-          print('❌ Error in child edit flow: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${e.toString()}'),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-        }
-      },
-      borderRadius: BorderRadius.circular(
-        12,
-      ), // Matches container border radius
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    child.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D3748),
-                    ),
-                  ),
-                ),
-                SizedBox(width: 5),
-                InkWell(
-                  onTap: () async {
-                    print('✏️ Editing child with ID: ${child.id}');
-
-                    try {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddChildPage(
-                            childToEdit: child,
-                            isEditMode: true,
-                          ),
-                        ),
-                      );
-
-                      if (result == true && mounted) {
-                        print('✅ Child updated, refreshing...');
-
-                        await _loadChildren(forceRefresh: true);
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Child profile updated successfully!',
-                            ),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      print('❌ Error in child edit flow: $e');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Error: ${e.toString()}'),
-                            backgroundColor: Colors.red,
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  child: const Icon(
-                    Icons.edit,
-                    color: Color(0xFF718096),
-                    size: 16,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  child.gender.toLowerCase() == 'male' ? 'Boy,' : 'Girl,',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF2D3748),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _formatDate(child.dob),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF2D3748),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
