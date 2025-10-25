@@ -8,7 +8,6 @@ class FCMService {
   static final FirebaseMessaging _firebaseMessaging =
       FirebaseMessaging.instance;
 
-  /// Initialize FCM and request permissions
   static Future<void> initialize() async {
     try {
       // Request notification permissions (iOS)
@@ -24,6 +23,9 @@ class FCMService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         print('✅ User granted permission');
+
+        // Get APNs token for iOS (for debugging)
+        await getAPNsToken(); // Add this line
       } else if (settings.authorizationStatus ==
           AuthorizationStatus.provisional) {
         print('⚠️ User granted provisional permission');
@@ -150,6 +152,28 @@ class FCMService {
     } catch (e) {
       print('❌ Error getting local FCM token: $e');
       return null;
+    }
+  }
+
+  /// Get APNs token (iOS specific) - for debugging
+  static Future<void> getAPNsToken() async {
+    try {
+      String? apnsToken = await _firebaseMessaging.getAPNSToken();
+      if (apnsToken != null) {
+        print('📱 APNs Token: $apnsToken');
+      } else {
+        print('⚠️ APNs token not available yet. Waiting...');
+        // Sometimes APNs token takes a moment to be available
+        await Future.delayed(Duration(seconds: 3));
+        apnsToken = await _firebaseMessaging.getAPNSToken();
+        if (apnsToken != null) {
+          print('📱 APNs Token (after delay): $apnsToken');
+        } else {
+          print('❌ APNs token still not available');
+        }
+      }
+    } catch (e) {
+      print('❌ Error getting APNs token: $e');
     }
   }
 

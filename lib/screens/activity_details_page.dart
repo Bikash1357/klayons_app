@@ -370,28 +370,96 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
     // Build detailed message
     String detailMessage =
         '${enrollment.child.name} has been ${_getStatusDisplay(enrollment.status).toLowerCase()} in ${enrollment.activity.name}!\n\n';
-    detailMessage += 'Status: ${_getStatusDisplay(enrollment.status)}\n';
 
     if (enrollment.waitlistPosition != null) {
-      detailMessage += 'Waitlist Position: #${enrollment.waitlistPosition}\n';
+      detailMessage += 'Waitlist Position: #${enrollment.waitlistPosition}';
     }
 
-    final result = await ConfirmationDialog.show(
+    final result = await showDialog<bool>(
       context: context,
-      title: enrollment.status.toLowerCase() == 'waitlist'
-          ? 'Added to Waitlist!'
-          : 'Congratulations!',
-      message: detailMessage,
-      confirmText: 'Great! View Schedule',
-      cancelText: '', // Hide cancel button
-      confirmColor: statusColor,
-      iconColor: statusColor,
-      icon: statusIcon,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 16),
+                    // Icon
+                    Icon(statusIcon, color: statusColor, size: 64),
+                    const SizedBox(height: 16),
+                    // Title
+                    Text(
+                      enrollment.status.toLowerCase() == 'waitlist'
+                          ? 'Added to Waitlist!'
+                          : 'Congratulations!',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    // Message
+                    Text(
+                      detailMessage,
+                      style: const TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 5),
+                    // Centered View Schedule Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: statusColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'View Schedule',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Close button in top-right corner
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
 
     if (result == true && mounted) {
       Navigator.of(context).pop(); // Go back to previous screen
-
       // Navigate to the schedule/enrollments page
       Navigator.push(
         context,
@@ -1634,7 +1702,7 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
           Row(
             children: [
               CircleAvatar(
-                radius: 40,
+                radius: 30,
                 backgroundColor: AppColors.orangeHighlight,
                 backgroundImage: activity.instructor.avatarUrl != null
                     ? NetworkImage(activity.instructor.avatarUrl!)
