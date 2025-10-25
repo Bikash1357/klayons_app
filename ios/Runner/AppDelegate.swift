@@ -10,11 +10,8 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configure Firebase FIRST
+    // Configure Firebase
     FirebaseApp.configure()
-
-    // Set FCM messaging delegate IMMEDIATELY after Firebase config
-    Messaging.messaging().delegate = self
 
     // Configure Google Maps
     GMSServices.provideAPIKey("AIzaSyDwMeJhkBLaOqUfJYBX6ReGvaRaIYbSpFA")
@@ -26,13 +23,7 @@ import FirebaseMessaging
       let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
       UNUserNotificationCenter.current().requestAuthorization(
         options: authOptions,
-        completionHandler: { granted, error in
-          if granted {
-            print("✅ Notification permission granted")
-          } else {
-            print("❌ Notification permission denied: \(String(describing: error))")
-          }
-        }
+        completionHandler: { _, _ in }
       )
     } else {
       let settings: UIUserNotificationSettings =
@@ -40,41 +31,32 @@ import FirebaseMessaging
       application.registerUserNotificationSettings(settings)
     }
 
-    // Register for remote notifications IMMEDIATELY
-    DispatchQueue.main.async {
-      application.registerForRemoteNotifications()
-      print("📱 Registering for remote notifications...")
-    }
+    application.registerForRemoteNotifications()
+
+    // Set FCM messaging delegate
+    Messaging.messaging().delegate = self
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  // Handle APNs token registration SUCCESS
+  // Handle APNs token registration
   override func application(_ application: UIApplication,
                             didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-    let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
-    let token = tokenParts.joined()
-    print("✅ APNs device token registered: \(token)")
-
-    // CRITICAL: Set APNs token for Firebase Messaging
+    print("📱 APNs device token: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
     Messaging.messaging().apnsToken = deviceToken
-    print("✅ APNs token set for Firebase Messaging")
   }
 
-  // Handle APNs token registration FAILURE
+  // Handle APNs token registration failure
   override func application(_ application: UIApplication,
                             didFailToRegisterForRemoteNotificationsWithError error: Error) {
     print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
   }
-}
 
-// MARK: - UNUserNotificationCenterDelegate
-extension AppDelegate: UNUserNotificationCenterDelegate {
   // Handle notification when app is in foreground
-  func userNotificationCenter(_ center: UNUserNotificationCenter,
-                              willPresent notification: UNNotification,
-                              withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+  override func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                      willPresent notification: UNNotification,
+                                      withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
     let userInfo = notification.request.content.userInfo
     print("📩 Foreground notification received: \(userInfo)")
 
@@ -87,9 +69,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
   }
 
   // Handle notification tap
-  func userNotificationCenter(_ center: UNUserNotificationCenter,
-                              didReceive response: UNNotificationResponse,
-                              withCompletionHandler completionHandler: @escaping () -> Void) {
+  override func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                      didReceive response: UNNotificationResponse,
+                                      withCompletionHandler completionHandler: @escaping () -> Void) {
     let userInfo = response.notification.request.content.userInfo
     print("📱 Notification tapped: \(userInfo)")
 
@@ -99,9 +81,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 
 // MARK: - MessagingDelegate
 extension AppDelegate: MessagingDelegate {
-  // Handle FCM token refresh/initial registration
+  // Handle FCM token refresh
   func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-    print("🔄 Firebase registration token received: \(String(describing: fcmToken))")
+    print("🔄 Firebase registration token: \(String(describing: fcmToken))")
 
     let dataDict: [String: String] = ["token": fcmToken ?? ""]
     NotificationCenter.default.post(
