@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io'; // Add this at the top
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FCMService {
@@ -44,32 +45,19 @@ class FCMService {
 
   /// Get FCM token and send to backend
   /// Get FCM token and send to backend
+  /// Get FCM token and send to backend
   static Future<bool> getFCMTokenAndSendToBackend() async {
     try {
       print('🔄 Getting FCM token...');
 
-      // Wait for APNs token first (iOS only)
-      String? apnsToken = await _firebaseMessaging.getAPNSToken();
-
-      // If APNs token is not available, wait and retry
-      if (apnsToken == null) {
-        print('⏳ APNs token not available yet, waiting 3 seconds...');
-        await Future.delayed(Duration(seconds: 3));
-        apnsToken = await _firebaseMessaging.getAPNSToken();
-
-        if (apnsToken == null) {
-          print('⏳ APNs token still not available, waiting 5 more seconds...');
-          await Future.delayed(Duration(seconds: 5));
-          apnsToken = await _firebaseMessaging.getAPNSToken();
+      // On iOS, wait for APNs token with exponential backoff
+      if (Platform.isIOS) {
+        bool apnsReady = await _waitForAPNsToken();
+        if (!apnsReady) {
+          print(
+            '⚠️ APNs token not available after waiting. Proceeding anyway...',
+          );
         }
-      }
-
-      if (apnsToken != null) {
-        print('✅ APNs Token obtained: $apnsToken');
-      } else {
-        print(
-          '⚠️ APNs token still not available. This might be okay on Android.',
-        );
       }
 
       // Now get FCM token from Firebase
@@ -104,6 +92,30 @@ class FCMService {
       print('📍 Stack trace: $stackTrace');
       return false;
     }
+  }
+
+  /// Wait for APNs token with exponential backoff
+  static Future<bool> _waitForAPNsToken() async {
+    const maxAttempts = 5;
+    const delays = [2, 3, 5, 8, 10]; // seconds
+
+    for (int i = 0; i < maxAttempts; i++) {
+      print('🔍 Checking for APNs token (attempt ${i + 1}/$maxAttempts)...');
+
+      String? apnsToken = await _firebaseMessaging.getAPNSToken();
+
+      if (apnsToken != null && apnsToken.isNotEmpty) {
+        print('✅ APNs Token obtained: $apnsToken');
+        return true;
+      }
+
+      if (i < maxAttempts - 1) {
+        print('⏳ APNs token not ready, waiting ${delays[i]} seconds...');
+        await Future.delayed(Duration(seconds: delays[i]));
+      }
+    }
+
+    return false;
   }
 
   /// Send FCM token to Django backend

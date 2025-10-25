@@ -73,10 +73,11 @@ class _KlayonsAppState extends State<KlayonsApp> with WidgetsBindingObserver {
 
   /// Initialize FCM token after app is loaded and APNs is ready
   /// Initialize FCM token after app is loaded and APNs is ready
+  /// Initialize FCM token after app is loaded and APNs is ready
   Future<void> _initializeFCMTokenAfterDelay() async {
     try {
-      // Wait for the app to fully load and APNs to be ready
-      await Future.delayed(Duration(seconds: 3));
+      // Wait longer for iOS APNs token to be fully registered
+      await Future.delayed(Duration(seconds: 12)); // Increased from 3 to 12
 
       final prefs = await SharedPreferences.getInstance();
       final authToken = prefs.getString('auth_token');
@@ -88,7 +89,9 @@ class _KlayonsAppState extends State<KlayonsApp> with WidgetsBindingObserver {
         if (success) {
           print('🎉 FCM token retrieved and sent to backend');
         } else {
-          print('⚠️ FCM token retrieval/sending failed');
+          print(
+            '⚠️ FCM token retrieval/sending failed - will retry on token refresh',
+          );
         }
       } else {
         print(
