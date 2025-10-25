@@ -13,11 +13,11 @@ class FCMService {
       // Request notification permissions (iOS)
       NotificationSettings settings = await _firebaseMessaging
           .requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-            provisional: false,
-          );
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
       print('📱 FCM Permission status: ${settings.authorizationStatus}');
 
