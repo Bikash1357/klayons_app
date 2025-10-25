@@ -10,20 +10,35 @@ import FirebaseMessaging
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Configure Firebase
+    print("🚀 AppDelegate: didFinishLaunchingWithOptions called")
+
+    // Configure Firebase FIRST
     FirebaseApp.configure()
+    print("✅ Firebase configured")
+
+    // Set FCM messaging delegate IMMEDIATELY
+    Messaging.messaging().delegate = self
+    print("✅ FCM delegate set")
 
     // Configure Google Maps
     GMSServices.provideAPIKey("AIzaSyDwMeJhkBLaOqUfJYBX6ReGvaRaIYbSpFA")
 
-    // Register for remote notifications
+    // Request notification permissions
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self
 
       let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
       UNUserNotificationCenter.current().requestAuthorization(
         options: authOptions,
-        completionHandler: { _, _ in }
+        completionHandler: { granted, error in
+          print("📱 Notification permission - Granted: \(granted), Error: \(String(describing: error))")
+          if granted {
+            DispatchQueue.main.async {
+              print("📱 Calling registerForRemoteNotifications...")
+              UIApplication.shared.registerForRemoteNotifications()
+            }
+          }
+        }
       )
     } else {
       let settings: UIUserNotificationSettings =
@@ -31,36 +46,53 @@ import FirebaseMessaging
       application.registerUserNotificationSettings(settings)
     }
 
-    application.registerForRemoteNotifications()
-
-    // Set FCM messaging delegate
-    Messaging.messaging().delegate = self
+    // Also register immediately (redundant but ensures it's called)
+    DispatchQueue.main.async {
+      print("📱 [Immediate] Calling registerForRemoteNotifications...")
+      application.registerForRemoteNotifications()
+    }
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
-  // Handle APNs token registration
+  // APNS TOKEN REGISTRATION SUCCESS
   override func application(_ application: UIApplication,
                             didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-    print("📱 APNs device token: \(deviceToken.map { String(format: "%02.2hhx", $0) }.joined())")
+    print("✅✅✅ didRegisterForRemoteNotificationsWithDeviceToken CALLED ✅✅✅")
+    let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+    let token = tokenParts.joined()
+    print("✅ APNs device token: \(token)")
+
+    // Set APNs token for Firebase
     Messaging.messaging().apnsToken = deviceToken
+    print("✅ APNs token SET for Firebase Messaging")
+
+    // Verify it was set
+    if let apnsToken = Messaging.messaging().apnsToken {
+      print("✅ VERIFIED: APNs token is now set in Firebase")
+    } else {
+      print("❌ WARNING: APNs token NOT set in Firebase after assignment")
+    }
   }
 
-  // Handle APNs token registration failure
+  // APNS TOKEN REGISTRATION FAILURE
   override func application(_ application: UIApplication,
                             didFailToRegisterForRemoteNotificationsWithError error: Error) {
-    print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
+    print("❌❌❌ didFailToRegisterForRemoteNotificationsWithError CALLED ❌❌❌")
+    print("❌ Error: \(error.localizedDescription)")
+    print("❌ Full error: \(error)")
   }
+}
 
-  // Handle notification when app is in foreground
-  override func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                      willPresent notification: UNNotification,
-                                      withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+// MARK: - UNUserNotificationCenterDelegate
+extension AppDelegate: UNUserNotificationCenterDelegate {
+  func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              willPresent notification: UNNotification,
+                              withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
     let userInfo = notification.request.content.userInfo
-    print("📩 Foreground notification received: \(userInfo)")
+    print("📩 Foreground notification: \(userInfo)")
 
-    // Show notification even when app is in foreground
     if #available(iOS 14.0, *) {
       completionHandler([[.banner, .sound, .badge]])
     } else {
@@ -68,22 +100,26 @@ import FirebaseMessaging
     }
   }
 
-  // Handle notification tap
-  override func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                      didReceive response: UNNotificationResponse,
-                                      withCompletionHandler completionHandler: @escaping () -> Void) {
+  func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              didReceive response: UNNotificationResponse,
+                              withCompletionHandler completionHandler: @escaping () -> Void) {
     let userInfo = response.notification.request.content.userInfo
     print("📱 Notification tapped: \(userInfo)")
-
     completionHandler()
   }
 }
 
 // MARK: - MessagingDelegate
 extension AppDelegate: MessagingDelegate {
-  // Handle FCM token refresh
   func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-    print("🔄 Firebase registration token: \(String(describing: fcmToken))")
+    print("🔄🔄🔄 FCM Token received in AppDelegate: \(String(describing: fcmToken))")
+
+    // Check if APNs token is set
+    if let apnsToken = Messaging.messaging().apnsToken {
+      print("✅ APNs token IS SET when FCM token received")
+    } else {
+      print("⚠️ APNs token NOT SET when FCM token received")
+    }
 
     let dataDict: [String: String] = ["token": fcmToken ?? ""]
     NotificationCenter.default.post(
