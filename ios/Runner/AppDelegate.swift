@@ -87,6 +87,7 @@ import FirebaseMessaging
 
 // MARK: - UNUserNotificationCenterDelegate
 extension AppDelegate: UNUserNotificationCenterDelegate {
+  // ⚠️ NO 'override' keyword here - these are protocol methods, not overrides
   func userNotificationCenter(_ center: UNUserNotificationCenter,
                               willPresent notification: UNNotification,
                               withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
@@ -100,6 +101,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }
   }
 
+  // ⚠️ NO 'override' keyword here
   func userNotificationCenter(_ center: UNUserNotificationCenter,
                               didReceive response: UNNotificationResponse,
                               withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -111,6 +113,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 
 // MARK: - MessagingDelegate
 extension AppDelegate: MessagingDelegate {
+  // ⚠️ NO 'override' keyword here - this is a protocol method
   func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
     print("🔄🔄🔄 FCM Token received in AppDelegate: \(String(describing: fcmToken))")
 
