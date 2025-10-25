@@ -210,6 +210,9 @@ class LoginAuthService {
           // NEW: Register FCM token after successful login
           print('🚀 Attempting to register FCM token after login...');
           try {
+            // Wait for APNs to be ready on iOS
+            await Future.delayed(Duration(seconds: 2));
+
             bool fcmSuccess = await FCMService.getFCMTokenAndSendToBackend();
             if (fcmSuccess) {
               print('✅ FCM token registered successfully after login');

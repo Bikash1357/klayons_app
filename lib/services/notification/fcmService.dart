@@ -8,24 +8,26 @@ class FCMService {
   static final FirebaseMessaging _firebaseMessaging =
       FirebaseMessaging.instance;
 
+  /// Initialize FCM and request permissions
   static Future<void> initialize() async {
     try {
       // Request notification permissions (iOS)
       NotificationSettings settings = await _firebaseMessaging
           .requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
+            alert: true,
+            badge: true,
+            sound: true,
+            provisional: false,
+          );
 
       print('📱 FCM Permission status: ${settings.authorizationStatus}');
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         print('✅ User granted permission');
 
-        // Get APNs token for iOS (for debugging)
-        await getAPNsToken(); // Add this line
+        // IMPORTANT: Wait a bit for APNs token to be registered
+        print('⏳ Waiting for APNs token registration...');
+        await Future.delayed(Duration(seconds: 2));
       } else if (settings.authorizationStatus ==
           AuthorizationStatus.provisional) {
         print('⚠️ User granted provisional permission');
@@ -41,11 +43,36 @@ class FCMService {
   }
 
   /// Get FCM token and send to backend
+  /// Get FCM token and send to backend
   static Future<bool> getFCMTokenAndSendToBackend() async {
     try {
       print('🔄 Getting FCM token...');
 
-      // Get FCM token from Firebase
+      // Wait for APNs token first (iOS only)
+      String? apnsToken = await _firebaseMessaging.getAPNSToken();
+
+      // If APNs token is not available, wait and retry
+      if (apnsToken == null) {
+        print('⏳ APNs token not available yet, waiting 3 seconds...');
+        await Future.delayed(Duration(seconds: 3));
+        apnsToken = await _firebaseMessaging.getAPNSToken();
+
+        if (apnsToken == null) {
+          print('⏳ APNs token still not available, waiting 5 more seconds...');
+          await Future.delayed(Duration(seconds: 5));
+          apnsToken = await _firebaseMessaging.getAPNSToken();
+        }
+      }
+
+      if (apnsToken != null) {
+        print('✅ APNs Token obtained: $apnsToken');
+      } else {
+        print(
+          '⚠️ APNs token still not available. This might be okay on Android.',
+        );
+      }
+
+      // Now get FCM token from Firebase
       String? fcmToken = await _firebaseMessaging.getToken();
 
       if (fcmToken == null || fcmToken.isEmpty) {

@@ -14,7 +14,6 @@ import 'package:klayons/screens/home_screen.dart';
 import 'package:klayons/screens/notification.dart';
 import 'package:klayons/screens/splash_screen.dart';
 import 'package:klayons/services/get_societyname.dart';
-
 import 'firebase_options.dart';
 
 // Background message handler must be top-level function
@@ -39,40 +38,14 @@ void main() async {
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Initialize FCM (permissions and handlers only)
+    // Initialize FCM (permissions and handlers only - DON'T get token yet)
     await FCMService.initialize();
     print('✅ FCM initialized');
-
-    // Check if user is already logged in and get FCM token
-    await _initializeFCMTokenIfLoggedIn();
   } catch (e) {
     print('❌ Firebase/FCM initialization error: $e');
   }
 
   runApp(KlayonsApp());
-}
-
-/// Check if user is authenticated and get FCM token
-Future<void> _initializeFCMTokenIfLoggedIn() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    final authToken = prefs.getString('auth_token');
-
-    if (authToken != null && authToken.isNotEmpty) {
-      print('✅ User already authenticated, getting FCM token...');
-      bool success = await FCMService.getFCMTokenAndSendToBackend();
-
-      if (success) {
-        print('🎉 FCM token retrieved and sent to backend');
-      } else {
-        print('⚠️ FCM token retrieval/sending failed');
-      }
-    } else {
-      print('ℹ️ No auth token found - FCM token will be retrieved after login');
-    }
-  } catch (e) {
-    print('❌ Error checking auth status for FCM: $e');
-  }
 }
 
 class KlayonsApp extends StatefulWidget {
@@ -83,6 +56,50 @@ class KlayonsApp extends StatefulWidget {
 }
 
 class _KlayonsAppState extends State<KlayonsApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    // Initialize FCM token after app is fully loaded
+    _initializeFCMTokenAfterDelay();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Initialize FCM token after app is loaded and APNs is ready
+  /// Initialize FCM token after app is loaded and APNs is ready
+  Future<void> _initializeFCMTokenAfterDelay() async {
+    try {
+      // Wait for the app to fully load and APNs to be ready
+      await Future.delayed(Duration(seconds: 3));
+
+      final prefs = await SharedPreferences.getInstance();
+      final authToken = prefs.getString('auth_token');
+
+      if (authToken != null && authToken.isNotEmpty) {
+        print('✅ User already authenticated, getting FCM token...');
+        bool success = await FCMService.getFCMTokenAndSendToBackend();
+
+        if (success) {
+          print('🎉 FCM token retrieved and sent to backend');
+        } else {
+          print('⚠️ FCM token retrieval/sending failed');
+        }
+      } else {
+        print(
+          'ℹ️ No auth token found - FCM token will be retrieved after login',
+        );
+      }
+    } catch (e) {
+      print('❌ Error initializing FCM token: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
