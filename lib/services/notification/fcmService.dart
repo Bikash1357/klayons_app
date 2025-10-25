@@ -11,39 +11,42 @@ class FCMService {
   /// Initialize FCM and request permissions
   static Future<void> initialize() async {
     try {
-      // Request notification permissions (iOS)
-      NotificationSettings settings = await _firebaseMessaging
-          .requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-            provisional: false,
-          );
+      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
       print('📱 FCM Permission status: ${settings.authorizationStatus}');
 
+      // ✅ If permission granted, ensure APNS token gets generated (iOS)
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('✅ User granted permission');
-      } else if (settings.authorizationStatus ==
-          AuthorizationStatus.provisional) {
-        print('⚠️ User granted provisional permission');
-      } else {
-        print('❌ User declined or has not accepted permission');
+        await _firebaseMessaging.getAPNSToken(); // Important for iOS
       }
 
-      // Setup message handlers
       _setupMessageHandlers();
     } catch (e) {
       print('❌ FCM initialization error: $e');
     }
   }
 
+
   /// Get FCM token and send to backend
   static Future<bool> getFCMTokenAndSendToBackend() async {
     try {
       print('🔄 Getting FCM token...');
 
-      // Get FCM token from Firebase
+      // ✅ Ensure APNS token exists first (iOS only)
+      String? apnsToken = await _firebaseMessaging.getAPNSToken();
+      if (apnsToken == null) {
+        print('❌ APNS token not available yet. Cannot request FCM token.');
+        return false;
+      }
+
+      print('✅ APNS Token available: $apnsToken');
+
+      // ✅ Now get FCM token
       String? fcmToken = await _firebaseMessaging.getToken();
 
       if (fcmToken == null || fcmToken.isEmpty) {
@@ -51,15 +54,11 @@ class FCMService {
         return false;
       }
 
-      // Print FULL FCM token for debugging
       print('✅ FCM Token obtained successfully!');
       print('📋 FULL FCM TOKEN: $fcmToken');
       print('📏 Token length: ${fcmToken.length} characters');
 
-      // Save token locally for reference
       await _saveFCMTokenLocally(fcmToken);
-
-      // Send token to Django backend
       print('🚀 Sending FCM token to backend...');
       bool success = await sendFCMTokenToBackend(fcmToken);
 
@@ -76,6 +75,7 @@ class FCMService {
       return false;
     }
   }
+
 
   /// Send FCM token to Django backend
   static Future<bool> sendFCMTokenToBackend(String fcmToken) async {
