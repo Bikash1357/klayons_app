@@ -113,7 +113,7 @@ class _KlayonsAppState extends State<KlayonsApp> with WidgetsBindingObserver {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => KlayonsSplashScreen(),
+        '/': (context) => KlayonsHomePage(key: homePageKey),
         '/login': (context) => LoginPage(),
         '/demo_registration': (context) => SignUnPage(),
         '/home': (context) => KlayonsHomePage(),

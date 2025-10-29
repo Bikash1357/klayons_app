@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:klayons/screens/bottom_screens/uesr_profile/Childs/add_child.dart';
 import 'package:klayons/screens/user_calender/calander.dart';
 import 'package:klayons/utils/styles/fonts.dart';
+import 'package:klayons/screens/home_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/activity/activityDetailsService.dart';
 import '../services/Enrollments/get_enrolled_service.dart';
@@ -458,13 +459,13 @@ class _ActivityBookingPageState extends State<ActivityBookingPage>
       },
     );
 
+    // Replace the existing navigation in _showSuccessWithConfirmationDialog method
+
     if (result == true && mounted) {
-      Navigator.of(context).pop(); // Go back to previous screen
-      // Navigate to the schedule/enrollments page
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => CalendarScreen()),
-      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+
+      // Use the global key to access home page state
+      homePageKey.currentState?.changeTab(1); // Index 1 is CalendarScreen
     }
   }
 

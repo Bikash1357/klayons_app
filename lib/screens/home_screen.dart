@@ -15,6 +15,9 @@ import 'user_calender/calander.dart';
 import 'bottom_screens/enrolledpage.dart';
 import 'bottom_screens/uesr_profile/profile_page.dart';
 
+final GlobalKey<_KlayonsHomePageState> homePageKey =
+    GlobalKey<_KlayonsHomePageState>();
+
 class KlayonsHomePage extends StatefulWidget {
   const KlayonsHomePage({super.key});
 
@@ -88,6 +91,10 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
         });
       }
     });
+  }
+
+  void changeTab(int index) {
+    _onBottomNavTapped(index);
   }
 
   // Initialize animation controller

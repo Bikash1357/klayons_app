@@ -10,6 +10,7 @@ import '../../../services/UserProfileServices/userProfileModels.dart';
 import '../../../services/auth/login_service.dart';
 import '../../../services/UserProfileServices/get_userprofile_service.dart';
 import '../../../utils/styles/fonts.dart';
+import 'package:klayons/screens/home_screen.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -229,10 +230,8 @@ class _SettingsPageState extends State<SettingsPage> {
         await Future.delayed(const Duration(seconds: 1));
 
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/user_profile_page',
-            (Route<dynamic> route) => false,
-          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          homePageKey.currentState?.changeTab(3);
         }
       }
     } catch (e) {
@@ -761,8 +760,10 @@ class _SettingsPageState extends State<SettingsPage> {
               BlendMode.srcIn,
             ),
           ),
-          onPressed: () =>
-              Navigator.pushReplacementNamed(context, '/user_profile_page'),
+          onPressed: () {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+            homePageKey.currentState?.changeTab(3);
+          },
         ),
       ),
       body: SafeArea(
