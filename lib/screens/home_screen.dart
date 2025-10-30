@@ -597,6 +597,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
   }
 
   // Build bottom navigation bar
+
+  // Update the _buildBottomNavigationBar method
   Widget _buildBottomNavigationBar() {
     return Container(
       height: 70,
@@ -617,10 +619,22 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildCustomNavItem('assets/App_icons/iconHome.svg', 0),
-                _buildCustomNavItem('assets/App_icons/iconCalendar.svg', 1),
-                _buildCustomNavItem('assets/App_icons/iconTicket.svg', 2),
-                _buildCustomNavItem('assets/App_icons/iconProfile.svg', 3),
+                _buildCustomNavItem('assets/App_icons/iconHome.svg', 'Home', 0),
+                _buildCustomNavItem(
+                  'assets/App_icons/iconCalendar.svg',
+                  'Calendar',
+                  1,
+                ),
+                _buildCustomNavItem(
+                  'assets/App_icons/iconTicket.svg',
+                  'Enrollments',
+                  2,
+                ),
+                _buildCustomNavItem(
+                  'assets/App_icons/iconProfile.svg',
+                  'Profile',
+                  3,
+                ),
               ],
             ),
           ),
@@ -629,7 +643,7 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
             builder: (context, child) {
               final screenWidth = MediaQuery.of(context).size.width;
               final tabWidth = screenWidth / 4;
-              const lineWidth = 32.0;
+              const lineWidth = 50.0;
               final currentPosition = _slideAnimation.value;
               return Positioned(
                 bottom: 0,
@@ -650,8 +664,8 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
     );
   }
 
-  // Build custom navigation item
-  Widget _buildCustomNavItem(String assetPath, int index) {
+  // Update the _buildCustomNavItem method to include label
+  Widget _buildCustomNavItem(String assetPath, String label, int index) {
     final isSelected = _selectedIndex == index;
     final iconColor = isSelected
         ? AppColors.primaryOrange
@@ -669,11 +683,23 @@ class _KlayonsHomePageState extends State<KlayonsHomePage>
               const SizedBox(height: 5),
               SvgPicture.asset(
                 assetPath,
-                width: 32,
-                height: 32,
+                width: 29,
+                height: 29,
                 colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
               ),
-              const SizedBox(height: 23),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: AppTextStyles.bodySmall(context).copyWith(
+                  color: iconColor,
+                  fontSize: 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textScaleFactor: 1.2, // This prevents system font scaling
+              ),
+              const SizedBox(height: 4),
             ],
           ),
         ),

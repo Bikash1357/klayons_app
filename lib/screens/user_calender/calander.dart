@@ -277,7 +277,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     if (eventCount <= 2) {
       return Positioned(
-        bottom: 1,
+        bottom: 8,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: events.take(2).map((event) {
@@ -314,7 +314,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     } else {
       // When more than 2 events, show 2 dots + plus sign
       return Positioned(
-        bottom: 1,
+        bottom: 3,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -815,6 +815,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       );
                     }
 
+                    // Replace the entire ListView.builder section in your ValueListenableBuilder
+                    // This is the complete itemBuilder code
+
+                    // Replace the entire ListView.builder section in your ValueListenableBuilder
+                    // This is the complete itemBuilder code
+
                     return ListView.builder(
                       padding: EdgeInsets.all(16),
                       shrinkWrap: true,
@@ -913,19 +919,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ),
                             child: Row(
                               children: [
+                                // Calendar or Person Icon
+                                Icon(
+                                  isCustomActivity
+                                      ? Icons.person
+                                      : Icons.calendar_today,
+                                  color: Colors.grey.shade700,
+                                  size: 30,
+                                ),
+
+                                SizedBox(width: 12),
+                                // Vertical color bar
                                 Container(
                                   width: 4,
-                                  height: 50,
+                                  height: 60,
                                   decoration: BoxDecoration(
                                     color: isCustomActivity
-                                        ? Colors
-                                              .orange // Orange for custom activities
-                                        : AppColors
-                                              .primaryOrange, // Primary orange for all others
+                                        ? Colors.orange
+                                        : AppColors.primaryOrange,
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
-
                                 SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
