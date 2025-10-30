@@ -1,14 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Add this import for input formatters
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:klayons/utils/colour.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/UserProfileServices/deleteUserAccountsService.dart';
 import '../../../services/UserProfileServices/updateUserProfileServices.dart';
 import '../../../services/UserProfileServices/userProfileModels.dart';
 import '../../../services/auth/login_service.dart';
 import '../../../services/UserProfileServices/get_userprofile_service.dart';
+import '../../../utils/popup.dart';
 import '../../../utils/styles/fonts.dart';
 import 'package:klayons/screens/home_screen.dart';
 
@@ -26,6 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isVerifyingEmail = false;
   bool _isVerifyingPhone = false;
   bool _isVerifyingOTP = false;
+  bool _isDeletingAccount = false;
 
   // Form controllers
   final TextEditingController _nameController = TextEditingController();
@@ -54,8 +57,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _showEmailOTP = false;
   bool _showPhoneOTP = false;
   String _pendingVerificationType = '';
-
-  // Add these new state variables to track user input
   bool _hasEmailInput = false;
   bool _hasPhoneInput = false;
 
@@ -111,7 +112,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   bool _validatePhone(String phone) {
-    final phoneRegex = RegExp(r'^\d{10}$'); // Exactly 10 digits
+    final phoneRegex = RegExp(r'^\d{10}$');
     return phoneRegex.hasMatch(phone.trim());
   }
 
@@ -276,18 +277,12 @@ class _SettingsPageState extends State<SettingsPage> {
         'Accept': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       };
-      debugPrint('API POST $endpoint');
-      debugPrint('Headers: $headers');
-      debugPrint('Body: ${json.encode(body)}');
 
       final response = await http.post(
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
         body: json.encode(body),
       );
-
-      debugPrint('Response Status: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
 
       final responseData = json.decode(response.body);
 
@@ -302,8 +297,51 @@ class _SettingsPageState extends State<SettingsPage> {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      debugPrint('Error in $endpoint: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirmed = await ConfirmationDialog.show(
+      context: context,
+      title: 'Delete Account?',
+      message:
+          'This will permanently delete your account and all associated data. This action cannot be undone.',
+      confirmText: 'Delete Account',
+      cancelText: 'Cancel',
+      confirmColor: Colors.red,
+      iconColor: Colors.red,
+      customIcon: SvgPicture.asset(
+        'assets/App_icons/Exclamation_mark.svg',
+        width: 50,
+        height: 50,
+        colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isDeletingAccount = true);
+
+    try {
+      final result = await DeleteAccountService.deleteAccount();
+
+      if (mounted) {
+        _showSnackBar(result['message'] ?? 'Account deleted successfully');
+        await Future.delayed(const Duration(seconds: 1));
+
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar(_getErrorMessage(e), isError: true);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDeletingAccount = false);
+      }
     }
   }
 
@@ -410,40 +448,24 @@ class _SettingsPageState extends State<SettingsPage> {
         requestBody['phone'] = _phoneController.text.trim().replaceAll(' ', '');
       }
 
-      // Log full request info
-      debugPrint('=== VERIFY OTP DEBUG START ===');
-      debugPrint('POST URL: $baseUrl/auth/verify-otp/');
-      debugPrint('Headers:');
       Map<String, String> headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       };
-      headers.forEach((key, value) => debugPrint(' - $key: $value'));
-      debugPrint('Request Body: ${json.encode(requestBody)}');
-      debugPrint('OTP Type: ${otpString.runtimeType}, Value: "$otpString"');
-      debugPrint('Verification Type: $_pendingVerificationType');
 
-      final stopwatch = Stopwatch()..start();
       final response = await http.post(
         Uri.parse('$baseUrl/auth/verify-otp/'),
         headers: headers,
         body: json.encode(requestBody),
       );
-      stopwatch.stop();
 
-      debugPrint('Response time: ${stopwatch.elapsedMilliseconds} ms');
-      debugPrint('OTP verification response status: ${response.statusCode}');
-      debugPrint('OTP verification response body: ${response.body}');
-
-      // Full raw response body logging for error inspection
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
         if (responseData.containsKey('access')) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('auth_token', responseData['access']);
-          debugPrint('New auth token saved!');
         }
 
         final verifiedType = _pendingVerificationType;
@@ -465,18 +487,13 @@ class _SettingsPageState extends State<SettingsPage> {
             responseData['message'] ??
             responseData['error'] ??
             'OTP verification failed';
-        debugPrint('Verification Error Message: $errorMsg');
         _showSnackBar(errorMsg, isError: true);
         _clearOTPFields();
         if (_otpFocusNodes.isNotEmpty) {
           _otpFocusNodes[0].requestFocus();
         }
       }
-
-      debugPrint('=== VERIFY OTP DEBUG END ===');
-    } catch (e, stacktrace) {
-      debugPrint('OTP verification error: $e');
-      debugPrint('Stack trace: $stacktrace');
+    } catch (e) {
       _showSnackBar(
         'Network error: Please check your connection and try again',
         isError: true,
@@ -489,8 +506,6 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() => _isVerifyingOTP = false);
     }
   }
-
-  // UI builder methods (unchanged from your original code)...
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -692,7 +707,6 @@ class _SettingsPageState extends State<SettingsPage> {
       _otpFocusNodes[index - 1].requestFocus();
     }
 
-    // Auto-verify when all 6 digits are entered
     if (index == 5 && value.isNotEmpty) {
       final otp = _otpControllers.map((controller) => controller.text).join();
       if (otp.length == 6) {
@@ -805,7 +819,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Dynamic email/phone layout based on existing data
+                      // Dynamic email/phone layout
                       if (_hasEmailData) ...[
                         _buildTextField(
                           controller: _emailController,
@@ -816,10 +830,6 @@ class _SettingsPageState extends State<SettingsPage> {
                               ? null
                               : 'Please enter a valid email',
                           enabled: false,
-                          onChanged: (value) => setState(
-                            () => _isEmailValid =
-                                value.isEmpty || _validateEmail(value),
-                          ),
                         ),
                         const SizedBox(height: 12),
                         _buildTextField(
@@ -862,14 +872,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           hint: 'Enter your phone number',
                           keyboardType: TextInputType.phone,
                           isValid: _isPhoneValid,
-                          errorText: _isPhoneValid
-                              ? null
-                              : 'Please enter exactly 10 digits',
                           enabled: false,
-                          onChanged: (value) => setState(
-                            () => _isPhoneValid =
-                                value.isEmpty || _validatePhone(value),
-                          ),
                         ),
                         const SizedBox(height: 12),
                         _buildTextField(
@@ -889,36 +892,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         if (!_hasEmailData &&
                             !_showEmailOTP &&
-                            _hasEmailInput &&
-                            _isEmailValid) ...[
-                          const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: _buildVerifyButton(
-                              text: 'Verify Email',
-                              onPressed: _linkEmail,
-                              isLoading: _isVerifyingEmail,
-                            ),
-                          ),
-                        ],
-                        if (_showEmailOTP) _buildOTPFields(),
-                      ] else ...[
-                        _buildTextField(
-                          controller: _emailController,
-                          hint: 'Email',
-                          keyboardType: TextInputType.emailAddress,
-                          isValid: _isEmailValid,
-                          errorText: _isEmailValid
-                              ? null
-                              : 'Please enter a valid email',
-                          enabled: true,
-                          onChanged: (value) => setState(() {
-                            _isEmailValid =
-                                value.isEmpty || _validateEmail(value);
-                            _hasEmailInput = value.trim().isNotEmpty;
-                          }),
-                        ),
-                        if (!_showEmailOTP &&
                             _hasEmailInput &&
                             _isEmailValid) ...[
                           const SizedBox(height: 8),
@@ -967,12 +940,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         ],
                         if (_showPhoneOTP) _buildOTPFields(),
                       ],
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
+                // Address Information Section
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: BoxDecoration(
@@ -1032,6 +1006,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
+
+                // Save Details Button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: SizedBox(
@@ -1068,7 +1044,50 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 16),
+
+                // Delete Account Button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _isDeletingAccount ? null : _deleteAccount,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        side: BorderSide(
+                          color: _isDeletingAccount
+                              ? Colors.grey.shade300
+                              : Colors.red,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: _isDeletingAccount
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.red,
+                                ),
+                              ),
+                            )
+                          : const Text(
+                              'Delete Account',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
               ],
             ),
           ),
