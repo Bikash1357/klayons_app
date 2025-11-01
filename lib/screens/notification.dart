@@ -163,6 +163,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.background,
+        titleSpacing: 0,
         elevation: 0,
         leading: IconButton(
           icon: SvgPicture.asset(

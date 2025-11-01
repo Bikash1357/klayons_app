@@ -590,21 +590,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: SvgPicture.asset(
-            'assets/App_icons/iconBack.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(
-              AppColors.darkElements,
-              BlendMode.srcIn,
-            ),
-          ),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-        ),
         title: Text(
-          'Activity Schedule',
+          'Activity Calendar',
           style: AppTextStyles.formLarge(context).copyWith(
             color: AppColors.darkElements,
             fontWeight: FontWeight.w700,

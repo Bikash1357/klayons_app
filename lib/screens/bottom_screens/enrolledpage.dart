@@ -516,21 +516,8 @@ class _EnrolledPageState extends State<EnrolledPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: SvgPicture.asset(
-            'assets/App_icons/iconBack.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(
-              AppColors.darkElements,
-              BlendMode.srcIn,
-            ),
-          ),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-        ),
+        titleSpacing: 16,
         backgroundColor: AppColors.background,
-        elevation: 0,
         title: Text(
           'Activity Tracker',
           style: AppTextStyles.formLarge(context).copyWith(
