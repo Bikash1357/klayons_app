@@ -519,7 +519,7 @@ class _EnrolledPageState extends State<EnrolledPage> {
         titleSpacing: 16,
         backgroundColor: AppColors.background,
         title: Text(
-          'Activity Tracker',
+          'Enrollments',
           style: AppTextStyles.formLarge(context).copyWith(
             color: AppColors.darkElements,
             fontWeight: FontWeight.w700,
